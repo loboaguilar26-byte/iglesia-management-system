@@ -1,0 +1,15 @@
+# PostgreSQL para desarrollo local (opcional, requiere Docker).
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: iglesia
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cambiar-esto}
+      POSTGRES_DB: iglesia_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
