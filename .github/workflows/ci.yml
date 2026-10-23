@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: iglesia
+          POSTGRES_PASSWORD: ci-solo-pruebas
+          POSTGRES_DB: iglesia_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U iglesia" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      # Valores exclusivos de CI (base efímera); no son secretos reales.
+      DATABASE_URL: postgresql://iglesia:ci-solo-pruebas@localhost:5432/iglesia_test
+      TEST_DATABASE_URL: postgresql://iglesia:ci-solo-pruebas@localhost:5432/iglesia_test
+      BETTER_AUTH_SECRET: ci-secreto-solo-para-pruebas-automatizadas-000
+      BETTER_AUTH_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+      - name: Auditoría de dependencias
+        run: pnpm audit --prod --audit-level high

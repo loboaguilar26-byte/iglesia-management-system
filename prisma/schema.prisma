@@ -1,0 +1,427 @@
+// Modelo de datos — ver docs/modelo-datos.md
+// Restricciones que Prisma no expresa (CHECK, índices parciales) se añaden con SQL en las migraciones.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────────────────────── Autenticación (Better Auth) ─────────────────────────
+
+model User {
+  id            String   @id
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @db.Timestamptz(3)
+
+  sessions   Session[]
+  accounts   Account[]
+  roles      UserRole[] @relation("UserRoles")
+  rolesGiven UserRole[] @relation("RoleAssigner")
+  auditLogs  AuditLog[]
+
+  member   Member? @relation(fields: [memberId], references: [id])
+  memberId String? @unique
+
+  membersCreated        Member[]         @relation("MemberCreatedBy")
+  membersUpdated        Member[]         @relation("MemberUpdatedBy")
+  attendanceRecorded    Attendance[]
+  donationsCreated      Donation[]       @relation("DonationCreatedBy")
+  donationsVoided       Donation[]       @relation("DonationVoidedBy")
+  announcements         Announcement[]
+  churchSettingsUpdated ChurchSettings[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime @db.Timestamptz(3)
+  token     String   @unique
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime? @db.Timestamptz(3)
+  refreshTokenExpiresAt DateTime? @db.Timestamptz(3)
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime  @updatedAt @db.Timestamptz(3)
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime @db.Timestamptz(3)
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+model RateLimit {
+  id          String @id
+  key         String @unique
+  count       Int
+  lastRequest BigInt
+
+  @@map("rate_limit")
+}
+
+// ───────────────────────── Autorización ─────────────────────────
+
+model Role {
+  id          String           @id @default(cuid())
+  key         String           @unique
+  name        String
+  description String?
+  isSystem    Boolean          @default(false)
+  createdAt   DateTime         @default(now()) @db.Timestamptz(3)
+  permissions RolePermission[]
+  users       UserRole[]
+
+  @@map("role")
+}
+
+model Permission {
+  id          String           @id @default(cuid())
+  key         String           @unique
+  description String
+  roles       RolePermission[]
+
+  @@map("permission")
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permission")
+}
+
+model UserRole {
+  userId       String
+  roleId       String
+  assignedById String?
+  assignedAt   DateTime @default(now()) @db.Timestamptz(3)
+  user         User     @relation("UserRoles", fields: [userId], references: [id], onDelete: Cascade)
+  role         Role     @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  assignedBy   User?    @relation("RoleAssigner", fields: [assignedById], references: [id], onDelete: SetNull)
+
+  @@id([userId, roleId])
+  @@map("user_role")
+}
+
+// ───────────────────────── Miembros ─────────────────────────
+
+enum MemberStatus {
+  VISITOR
+  ACTIVE
+  INACTIVE
+}
+
+model Member {
+  id          String       @id @default(cuid())
+  firstName   String
+  lastName    String
+  /// Nombre completo normalizado (minúsculas, sin acentos) para búsquedas.
+  searchName  String
+  phone       String?
+  email       String?
+  joinDate    DateTime?    @db.Date
+  status      MemberStatus @default(ACTIVE)
+  /// Cargo organizativo (texto libre, sin efecto en permisos).
+  position    String?
+  isMinor     Boolean      @default(false)
+  notes       String?
+  createdAt   DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime     @updatedAt @db.Timestamptz(3)
+  createdById String?
+  updatedById String?
+  createdBy   User?        @relation("MemberCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy   User?        @relation("MemberUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  user                User?
+  attendances         Attendance[]
+  ministryMemberships MinistryMembership[]
+  eventResponsibles   EventResponsible[]
+  donations           Donation[]
+
+  @@index([searchName])
+  @@index([status])
+  @@map("member")
+}
+
+// ───────────────────────── Eventos y asistencia ─────────────────────────
+
+enum Visibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum EventStatus {
+  SCHEDULED
+  CANCELLED
+  COMPLETED
+}
+
+model EventType {
+  id       String  @id @default(cuid())
+  name     String  @unique
+  isActive Boolean @default(true)
+  events   Event[]
+
+  @@map("event_type")
+}
+
+model Event {
+  id              String      @id @default(cuid())
+  title           String
+  typeId          String
+  type            EventType   @relation(fields: [typeId], references: [id], onDelete: Restrict)
+  startsAt        DateTime    @db.Timestamptz(3)
+  endsAt          DateTime    @db.Timestamptz(3)
+  location        String?
+  description     String?
+  visibility      Visibility  @default(PRIVATE)
+  status          EventStatus @default(SCHEDULED)
+  cancelledReason String?
+  visitorCount    Int         @default(0)
+  ministryId      String?
+  ministry        Ministry?   @relation(fields: [ministryId], references: [id], onDelete: SetNull)
+  createdAt       DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime    @updatedAt @db.Timestamptz(3)
+
+  attendances  Attendance[]
+  responsibles EventResponsible[]
+
+  @@index([startsAt])
+  @@index([visibility, status, startsAt])
+  @@map("event")
+}
+
+model EventResponsible {
+  eventId  String
+  memberId String
+  event    Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  member   Member @relation(fields: [memberId], references: [id], onDelete: Restrict)
+
+  @@id([eventId, memberId])
+  @@map("event_responsible")
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+}
+
+model Attendance {
+  id           String           @id @default(cuid())
+  eventId      String
+  memberId     String
+  status       AttendanceStatus
+  recordedById String?
+  recordedAt   DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime         @updatedAt @db.Timestamptz(3)
+  event        Event            @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  member       Member           @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  recordedBy   User?            @relation(fields: [recordedById], references: [id], onDelete: SetNull)
+
+  @@unique([eventId, memberId])
+  @@index([memberId])
+  @@map("attendance")
+}
+
+// ───────────────────────── Ministerios ─────────────────────────
+
+enum MinistryRole {
+  MEMBER
+  COORDINATOR
+}
+
+model Ministry {
+  id          String               @id @default(cuid())
+  name        String               @unique
+  description String?
+  isActive    Boolean              @default(true)
+  createdAt   DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime             @updatedAt @db.Timestamptz(3)
+  memberships MinistryMembership[]
+  events      Event[]
+
+  @@map("ministry")
+}
+
+model MinistryMembership {
+  id         String       @id @default(cuid())
+  ministryId String
+  memberId   String
+  role       MinistryRole @default(MEMBER)
+  startDate  DateTime     @db.Date
+  /// null = participación vigente. Índice único parcial en SQL (ministryId, memberId) WHERE endDate IS NULL.
+  endDate    DateTime?    @db.Date
+  ministry   Ministry     @relation(fields: [ministryId], references: [id], onDelete: Restrict)
+  member     Member       @relation(fields: [memberId], references: [id], onDelete: Restrict)
+
+  @@index([memberId])
+  @@index([ministryId])
+  @@map("ministry_membership")
+}
+
+// ───────────────────────── Finanzas ─────────────────────────
+
+model DonationConcept {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  isActive  Boolean    @default(true)
+  donations Donation[]
+
+  @@map("donation_concept")
+}
+
+model PaymentMethod {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  isActive  Boolean    @default(true)
+  donations Donation[]
+
+  @@map("payment_method")
+}
+
+enum DonationStatus {
+  VALID
+  VOIDED
+}
+
+model Donation {
+  id          String          @id @default(cuid())
+  receivedAt  DateTime        @db.Date
+  /// CHECK (amount > 0) en SQL.
+  amount      Decimal         @db.Decimal(12, 2)
+  currency    String          @default("MXN") @db.Char(3)
+  conceptId   String
+  methodId    String
+  /// null = aportación anónima.
+  memberId    String?
+  reference   String?
+  notes       String?
+  status      DonationStatus  @default(VALID)
+  voidedAt    DateTime?       @db.Timestamptz(3)
+  voidedById  String?
+  voidReason  String?
+  /// Registro anulado al que esta aportación corrige.
+  correctsId  String?         @unique
+  createdById String
+  createdAt   DateTime        @default(now()) @db.Timestamptz(3)
+  concept     DonationConcept @relation(fields: [conceptId], references: [id], onDelete: Restrict)
+  method      PaymentMethod   @relation(fields: [methodId], references: [id], onDelete: Restrict)
+  member      Member?         @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  voidedBy    User?           @relation("DonationVoidedBy", fields: [voidedById], references: [id], onDelete: Restrict)
+  createdBy   User            @relation("DonationCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  corrects    Donation?       @relation("DonationCorrection", fields: [correctsId], references: [id], onDelete: Restrict)
+  correctedBy Donation?       @relation("DonationCorrection")
+
+  @@index([receivedAt])
+  @@index([status, receivedAt])
+  @@index([memberId])
+  @@map("donation")
+}
+
+// ───────────────────────── Comunicados ─────────────────────────
+
+enum AnnouncementStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Announcement {
+  id          String             @id @default(cuid())
+  title       String
+  body        String
+  authorId    String
+  author      User               @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  visibility  Visibility         @default(PRIVATE)
+  isFeatured  Boolean            @default(false)
+  status      AnnouncementStatus @default(DRAFT)
+  publishedAt DateTime?          @db.Timestamptz(3)
+  expiresAt   DateTime?          @db.Timestamptz(3)
+  createdAt   DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime           @updatedAt @db.Timestamptz(3)
+
+  @@index([status, visibility, publishedAt])
+  @@map("announcement")
+}
+
+// ───────────────────────── Configuración y auditoría ─────────────────────────
+
+model ChurchSettings {
+  id           String   @id @default("default")
+  name         String
+  logoPath     String?
+  address      String?
+  phone        String?
+  email        String?
+  timezone     String   @default("America/Mexico_City")
+  currency     String   @default("MXN") @db.Char(3)
+  aboutText    String?
+  scheduleText String?
+  /// Terminología configurable, p. ej. { "event": "Culto", "ministry": "Ministerio" }.
+  terminology  Json     @default("{}")
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
+  updatedById  String?
+  updatedBy    User?    @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@map("church_settings")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action     String
+  entityType String
+  entityId   String?
+  /// Nunca contiene contraseñas, tokens ni secretos.
+  metadata   Json     @default("{}")
+  ipAddress  String?
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@index([actorId])
+  @@map("audit_log")
+}

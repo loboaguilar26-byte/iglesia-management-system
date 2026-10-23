@@ -1,24 +1,54 @@
 # Instalación (desarrollo local)
 
-> Estado: la aplicación se inicializa en la Fase 1. Este documento se completará y verificará entonces.
+Verificado en Windows 11 con Node 24.18, pnpm 11.1 y PostgreSQL 17.11 (22/10/2026).
 
 ## Requisitos
-- Node.js ≥ 22 (verificado en el equipo: 24.18.0)
-- pnpm ≥ 10 (verificado: 11.1.3)
-- PostgreSQL 16+ — nativo, Docker (`docker compose up -d`) o una base Neon de desarrollo
-- Git y GitHub CLI
+- Node.js ≥ 22 y pnpm ≥ 10
+- PostgreSQL 16 o superior (nativo, Docker con `docker compose up -d`, o un servicio gestionado)
+- Git
 
-## Pasos (previstos)
+## 1. PostgreSQL
+
+### Windows (nativo)
+```powershell
+winget install --id PostgreSQL.PostgreSQL.17 -e
+```
+El instalador pide una contraseña para el superusuario `postgres`. Después crea un usuario y dos bases (desarrollo y pruebas):
+```powershell
+& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -h localhost -U postgres -c "CREATE ROLE iglesia LOGIN CREATEDB PASSWORD 'elige-una-contraseña';" -c "CREATE DATABASE iglesia_dev OWNER iglesia;" -c "CREATE DATABASE iglesia_test OWNER iglesia;"
+```
+
+### Con Docker
+`docker compose up -d` levanta PostgreSQL con el usuario `iglesia` y la base `iglesia_dev`; crea `iglesia_test` manualmente.
+
+## 2. Proyecto
 ```bash
 git clone https://github.com/loboaguilar26-byte/iglesia-management-system.git
 cd iglesia-management-system
-cp .env.example .env      # editar DATABASE_URL y BETTER_AUTH_SECRET
-pnpm install
-pnpm db:migrate
-pnpm db:seed              # solo datos ficticios, solo en desarrollo
-pnpm setup:admin          # crea el primer administrador de forma interactiva
-pnpm dev
+cp .env.example .env
+```
+Edita `.env`:
+- `DATABASE_URL` y `TEST_DATABASE_URL` con la contraseña elegida.
+- `BETTER_AUTH_SECRET`: valor aleatorio, p. ej. `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`.
+
+```bash
+pnpm install          # también genera el cliente Prisma
+pnpm db:migrate       # aplica migraciones a iglesia_dev
+pnpm db:seed          # roles, permisos y catálogos (sin datos personales)
+pnpm setup:admin      # crea el primer administrador (solo si no hay usuarios)
+pnpm dev              # http://localhost:3000  → /login
 ```
 
+## 3. Pruebas
+```bash
+pnpm test                            # unitarias + integración (usa TEST_DATABASE_URL)
+pnpm build
+pnpm exec playwright install chromium   # solo la primera vez
+pnpm test:e2e                        # E2E contra el build de producción en el puerto 3100
+```
+
+## Recuperación de contraseña en desarrollo
+No hay proveedor de correo conectado todavía. En desarrollo, el enlace de restablecimiento se imprime en la consola donde corre `pnpm dev`. En producción no se envía ni se registra el enlace (ver `seguridad.md`).
+
 ## Nota sobre OneDrive
-La carpeta de trabajo actual está dentro de OneDrive. `node_modules` y `.next` generan decenas de miles de archivos que OneDrive intentará sincronizar (lentitud, bloqueos de archivos). Se recomienda clonar el repositorio fuera de OneDrive (p. ej. `C:\dev\iglesia-management-system`).
+Si el repositorio está dentro de OneDrive, `node_modules` y `.next` (decenas de miles de archivos) se sincronizan y pueden causar lentitud o archivos bloqueados. Se recomienda clonar fuera de OneDrive (p. ej. `C:\dev\iglesia-management-system`).

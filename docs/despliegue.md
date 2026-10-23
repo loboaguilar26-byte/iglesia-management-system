@@ -6,6 +6,7 @@
 Ver `analisis-alojamiento.md`. Principal: Railway; alternativa: Vercel Pro + Neon.
 
 ## Lista de verificación previa a producción
+- [ ] `AUTH_IP_HEADERS` (y `AUTH_TRUSTED_PROXIES` si aplica) según el proxy del proveedor.
 - [ ] `BETTER_AUTH_SECRET` aleatorio (≥ 32 bytes) en variables del proveedor, no en git.
 - [ ] `DATABASE_URL` con TLS (`sslmode=require`).
 - [ ] Migraciones con `prisma migrate deploy` (nunca `migrate dev` en producción).
