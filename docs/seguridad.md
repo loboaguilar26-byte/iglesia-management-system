@@ -33,3 +33,11 @@
 1. Revocar sesiones y rotar secretos (`BETTER_AUTH_SECRET`, credenciales BD).
 2. Revisar `AuditLog`.
 3. Evaluar notificación a titulares conforme a la ley.
+
+## Implementado en la Fase 1 (22/10/2026)
+- Better Auth 1.7.12 (≥ versión que corrige CVE-2026-45364); registro público deshabilitado; contraseñas 10–128 caracteres; sesiones de 7 días revocables; token de recuperación de 30 min y un solo uso; al restablecer se cierran todas las sesiones.
+- Rate limit en BD: `/sign-in/email` 5/min, `/request-password-reset` 3/5 min, `/reset-password` 5/5 min. **Requiere `AUTH_IP_HEADERS` en producción** (ADR-015).
+- Usuario desactivado: no puede crear sesión (hook de BD) y sus sesiones se eliminan.
+- No autoasignación de roles (auditado como `roles.self_assign_denied`); siempre queda al menos un usuario activo con `roles:assign`.
+- Triggers de BD: `audit_log` es de solo inserción; `donation` no admite `DELETE`.
+- Los correos en producción no se envían (no hay proveedor) y el enlace de recuperación nunca se escribe en logs de producción.
