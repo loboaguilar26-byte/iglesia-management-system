@@ -52,11 +52,13 @@ export const PERMISSIONS = {
 
   "audit:read": "Consultar bitácora de auditoría (no financiera)",
   "audit:read_finance": "Consultar bitácora de auditoría financiera",
+
+  "portal:access": "Acceder al portal personal del miembro (solo sus propios datos)",
 } as const;
 
 export type Permission = keyof typeof PERMISSIONS;
 
-export const ROLE_KEYS = ["ADMIN", "PASTOR", "SECRETARY", "TREASURER", "COORDINATOR"] as const;
+export const ROLE_KEYS = ["ADMIN", "PASTOR", "SECRETARY", "TREASURER", "COORDINATOR", "MEMBER"] as const;
 export type RoleKey = (typeof ROLE_KEYS)[number];
 
 const all = (prefix: string) =>
@@ -148,7 +150,20 @@ export const ROLES: Record<RoleKey, { name: string; description: string; permiss
       "settings:read",
     ],
   },
+  MEMBER: {
+    name: "Miembro",
+    description: "Acceso al portal personal: sus datos, ministerios, asistencia, eventos y aportaciones propias. Sin acceso al panel.",
+    permissions: ["portal:access"],
+  },
 };
 
 /** Roles cuyos permisos se limitan a ministerios/eventos asignados (ver docs/permisos.md, regla 5). */
 export const SCOPED_ROLES: RoleKey[] = ["COORDINATOR"];
+
+/** Permisos que no dan acceso al panel administrativo. */
+const PORTAL_ONLY: Permission[] = ["portal:access"];
+
+/** true si el conjunto de permisos habilita al menos una función del panel `/admin`. */
+export function hasPanelAccess(permissions: ReadonlySet<Permission>): boolean {
+  return [...permissions].some((p) => !PORTAL_ONLY.includes(p));
+}

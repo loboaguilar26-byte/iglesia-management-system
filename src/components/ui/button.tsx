@@ -1,23 +1,32 @@
 import type { ButtonHTMLAttributes } from "react";
 
-type Variant = "primary" | "secondary" | "danger" | "ghost";
+export type ButtonVariant = "primary" | "secondary" | "danger" | "ghost" | "accent";
+type Size = "sm" | "md" | "lg";
 
-const variants: Record<Variant, string> = {
-  primary: "bg-primary text-primary-foreground hover:opacity-90",
-  secondary: "border border-border bg-surface hover:bg-background",
-  danger: "bg-danger text-white hover:opacity-90",
-  ghost: "hover:bg-background",
+const variants: Record<ButtonVariant, string> = {
+  primary: "bg-primary text-primary-foreground shadow-sm hover:bg-primary-strong",
+  secondary: "border border-border bg-surface text-foreground hover:bg-surface-2",
+  danger: "bg-danger text-white shadow-sm hover:opacity-90",
+  ghost: "text-foreground hover:bg-surface-2",
+  accent: "bg-accent text-white shadow-sm hover:opacity-90",
 };
 
-export function buttonClass(variant: Variant = "primary", className = "") {
-  return `inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60 ${variants[variant]} ${className}`;
+const sizes: Record<Size, string> = {
+  sm: "min-h-9 px-3 text-sm",
+  md: "min-h-10 px-4 text-sm",
+  lg: "min-h-12 px-6 text-base",
+};
+
+export function buttonClass(variant: ButtonVariant = "primary", className = "", size: Size = "md") {
+  return `inline-flex items-center justify-center gap-2 rounded-lg font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60 ${variants[variant]} ${sizes[size]} ${className}`;
 }
 
 export function Button({
   variant = "primary",
+  size = "md",
   className = "",
   type = "button",
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant }) {
-  return <button type={type} className={buttonClass(variant, className)} {...props} />;
+}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant; size?: Size }) {
+  return <button type={type} className={buttonClass(variant, className, size)} {...props} />;
 }

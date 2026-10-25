@@ -5,14 +5,9 @@ Cada fase se trabaja en ramas `feat/*`, se integra a `main` por pull request con
 | Fase | Rama(s) | Depende de | Estado |
 |---|---|---|---|
 | 0 Preparación y análisis | `main` (commit inicial) | — | ✅ Completada (22/10/2026) |
-| 1 Fundamentos | `feat/project-foundation`, `feat/authentication` | 0 | Siguiente |
-| 2 Sitio público | `feat/public-website` | 1 | Pendiente |
-| 3 Miembros y ministerios | `feat/members`, `feat/ministries` | 1 | Pendiente |
-| 4 Eventos y asistencia | `feat/events`, `feat/attendance` | 3 | Pendiente |
-| 5 Tesorería | `feat/finances` | 1, 3 | Pendiente |
-| 6 Comunicados y dashboard | `feat/announcements`, `feat/dashboard` | 3, 4, 5 | Pendiente |
-| 7 Reportes y configuración | `feat/reports`, `feat/settings` | 3–6 | Pendiente |
-| 8 Estabilización | `fix/*` | 1–7 | Pendiente |
+| 1 Fundamentos | `feat/project-foundation` | 0 | ✅ PR #1 |
+| 2–7 Sitio público y módulos | `feat/sitio-y-modulos` | 1 | ✅ Implementado (25/10/2026), en revisión |
+| 8 Estabilización | `fix/*` | 1–7 | Siguiente |
 | 9 Preparación móvil | `docs/mobile-api` | 8 | Pendiente |
 
 ## Fase 1 — Fundamentos (detalle)

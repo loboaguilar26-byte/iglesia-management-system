@@ -36,7 +36,8 @@ pnpm install          # también genera el cliente Prisma
 pnpm db:migrate       # aplica migraciones a iglesia_dev
 pnpm db:seed          # roles, permisos y catálogos (sin datos personales)
 pnpm setup:admin      # crea el primer administrador (solo si no hay usuarios)
-pnpm dev              # http://localhost:3000  → /login
+pnpm db:seed:demo     # opcional: datos ficticios (48 personas, ministerios, eventos, asistencia, aportaciones)
+pnpm dev              # http://localhost:3000 (sitio) · /login (panel)
 ```
 
 ## 3. Pruebas

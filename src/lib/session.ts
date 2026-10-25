@@ -5,7 +5,7 @@ import { cache } from "react";
 import { auth } from "./auth";
 import type { Actor } from "./authz";
 import { db } from "./db";
-import type { Permission, RoleKey } from "./permissions";
+import { SCOPED_ROLES, hasPanelAccess, type Permission, type RoleKey } from "./permissions";
 
 /** Carga roles y permisos efectivos de un usuario activo. */
 export async function loadActor(userId: string, ipAddress?: string | null): Promise<Actor | null> {
@@ -16,6 +16,7 @@ export async function loadActor(userId: string, ipAddress?: string | null): Prom
       name: true,
       email: true,
       isActive: true,
+      memberId: true,
       roles: {
         select: {
           role: { select: { key: true, permissions: { select: { permission: { select: { key: true } } } } } },
@@ -25,8 +26,13 @@ export async function loadActor(userId: string, ipAddress?: string | null): Prom
   });
   if (!user?.isActive) return null;
   const permissions = new Set<Permission>();
+  const unscoped = new Set<Permission>();
   for (const { role } of user.roles) {
-    for (const rp of role.permissions) permissions.add(rp.permission.key as Permission);
+    const scoped = SCOPED_ROLES.includes(role.key as RoleKey);
+    for (const rp of role.permissions) {
+      permissions.add(rp.permission.key as Permission);
+      if (!scoped) unscoped.add(rp.permission.key as Permission);
+    }
   }
   return {
     userId: user.id,
@@ -34,6 +40,8 @@ export async function loadActor(userId: string, ipAddress?: string | null): Prom
     email: user.email,
     roles: user.roles.map((r) => r.role.key as RoleKey),
     permissions,
+    scopedPermissions: new Set([...permissions].filter((p) => !unscoped.has(p))),
+    memberId: user.memberId,
     ipAddress,
   };
 }
@@ -57,9 +65,20 @@ export async function getActorFromHeaders(h: Headers): Promise<Actor | null> {
 /** Deduplicado por petición: layout y página comparten la misma lectura. */
 export const getActor = cache(async (): Promise<Actor | null> => getActorFromHeaders(await headers()));
 
-/** Para páginas del panel: redirige al login si no hay sesión válida. */
+/**
+ * Páginas del panel: sin sesión → login; con sesión pero sin ninguna función del panel
+ * (p. ej. solo rol Miembro) → portal del miembro.
+ */
 export async function requirePageActor(): Promise<Actor> {
   const actor = await getActor();
   if (!actor) redirect("/login");
+  if (!hasPanelAccess(actor.permissions)) redirect("/mi-cuenta");
+  return actor;
+}
+
+/** Portal del miembro: requiere `portal:access` y una ficha de miembro vinculada. */
+export async function requirePortalActor(): Promise<Actor> {
+  const actor = await getActor();
+  if (!actor) redirect("/login?next=/mi-cuenta");
   return actor;
 }

@@ -2,10 +2,25 @@
 
 Sistema integral de gestión multidenominacional de iglesias: sitio público institucional y panel administrativo privado (miembros, asistencia, eventos, ministerios, aportaciones, comunicados, reportes y configuración). Preparado para una futura app móvil (React Native + Expo).
 
-> **Estado:** Fase 0 completada (investigación, requisitos, arquitectura y plan). La aplicación aún no está implementada; comienza en la Fase 1.
+> **Estado:** sitio público y los 10 módulos administrativos (RF-01 a RF-10) implementados y probados localmente. Pendiente: estabilización, despliegue (requiere autorización) y preparación móvil.
 
-## Stack previsto
-Next.js (App Router) · TypeScript · Tailwind CSS · PostgreSQL · Prisma · Better Auth · Zod · Vitest · Playwright · GitHub Actions.
+## Qué incluye
+- **Sitio público:** inicio, nosotros, horarios, eventos, comunicados, contacto y aviso de privacidad, editables desde el panel.
+- **Panel `/admin`:** inicio con indicadores, miembros, ministerios, eventos y calendario, asistencia, tesorería, comunicados, reportes (PDF/Excel), usuarios y roles, configuración.
+- Permisos por rol aplicados en el servidor (ver [docs/permisos.md](docs/permisos.md)).
+
+## Inicio rápido
+```bash
+pnpm install
+pnpm db:migrate
+pnpm db:seed          # roles, permisos y catálogos
+pnpm setup:admin      # primer administrador
+pnpm db:seed:demo     # opcional: datos ficticios de demostración
+pnpm dev
+```
+
+## Stack
+Next.js 16 (App Router) · TypeScript · Tailwind CSS 4 · PostgreSQL 17 · Prisma 7 · Better Auth · Zod · Vitest · Playwright · GitHub Actions.
 
 ## Documentación
 | Documento | Contenido |
@@ -24,7 +39,7 @@ Next.js (App Router) · TypeScript · Tailwind CSS · PostgreSQL · Prisma · Be
 | [docs/despliegue.md](docs/despliegue.md) | Despliegue y respaldos |
 
 ## Instalación
-Ver [docs/instalacion.md](docs/instalacion.md) (se completará en la Fase 1).
+Ver [docs/instalacion.md](docs/instalacion.md).
 
 ## Reglas del repositorio
 - Repositorio **privado**. No subir `.env`, secretos ni datos reales de la congregación.

@@ -1,47 +1,93 @@
 @import "tailwindcss";
 
-/* Paleta sobria y neutral; la identidad de cada iglesia se configurará en fases posteriores. */
+/*
+ * Sistema de diseño: azul profundo (confianza), dorado cálido (acento), fondo crema.
+ * Neutral entre denominaciones: sin símbolos religiosos fijos en la interfaz.
+ */
 :root {
-  --background: #f8fafc;
+  --background: #f7f4ee;
   --surface: #ffffff;
-  --foreground: #0f172a;
-  --muted: #64748b;
-  --border: #e2e8f0;
-  --primary: #1e3a5f;
+  --surface-2: #fbf9f5;
+  --foreground: #1b2130;
+  --muted: #5d6474;
+  --border: #e5ddcf;
+  --primary: #1f3a5f;
+  --primary-strong: #142740;
   --primary-foreground: #ffffff;
-  --danger: #b91c1c;
-  --success: #15803d;
+  --accent: #b7832a;
+  --accent-soft: #f6ead3;
+  --danger: #b42318;
+  --success: #157f3b;
+  --warning: #a15c07;
+  --sidebar: #13233d;
+  --sidebar-foreground: #d9e2f0;
+  /* Azul de marca: igual en ambos temas (portadas y bandas con texto claro). */
+  --brand: #1a3253;
+  --brand-deep: #0f1f36;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0b1120;
-    --surface: #111827;
-    --foreground: #e5e7eb;
-    --muted: #94a3b8;
-    --border: #1f2937;
-    --primary: #7fa7d6;
-    --primary-foreground: #0b1120;
-    --danger: #f87171;
-    --success: #4ade80;
+    --background: #0d1320;
+    --surface: #141c2c;
+    --surface-2: #182236;
+    --foreground: #ebe7df;
+    --muted: #9ba5b8;
+    --border: #253149;
+    --primary: #8fb3e0;
+    --primary-strong: #b5cdee;
+    --primary-foreground: #0d1320;
+    --accent: #e2b65e;
+    --accent-soft: #2e2716;
+    --danger: #f97066;
+    --success: #47cd89;
+    --warning: #fdb022;
+    --sidebar: #0a101b;
+    --sidebar-foreground: #c9d4e6;
   }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-border: var(--border);
   --color-primary: var(--primary);
+  --color-primary-strong: var(--primary-strong);
   --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
   --color-danger: var(--danger);
   --color-success: var(--success);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-warning: var(--warning);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-brand: var(--brand);
+  --color-brand-deep: var(--brand-deep);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-fraunces);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
 }

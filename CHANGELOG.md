@@ -4,6 +4,19 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Sin publicar]
 
+### Añadido — Fases 2 a 7 (sitio público y módulos)
+- **Sitio público** (`/`, `/nosotros`, `/horarios`, `/eventos`, `/comunicados`, `/contacto`, `/privacidad`): diseño propio (Fraunces + Inter, azul profundo y dorado), responsive, SEO básico, próxima reunión calculada en vivo. Solo muestra contenido marcado como público; caché invalidada al editar desde el panel.
+- **Configuración (RF-10):** datos institucionales, textos del sitio, redes, aviso de privacidad, zona horaria, moneda, logotipo validado por firma de archivo y horarios habituales.
+- **Miembros (RF-02):** alta, ficha, edición, búsqueda sin acentos, filtros, detección de duplicados, desactivación sin borrado, notas confidenciales, historial.
+- **Ministerios (RF-05):** coordinadores e integrantes con fechas de inicio/fin e historial; alcance del rol Coordinador a sus ministerios.
+- **Eventos (RF-04):** tipos configurables, calendario mensual/semanal/lista, responsables, visibilidad, cancelación con motivo, duplicar evento, zona horaria de la iglesia.
+- **Asistencia (RF-03):** pase de lista presente/ausente/pendiente, visitantes sin ficha, sin duplicados, correcciones auditadas.
+- **Tesorería (RF-06):** aportaciones con Decimal exacto, anónimas, anulación y corrección trazables, resúmenes por concepto/método, catálogos configurables; acceso exclusivo de Tesorero.
+- **Comunicados (RF-07):** borrador/publicado/archivado, públicos o internos, destacados, vigencia.
+- **Dashboard (RF-08):** indicadores reales con periodo y criterio, gráficas de asistencia semanal e ingresos mensuales (solo autorizados), accesos rápidos por rol.
+- **Reportes (RF-09):** miembros, asistencia por evento/periodo, ministerios, ingresos; exportación PDF y Excel con permisos y auditoría.
+- `pnpm db:seed:demo`: datos ficticios de demostración (bloqueado en producción).
+
 ### Añadido — Fase 1 (fundamentos)
 - Proyecto Next.js 16 + TypeScript + Tailwind 4, Prisma 7 + PostgreSQL 17, Better Auth, Zod.
 - Esquema completo de datos y migración inicial con restricciones SQL (CHECK, índices parciales, triggers de inmutabilidad).
