@@ -42,3 +42,13 @@ desktop.ini
 *.log
 npm-debug.log*
 pnpm-debug.log*
+
+# misc
+*.pem
+.vercel
+
+# cliente Prisma generado (se crea con prisma generate)
+src/generated/
+
+# datos efímeros de pruebas E2E
+e2e/.data/

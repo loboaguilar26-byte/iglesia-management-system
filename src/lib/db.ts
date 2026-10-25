@@ -1,0 +1,18 @@
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "@/generated/prisma/client";
+
+const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
+
+function createClient() {
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) throw new Error("DATABASE_URL no está definida");
+  return new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
+}
+
+// Reutiliza la conexión entre recargas en desarrollo.
+export const db = globalForPrisma.prisma ?? createClient();
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db;
+
+export type Db = typeof db;
+/** Cliente dentro de una transacción interactiva. */
+export type Tx = Parameters<Parameters<Db["$transaction"]>[0]>[0];

@@ -41,4 +41,15 @@ Formato: decisión · alternativas evaluadas · motivo. Estado: **Aceptada** sal
 - v1: almacenamiento en disco/volumen o en el almacenamiento del proveedor elegido, validando tipo por firma (magic bytes) y tamaño. Se abstrae en `lib/storage.ts` para cambiar a S3/R2 sin tocar módulos.
 
 ## ADR-012 Base de datos local sin Docker
-- Docker no está instalado en el equipo de desarrollo. Opciones: instalar PostgreSQL nativo en Windows, o usar una rama gratuita de Neon para desarrollo. **Pendiente de decisión del usuario** (ver informe de Fase 0). Se incluye `docker-compose.yml` para quien sí tenga Docker.
+- Docker no está instalado en el equipo de desarrollo. **Decisión (22/10/2026):** PostgreSQL 17 nativo en Windows (winget), con bases `iglesia_dev` e `iglesia_test`. Se conserva `docker-compose.yml` para quien sí tenga Docker.
+
+## ADR-013 Next.js 16 con Cache Components
+- `create-next-app` instala Next.js 16.4 con `cacheComponents` y `partialPrefetching` activos; Next indica que serán el comportamiento por defecto en la próxima versión mayor, así que se conservan.
+- Consecuencias: la sesión se lee dentro de un `<Suspense>` (layout de `/admin`); el sitio público usará funciones `'use cache'` con `cacheTag` y se invalidan con `updateTag` desde Server Actions. Las páginas que llaman `notFound()` dentro de contenido en streaming responden con estado HTTP 200 (el contenido sí es la página 404, sin datos); la API `/api/v1` sí devuelve 401/403/404 reales.
+- `middleware` ahora se llama `proxy` (`src/proxy.ts`): solo hace una verificación optimista de cookie; la autorización real está en el servidor.
+
+## ADR-014 Prisma 7 fijado a versión estable
+- La etiqueta `latest` de npm apuntaba a una versión candidata (8.0.0-rc). Se fija `prisma`, `@prisma/client` y `@prisma/adapter-pg` en **7.10.1** (estable) con el adaptador de `pg`. El cliente se genera en `src/generated/prisma` (ignorado por git; `postinstall` lo regenera).
+
+## ADR-015 IP del cliente para límite de intentos
+- Better Auth no confía en encabezados de proxy por defecto (no se puede falsificar la IP), pero sin IP usa un contador compartido por ruta: detrás de un proxy, todos los usuarios compartirían el límite de 5 intentos/min. En producción se debe definir `AUTH_IP_HEADERS` (y `AUTH_TRUSTED_PROXIES` si hay cadena de proxies) según el proveedor. Ver `despliegue.md`.
