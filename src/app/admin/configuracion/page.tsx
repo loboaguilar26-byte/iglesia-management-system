@@ -52,6 +52,7 @@ export default async function SettingsPage() {
           <Card title="Textos del sitio público" description="Escribe con tus propias palabras; el sitio no presupone ninguna denominación.">
             <div className="flex flex-col gap-4">
               <TextArea label="Mensaje de bienvenida" name="welcomeText" defaultValue={s.welcomeText ?? ""} rows={3} />
+              <TextArea label="Tu primera visita" name="firstVisitText" defaultValue={s.firstVisitText ?? ""} rows={4} hint="Qué puede esperar alguien que visita por primera vez (horario, estacionamiento, niños…). Un punto por línea." />
               <TextArea label="Quiénes somos" name="aboutText" defaultValue={s.aboutText ?? ""} rows={6} />
               <div className="grid gap-4 sm:grid-cols-2">
                 <TextArea label="Misión" name="mission" defaultValue={s.mission ?? ""} />

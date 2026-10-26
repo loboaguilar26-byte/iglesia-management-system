@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { MemberPicker } from "@/components/member-picker";
 import { ActionButton } from "@/components/ui/action-button";
 import { ActionForm, SubmitButton } from "@/components/ui/action-form";
-import { Field, SelectField, TextArea } from "@/components/ui/field";
+import { CheckboxField, Field, SelectField, TextArea } from "@/components/ui/field";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/layout";
 import { can, canFully } from "@/lib/authz";
 import { formatDate, formatDateOnly, toDateInput } from "@/lib/dates";
@@ -131,6 +131,7 @@ export default async function MinistryPage({ params }: PageProps<"/admin/ministe
               <ActionForm action={updateMinistryAction.bind(null, m.id)}>
                 <Field label="Nombre" name="name" defaultValue={m.name} required />
                 <TextArea label="Descripción" name="description" defaultValue={m.description ?? ""} rows={3} />
+                <CheckboxField label="Mostrar en el sitio público" name="isPublic" defaultChecked={m.isPublic} hint="Solo nombre y descripción." />
                 <SubmitButton>Guardar</SubmitButton>
               </ActionForm>
             </Card>

@@ -5,7 +5,7 @@ import { AppError } from "@/lib/errors";
 import { normalizeSearch } from "@/lib/text";
 import { parseInput } from "@/lib/validation";
 import type { MemberStatus, Prisma } from "@/generated/prisma/client";
-import { memberScopeWhere } from "../scope";
+import { eventScopeWhere, memberScopeWhere } from "../scope";
 import { listMembersSchema, memberSchema } from "./schema";
 
 const fullName = (m: { firstName: string; lastName: string }) => `${m.firstName} ${m.lastName}`;
@@ -46,6 +46,15 @@ export async function listMembers(actor: Actor | null, input: unknown) {
   return { data: rows, meta: { page, pageSize, total } };
 }
 
+/** Conteos por estado (con el mismo alcance que el listado). */
+export async function memberStatusCounts(actor: Actor | null) {
+  const a = requirePermission(actor, "members:read");
+  const scope = await memberScopeWhere(a, "members:read");
+  const rows = await db.member.groupBy({ by: ["status"], where: scope ?? {}, _count: true });
+  const get = (s: MemberStatus) => rows.find((r) => r.status === s)?._count ?? 0;
+  return { ACTIVE: get("ACTIVE"), VISITOR: get("VISITOR"), INACTIVE: get("INACTIVE"), total: rows.reduce((t, r) => t + r._count, 0) };
+}
+
 export async function getMember(actor: Actor | null, id: string) {
   const a = requirePermission(actor, "members:read");
   const scope = await memberScopeWhere(a, "members:read");
@@ -64,7 +73,7 @@ export async function getMember(actor: Actor | null, id: string) {
   if (!member) throw new AppError("NOT_FOUND", "Miembro no encontrado.");
   const attendance = can(a, "attendance:read")
     ? await db.attendance.findMany({
-        where: { memberId: id },
+        where: { memberId: id, event: (await eventScopeWhere(a, "attendance:read")) ?? {} },
         orderBy: { event: { startsAt: "desc" } },
         take: 15,
         select: { status: true, event: { select: { id: true, title: true, startsAt: true } } },
@@ -166,7 +175,7 @@ export async function setMemberStatus(actor: Actor | null, id: string, status: M
  */
 export async function lookupMembers(actor: Actor | null, q: string, { includeInactive = false } = {}) {
   const a = requireActor(actor);
-  const allowed = (["members:read", "finance:create", "attendance:record", "ministries:manage_members", "events:update"] as const).some((p) => can(a, p));
+  const allowed = (["members:read", "finance:create", "attendance:record", "ministries:manage_members", "events:update", "followup:write"] as const).some((p) => can(a, p));
   if (!allowed) throw new AppError("FORBIDDEN");
   const term = normalizeSearch(q);
   const rows = await db.member.findMany({

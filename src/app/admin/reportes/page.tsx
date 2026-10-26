@@ -4,7 +4,9 @@ import { notFound } from "next/navigation";
 import { Alert } from "@/components/ui/alert";
 import { buttonClass } from "@/components/ui/button";
 import { Card, EmptyState, PageHeader } from "@/components/ui/layout";
-import { formatDateTime, toDateInput, zonedParts } from "@/lib/dates";
+import { MemberPicker } from "@/components/member-picker";
+import { MONTHS, formatDateTime, toDateInput, zonedParts } from "@/lib/dates";
+import { db } from "@/lib/db";
 import { AppError } from "@/lib/errors";
 import { requirePageActor } from "@/lib/session";
 import { MEMBER_STATUSES, MEMBER_STATUS_LABEL } from "@/modules/members/schema";
@@ -26,13 +28,27 @@ export default async function ReportsPage({ searchParams }: PageProps<"/admin/re
   const now = zonedParts(new Date(), tz);
   const desde = sp.desde ?? `${now.year}-${pad(now.month)}-01`;
   const hasta = sp.hasta ?? toDateInput(new Date(), tz);
-  const filters: Record<string, string> = { desde, hasta, ...(sp.estado ? { estado: sp.estado } : {}), ...(sp.evento ? { evento: sp.evento } : {}), ...(sp.agrupar ? { agrupar: sp.agrupar } : {}) };
+  const filters: Record<string, string> = {
+    desde,
+    hasta,
+    ...(sp.estado ? { estado: sp.estado } : {}),
+    ...(sp.evento ? { evento: sp.evento } : {}),
+    ...(sp.agrupar ? { agrupar: sp.agrupar } : {}),
+    ...(sp.persona ? { persona: sp.persona } : {}),
+    ...(sp.anio ? { anio: sp.anio } : {}),
+    ...(sp.mes ? { mes: sp.mes } : {}),
+  };
+  if (type === "constancia" && !filters.desde) filters.desde = desde;
+  const person = sp.persona ? await db.member.findUnique({ where: { id: sp.persona }, select: { id: true, firstName: true, lastName: true } }) : null;
+  const personOption = person ? [{ id: person.id, name: `${person.firstName} ${person.lastName}` }] : [];
+  const needsPerson = (type === "asistencia-persona" || type === "constancia") && !filters.persona;
   const events = type === "asistencia-evento" ? await eventOptionsForReport(actor) : [];
   if (type === "asistencia-evento" && !filters.evento && events[0]) filters.evento = events[0].id;
 
   let report: Report | null = null;
   let error: string | null = null;
   try {
+    if (needsPerson) throw new AppError("VALIDATION_ERROR", type === "constancia" ? "Selecciona al donante y genera la constancia." : "Selecciona a la persona y genera el reporte.");
     report = await buildReport(actor, type, filters);
   } catch (e) {
     if (!(e instanceof AppError)) throw e;
@@ -60,6 +76,21 @@ export default async function ReportsPage({ searchParams }: PageProps<"/admin/re
               {MEMBER_STATUSES.map((s) => <option key={s} value={s}>{MEMBER_STATUS_LABEL[s]}</option>)}
             </select>
           </label>
+        ) : type === "cumpleanos" ? (
+          <label className="flex flex-col gap-1 text-sm">Mes
+            <select name="mes" defaultValue={sp.mes ?? String(now.month)} className={input}>
+              {MONTHS.map((m, i) => <option key={m} value={i + 1} className="capitalize">{m}</option>)}
+            </select>
+          </label>
+        ) : type === "constancia" ? (
+          <>
+            <div className="min-w-64"><MemberPicker name="persona" label="Donante" initial={personOption} /></div>
+            <label className="flex flex-col gap-1 text-sm">Año
+              <select name="anio" defaultValue={sp.anio ?? String(now.year)} className={input}>
+                {[0, 1, 2, 3, 4].map((d) => <option key={d} value={now.year - d}>{now.year - d}</option>)}
+              </select>
+            </label>
+          </>
         ) : type === "asistencia-evento" ? (
           <label className="flex flex-col gap-1 text-sm">Evento
             <select name="evento" defaultValue={filters.evento} className={`${input} max-w-sm`}>
@@ -70,6 +101,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/admin/re
           <>
             <label className="flex flex-col gap-1 text-sm">Desde<input type="date" name="desde" defaultValue={desde} className={input} /></label>
             <label className="flex flex-col gap-1 text-sm">Hasta<input type="date" name="hasta" defaultValue={hasta} className={input} /></label>
+            {type === "asistencia-persona" ? <div className="min-w-64"><MemberPicker name="persona" label="Persona" initial={personOption} /></div> : null}
             {type === "asistencia-periodo" ? (
               <label className="flex flex-col gap-1 text-sm">Agrupar por
                 <select name="agrupar" defaultValue={sp.agrupar ?? "semana"} className={input}>
@@ -89,7 +121,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/admin/re
         ) : null}
       </form>
 
-      {error ? <Alert tone="error">{error}</Alert> : null}
+      {error ? <Alert tone={needsPerson ? "info" : "error"}>{error}</Alert> : null}
       {report ? (
         <Card>
           <header className="mb-4 border-b border-border pb-4">

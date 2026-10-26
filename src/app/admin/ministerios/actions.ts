@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { formToObject, toActionState, type ActionState } from "@/lib/action-state";
+import { refreshPublicSite } from "@/lib/public-cache";
 import { getActor } from "@/lib/session";
 import { addMembership, endMembership, saveMinistry, setMinistryActive } from "@/modules/ministries/service";
 
@@ -13,6 +14,7 @@ export async function createMinistryAction(_prev: ActionState, form: FormData): 
   } catch (error) {
     return toActionState(error, form);
   }
+  refreshPublicSite();
   revalidatePath("/admin/ministerios");
   redirect(`/admin/ministerios/${id}`);
 }
@@ -23,6 +25,7 @@ export async function updateMinistryAction(id: string, _prev: ActionState, form:
   } catch (error) {
     return toActionState(error, form);
   }
+  refreshPublicSite();
   revalidatePath(`/admin/ministerios/${id}`);
   return { ok: true, message: "Ministerio actualizado." };
 }
@@ -33,6 +36,7 @@ export async function setMinistryActiveAction(id: string, isActive: boolean, _pr
   } catch (error) {
     return toActionState(error);
   }
+  refreshPublicSite();
   revalidatePath(`/admin/ministerios/${id}`);
   return { ok: true };
 }

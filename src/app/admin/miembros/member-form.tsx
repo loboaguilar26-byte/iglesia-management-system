@@ -9,6 +9,7 @@ type Values = {
   phone?: string | null;
   email?: string | null;
   joinDate?: Date | null;
+  birthDate?: Date | null;
   status?: string;
   position?: string | null;
   isMinor?: boolean;
@@ -30,6 +31,7 @@ export function MemberForm({ action, values = {}, canNotes, canStatus, submitLab
         <Field label="Teléfono" name="phone" type="tel" defaultValue={values.phone ?? ""} hint="Opcional." />
         <Field label="Correo electrónico" name="email" type="email" defaultValue={values.email ?? ""} hint="Opcional." />
         <Field label="Fecha de ingreso" name="joinDate" type="date" defaultValue={values.joinDate ? values.joinDate.toISOString().slice(0, 10) : ""} />
+        <Field label="Fecha de nacimiento" name="birthDate" type="date" defaultValue={values.birthDate ? values.birthDate.toISOString().slice(0, 10) : ""} hint="Opcional. Solo para la lista interna de cumpleaños." />
         <SelectField
           label="Estado"
           name="status"

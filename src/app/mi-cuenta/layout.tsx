@@ -4,6 +4,7 @@ import { Suspense, type ReactNode } from "react";
 import { hasPanelAccess } from "@/lib/permissions";
 import { requirePortalActor } from "@/lib/session";
 import { getSettingsInternal } from "@/modules/settings/service";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { SignOutButton } from "../admin/sign-out-button";
 
 export const metadata: Metadata = { title: "Mi cuenta", robots: { index: false } };
@@ -37,6 +38,7 @@ async function PortalShell({ children }: { children: ReactNode }) {
             </span>
           </Link>
           <nav aria-label="Cuenta" className="flex items-center gap-1">
+            <ThemeToggle />
             {hasPanelAccess(actor.permissions) ? (
               <Link href="/admin" className="hidden rounded-lg px-3 py-2 text-sm hover:bg-surface-2 sm:inline-block">Panel administrativo</Link>
             ) : null}

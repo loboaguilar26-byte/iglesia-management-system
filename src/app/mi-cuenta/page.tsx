@@ -5,13 +5,15 @@ import { Alert } from "@/components/ui/alert";
 import { Field } from "@/components/ui/field";
 import { Badge, Card, EmptyState, StatCard } from "@/components/ui/layout";
 import { can } from "@/lib/authz";
-import { formatDate, formatDateOnly, formatLongDate, formatTime } from "@/lib/dates";
+import { formatDate, formatDateOnly, formatLongDate, formatTime, toDateInput } from "@/lib/dates";
 import { AppError } from "@/lib/errors";
 import { formatMoney } from "@/lib/money";
 import { requirePortalActor } from "@/lib/session";
+import { givingFormOptions, myGivingReports } from "@/modules/finance/service";
 import { getMyPortal } from "@/modules/portal/service";
 import { getChurchTimezone, getSettingsInternal } from "@/modules/settings/service";
-import { updateMyContactAction } from "./actions";
+import { GivingReportForm } from "./giving-report-form";
+import { submitGivingReportAction, updateMyContactAction } from "./actions";
 
 export default async function PortalPage() {
   const actor = await requirePortalActor();
@@ -24,7 +26,12 @@ export default async function PortalPage() {
       />
     );
   }
-  const [tz, settings] = await Promise.all([getChurchTimezone(), getSettingsInternal()]);
+  const [tz, settings, givingOptions, givingReports] = await Promise.all([
+    getChurchTimezone(),
+    getSettingsInternal(),
+    givingFormOptions(actor),
+    myGivingReports(actor),
+  ]);
   let data: Awaited<ReturnType<typeof getMyPortal>>;
   try {
     data = await getMyPortal(actor);
@@ -52,7 +59,7 @@ export default async function PortalPage() {
         </div>
       </section>
 
-      <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))]">
+      <div className="grid gap-4 grid-cols-2 sm:[grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]">
         <StatCard
           label="Mi asistencia"
           value={attendance.rate90 === null ? "—" : `${attendance.rate90}%`}
@@ -137,6 +144,38 @@ export default async function PortalPage() {
                 <li key={d.id} className="flex items-center justify-between gap-2">
                   <span>{d.concept.name} <span className="text-muted">· {formatDateOnly(d.receivedAt)}</span></span>
                   <span className="font-medium tabular-nums">{formatMoney(d.amount, d.currency)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+
+        <Card title="Reportar una ofrenda" description="Informa a tesorería de una entrega ya realizada.">
+          <GivingReportForm
+            action={submitGivingReportAction}
+            concepts={givingOptions.concepts}
+            methods={givingOptions.methods}
+            today={toDateInput(new Date(), tz)}
+          />
+        </Card>
+
+        <Card title="Mis reportes de ofrenda" description="Los reportes pendientes no se cuentan como ingresos hasta su validación.">
+          {givingReports.length === 0 ? (
+            <EmptyState title="Aún no has reportado ofrendas" />
+          ) : (
+            <ul className="flex flex-col divide-y divide-border">
+              {givingReports.map((report) => (
+                <li key={report.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
+                  <div>
+                    <p className="font-medium">{report.concept.name} · {formatDateOnly(report.receivedAt)}</p>
+                    <p className="text-xs text-muted">{report.isAnonymous ? "Anónima" : "Con nombre"}{report.reviewNote ? ` · ${report.reviewNote}` : ""}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-semibold tabular-nums">{formatMoney(report.amount, report.currency)}</span>
+                    <Badge tone={report.status === "APPROVED" ? "success" : report.status === "REJECTED" ? "danger" : "warning"}>
+                      {report.status === "APPROVED" ? "Validada" : report.status === "REJECTED" ? "Revisar" : "Pendiente"}
+                    </Badge>
+                  </div>
                 </li>
               ))}
             </ul>

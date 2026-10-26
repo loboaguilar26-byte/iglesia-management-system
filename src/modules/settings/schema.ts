@@ -22,6 +22,7 @@ export const settingsSchema = z.object({
   name: z.string().trim().min(2, "Escribe el nombre de la iglesia").max(150),
   tagline: optionalText(200),
   welcomeText: optionalText(1000),
+  firstVisitText: optionalText(3000),
   aboutText: optionalText(5000),
   mission: optionalText(1000),
   vision: optionalText(1000),

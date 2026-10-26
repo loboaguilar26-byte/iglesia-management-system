@@ -8,7 +8,7 @@ import { can } from "@/lib/authz";
 import { formatDateOnly, toDateInput, zonedParts } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 import { requirePageActor } from "@/lib/session";
-import { donationSummary, financeCatalogs, listDonations } from "@/modules/finance/service";
+import { donationSummary, financeCatalogs, listDonations, weeklyFinanceSummary } from "@/modules/finance/service";
 import { getChurchTimezone, getSettingsInternal } from "@/modules/settings/service";
 import { createDonationAction } from "./actions";
 import { DonationForm } from "./donation-form";
@@ -34,10 +34,11 @@ export default async function TreasuryPage({ searchParams }: PageProps<"/admin/t
     includeVoided: sp.anuladas === "1",
     page: sp.page,
   };
-  const [{ data, meta }, summary, catalogs] = await Promise.all([
+  const [{ data, meta }, summary, catalogs, weekly] = await Promise.all([
     listDonations(actor, filter),
     donationSummary(actor, filter),
     financeCatalogs(actor),
+    weeklyFinanceSummary(actor, filter),
   ]);
   const cur = settings.currency;
   const params = new URLSearchParams({ desde: from, hasta: to, ...(filter.conceptId ? { concepto: filter.conceptId } : {}), ...(filter.methodId ? { metodo: filter.methodId } : {}), ...(filter.includeVoided ? { anuladas: "1" } : {}) });
@@ -50,6 +51,8 @@ export default async function TreasuryPage({ searchParams }: PageProps<"/admin/t
         actions={
           <>
             {can(actor, "reports:finance") ? <Link href={`/admin/reportes?tipo=ingresos&desde=${from}&hasta=${to}`} className={buttonClass("secondary")}>Reporte</Link> : null}
+            <Link href="/admin/tesoreria/gastos" className={buttonClass("secondary")}>Control de gastos</Link>
+            {can(actor, "finance:review_giving") ? <Link href="/admin/tesoreria/ofrendas" className={buttonClass("accent")}>Ofrendas por validar</Link> : null}
             {can(actor, "finance:configure") ? <Link href="/admin/tesoreria/catalogos" className={buttonClass("secondary")}>Conceptos y métodos</Link> : null}
           </>
         }
@@ -84,6 +87,25 @@ export default async function TreasuryPage({ searchParams }: PageProps<"/admin/t
           <ul className="flex flex-col gap-1 text-sm">{summary.byMethod.length ? summary.byMethod.map((c) => <li key={c.name} className="flex justify-between gap-2"><span>{c.name}</span><span className="tabular-nums">{formatMoney(c.total, cur)}</span></li>) : <li className="text-muted">Sin datos</li>}</ul>
         </Card>
       </div>
+
+      <Card title="Corte semanal" description="Ingresos confirmados menos gastos vigentes. Los reportes pendientes de miembros no se cuentan.">
+        {weekly.length === 0 ? (
+          <EmptyState title="Sin movimientos en el periodo" description="Cuando registres ingresos o gastos, aparecerá aquí el corte semanal." />
+        ) : (
+          <ResponsiveTable
+            rows={weekly}
+            rowKey={(week) => week.weekStart}
+            caption="Resumen semanal de ingresos y gastos"
+            columns={[
+              { header: "Semana", cell: (week) => `${formatDateOnly(new Date(`${week.weekStart}T00:00:00Z`))} – ${formatDateOnly(new Date(`${week.weekEnd}T00:00:00Z`))}` },
+              { header: "Ingresos", cell: (week) => formatMoney(week.income, cur) },
+              { header: "Gastos", cell: (week) => formatMoney(week.expenses, cur) },
+              { header: "Balance", cell: (week) => <span className={`font-semibold tabular-nums ${Number(week.balance) < 0 ? "text-danger" : "text-success"}`}>{formatMoney(week.balance, cur)}</span> },
+              { header: "Movimientos", cell: (week) => week.incomeCount + week.expenseCount },
+            ]}
+          />
+        )}
+      </Card>
 
       <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_400px]">
         {can(actor, "finance:create") ? (

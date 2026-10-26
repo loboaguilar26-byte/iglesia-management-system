@@ -54,9 +54,12 @@ describe("matriz de permisos", () => {
   it("solo usa permisos del catálogo", () => {
     for (const key of ROLE_KEYS) for (const p of ROLES[key].permissions) expect(PERMISSIONS).toHaveProperty(p);
   });
-  it("el administrador no tiene acceso financiero automático", () => {
+  it("el administrador solo tiene acceso a los totales financieros del panel", () => {
     const financial = Object.keys(PERMISSIONS).filter((p) => p.startsWith("finance:") || p === "reports:finance" || p === "audit:read_finance");
-    for (const p of financial) expect(roleHas("ADMIN", p as Permission)).toBe(false);
+    for (const p of financial) {
+      expect(roleHas("ADMIN", p as Permission)).toBe(p === "finance:dashboard");
+    }
+    expect(roleHas("TREASURER", "finance:dashboard")).toBe(true);
   });
   it("solo el tesorero tiene finanzas", () => {
     for (const key of ROLE_KEYS) expect(roleHas(key, "finance:read")).toBe(key === "TREASURER");
@@ -87,5 +90,14 @@ describe("autorización", () => {
       expect(e).toBeInstanceOf(AppError);
       expect((e as AppError).code).toBe("FORBIDDEN");
     }
+  });
+});
+
+describe("permisos de seguimiento y portal", () => {
+  it("solo pastor y secretario hacen seguimiento; el miembro solo tiene su portal", () => {
+    for (const key of ROLE_KEYS) {
+      expect(ROLES[key].permissions.includes("followup:write")).toBe(key === "PASTOR" || key === "SECRETARY");
+    }
+    expect(ROLES.MEMBER.permissions).toEqual(["portal:access"]);
   });
 });

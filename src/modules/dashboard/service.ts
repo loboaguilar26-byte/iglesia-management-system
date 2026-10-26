@@ -1,8 +1,9 @@
-import { can, requireActor, type Actor } from "@/lib/authz";
-import { weekStartKey } from "@/lib/dates";
+import { Decimal } from "decimal.js";
+import { can, canFully, requireActor, type Actor } from "@/lib/authz";
+import { parseDateOnly, toDateInput, weekStartKey } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { eventScopeWhere } from "../scope";
-import { donationSummary, monthlyTotals } from "../finance/service";
+import { donationSummary, expenseSummary, monthlyTotals } from "../finance/service";
 
 const DAY = 86400000;
 
@@ -14,15 +15,29 @@ export async function getDashboard(actor: Actor | null, tz: string, now = new Da
   const a = requireActor(actor);
   const result: {
     members?: { active: number; visitors: number };
+    birthdays?: { id: string; name: string; day: number; isToday: boolean }[];
     ministries?: { active: number };
     upcoming?: { count: number; list: { id: string; title: string; startsAt: Date; location: string | null; visibility: string }[] };
     attendance?: { last30: number; visitors30: number; weekly: { week: string; present: number; visitors: number }[] };
-    finance?: { monthTotal: string; monthCount: number; monthly: { year: number; month: number; total: string }[] };
+    financeSummary?: { todayTotal: string; todayCount: number; weekTotal: string; weekCount: number };
+    finance?: { monthTotal: string; monthCount: number; expenseTotal: string; balance: string; monthly: { year: number; month: number; total: string }[] };
   } = {};
 
   if (can(a, "members:read")) {
     const [active, visitors] = await Promise.all([db.member.count({ where: { status: "ACTIVE" } }), db.member.count({ where: { status: "VISITOR" } })]);
     result.members = { active, visitors };
+  }
+  // Cumpleaños del mes (zona de la iglesia), solo con acceso completo al directorio; no inactivos.
+  if (canFully(a, "members:read")) {
+    const parts = new Intl.DateTimeFormat("en-CA", { timeZone: tz, month: "numeric", day: "numeric" }).formatToParts(now);
+    const month = Number(parts.find((p) => p.type === "month")?.value);
+    const today = Number(parts.find((p) => p.type === "day")?.value);
+    const rows = await db.$queryRaw<{ id: string; firstName: string; lastName: string; day: number }[]>`
+      SELECT id, "firstName", "lastName", EXTRACT(DAY FROM "birthDate")::int AS day
+      FROM member
+      WHERE "birthDate" IS NOT NULL AND status <> 'INACTIVE' AND EXTRACT(MONTH FROM "birthDate") = ${month}
+      ORDER BY day, "lastName" LIMIT 30`;
+    result.birthdays = rows.map((r) => ({ id: r.id, name: `${r.firstName} ${r.lastName}`, day: r.day, isToday: r.day === today }));
   }
   if (can(a, "ministries:read")) {
     result.ministries = { active: await db.ministry.count({ where: { isActive: true } }) };
@@ -60,11 +75,43 @@ export async function getDashboard(actor: Actor | null, tz: string, now = new Da
     }
     result.attendance = { last30, visitors30, weekly: [...weeks].map(([week, v]) => ({ week, ...v })) };
   }
+  if (can(a, "finance:dashboard")) {
+    const today = toDateInput(now, tz);
+    const weekStart = weekStartKey(now, tz);
+    const [todaySummary, weekSummary] = await Promise.all([
+      db.donation.aggregate({
+        where: { status: "VALID", receivedAt: parseDateOnly(today) },
+        _sum: { amount: true },
+        _count: true,
+      }),
+      db.donation.aggregate({
+        where: { status: "VALID", receivedAt: { gte: parseDateOnly(weekStart), lte: parseDateOnly(today) } },
+        _sum: { amount: true },
+        _count: true,
+      }),
+    ]);
+    result.financeSummary = {
+      todayTotal: new Decimal(todaySummary._sum.amount?.toString() ?? 0).toFixed(2),
+      todayCount: todaySummary._count,
+      weekTotal: new Decimal(weekSummary._sum.amount?.toString() ?? 0).toFixed(2),
+      weekCount: weekSummary._count,
+    };
+  }
   if (can(a, "finance:read")) {
-    const p = new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+    const p = toDateInput(now, tz);
     const from = `${p.slice(0, 7)}-01`;
-    const [summary, monthly] = await Promise.all([donationSummary(a, { from, to: p }), monthlyTotals(a, 6, now)]);
-    result.finance = { monthTotal: summary.total, monthCount: summary.count, monthly };
+    const [summary, expenses, monthly] = await Promise.all([
+      donationSummary(a, { from, to: p }),
+      expenseSummary(a, { from, to: p }),
+      monthlyTotals(a, 6, now),
+    ]);
+    result.finance = {
+      monthTotal: summary.total,
+      monthCount: summary.count,
+      expenseTotal: expenses.total,
+      balance: new Decimal(summary.total).minus(expenses.total).toFixed(2),
+      monthly,
+    };
   }
   return result;
 }

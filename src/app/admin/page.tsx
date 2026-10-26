@@ -42,12 +42,14 @@ export default async function AdminHomePage() {
         ) : null}
       </section>
 
-      <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))]">
+      <div className="grid gap-4 grid-cols-2 sm:[grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]">
         {d.members ? <StatCard label="Miembros activos" value={d.members.active} detail={`Estado “Activo” al día de hoy · ${d.members.visitors} visitantes registrados`} icon={<Users className="size-4" />} /> : null}
         {d.upcoming ? <StatCard label="Eventos próximos" value={d.upcoming.count} detail="Programados en los próximos 7 días" icon={<CalendarDays className="size-4" />} /> : null}
         {d.attendance ? <StatCard label="Asistencias registradas" value={d.attendance.last30} detail={`Marcas “presente” en los últimos 30 días · +${d.attendance.visitors30} visitantes sin ficha`} icon={<ClipboardCheck className="size-4" />} /> : null}
         {d.ministries ? <StatCard label="Ministerios activos" value={d.ministries.active} detail="Ministerios con estado activo" icon={<HandHeart className="size-4" />} /> : null}
-        {d.finance ? <StatCard label="Ingresos del mes" value={formatMoney(d.finance.monthTotal, settings.currency)} detail={`${d.finance.monthCount} aportaciones vigentes desde el día 1`} icon={<Wallet className="size-4" />} /> : null}
+        {d.financeSummary ? <StatCard label="Ingresos de hoy" value={formatMoney(d.financeSummary.todayTotal, settings.currency)} detail={`${d.financeSummary.todayCount} aportaciones aprobadas`} icon={<Wallet className="size-4" />} /> : null}
+        {d.financeSummary ? <StatCard label="Ingresos de la semana" value={formatMoney(d.financeSummary.weekTotal, settings.currency)} detail={`${d.financeSummary.weekCount} aportaciones aprobadas desde el lunes`} icon={<CalendarDays className="size-4" />} /> : null}
+        {d.finance ? <StatCard label="Balance neto del mes" value={formatMoney(d.finance.balance, settings.currency)} detail={`${formatMoney(d.finance.monthTotal, settings.currency)} ingresos · ${formatMoney(d.finance.expenseTotal, settings.currency)} gastos`} icon={<Wallet className="size-4" />} /> : null}
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
@@ -86,6 +88,29 @@ export default async function AdminHomePage() {
                       <p className="truncate text-sm text-muted">{formatTime(e.startsAt, tz)}{e.location ? ` · ${e.location}` : ""}</p>
                     </div>
                     {e.visibility === "PUBLIC" ? <Badge tone="success">Público</Badge> : null}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+        ) : null}
+        {d.birthdays ? (
+          <Card title="Cumpleaños del mes" description="Personas con fecha de nacimiento registrada (no inactivas).">
+            {d.birthdays.length === 0 ? (
+              <EmptyState title="Sin cumpleaños registrados este mes" description="Agrega la fecha de nacimiento (opcional) en la ficha de cada persona." />
+            ) : (
+              <ul className="grid gap-2 sm:grid-cols-2">
+                {d.birthdays.map((b) => (
+                  <li key={b.id}>
+                    <Link href={`/admin/miembros/${b.id}`} className={`flex items-center gap-3 rounded-xl border p-3 transition hover:bg-surface-2 ${b.isToday ? "border-accent bg-accent-soft/50" : "border-border"}`}>
+                      <span className="flex size-10 shrink-0 flex-col items-center justify-center rounded-lg bg-brand text-white">
+                        <span className="font-display text-lg font-semibold leading-none">{b.day}</span>
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate font-medium">{b.name}</span>
+                        {b.isToday ? <span className="text-xs font-semibold text-accent">¡Hoy!</span> : null}
+                      </span>
+                    </Link>
                   </li>
                 ))}
               </ul>

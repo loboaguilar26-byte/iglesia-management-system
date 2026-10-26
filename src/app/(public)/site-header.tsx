@@ -4,11 +4,13 @@ import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const LINKS = [
   { href: "/", label: "Inicio" },
   { href: "/nosotros", label: "Nosotros" },
   { href: "/horarios", label: "Horarios" },
+  { href: "/ministerios", label: "Ministerios" },
   { href: "/eventos", label: "Eventos" },
   { href: "/comunicados", label: "Comunicados" },
   { href: "/contacto", label: "Contacto" },
@@ -36,11 +38,16 @@ export function SiteHeader({ name, logo }: { name: string; logo: string | null }
               {l.label}
             </Link>
           ))}
+          <ThemeToggle className="ml-1 size-9 border-0 bg-transparent shadow-none" />
+          <Link href="/login?next=/mi-cuenta" className="ml-2 rounded-full bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:opacity-90">Acceder</Link>
         </nav>
-        <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-controls="menu-movil" className="rounded-lg p-2 hover:bg-surface md:hidden">
-          {open ? <X aria-hidden className="size-5" /> : <Menu aria-hidden className="size-5" />}
-          <span className="sr-only">{open ? "Cerrar menú" : "Abrir menú"}</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <ThemeToggle className="md:hidden" />
+          <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-controls="menu-movil" className="rounded-lg p-2 hover:bg-surface md:hidden">
+            {open ? <X aria-hidden className="size-5" /> : <Menu aria-hidden className="size-5" />}
+            <span className="sr-only">{open ? "Cerrar menú" : "Abrir menú"}</span>
+          </button>
+        </div>
       </div>
       {open ? (
         <nav id="menu-movil" aria-label="Principal" className="border-t border-border bg-background px-4 pb-4 md:hidden">
@@ -53,6 +60,7 @@ export function SiteHeader({ name, logo }: { name: string; logo: string | null }
               </li>
             ))}
           </ul>
+          <Link href="/login?next=/mi-cuenta" onClick={() => setOpen(false)} className="block rounded-lg bg-accent px-3 py-3 text-center font-medium text-white">Acceder</Link>
         </nav>
       ) : null}
     </header>

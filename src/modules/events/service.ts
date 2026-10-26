@@ -37,11 +37,11 @@ export async function listEventsInRange(actor: Actor | null, from: Date, to: Dat
   });
 }
 
-export async function listUpcomingEvents(actor: Actor | null, take = 50) {
+export async function listUpcomingEvents(actor: Actor | null, take = 50, extra: Prisma.EventWhereInput = {}) {
   const a = requirePermission(actor, "events:read");
   const scope = await eventScopeWhere(a, "events:read");
   return db.event.findMany({
-    where: { AND: [scope ?? {}, { endsAt: { gte: new Date() } }] },
+    where: { AND: [scope ?? {}, extra, { endsAt: { gte: new Date() } }] },
     orderBy: { startsAt: "asc" },
     take,
     select: listSelect,

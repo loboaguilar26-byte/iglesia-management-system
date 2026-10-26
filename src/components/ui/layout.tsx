@@ -60,13 +60,13 @@ export function EmptyState({ title, description, action }: { title: string; desc
 
 export function StatCard({ label, value, detail, icon }: { label: string; value: ReactNode; detail?: ReactNode; icon?: ReactNode }) {
   return (
-    <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-medium text-muted">{label}</p>
-        {icon ? <span className="rounded-lg bg-accent-soft p-2 text-accent">{icon}</span> : null}
+    <div className="min-w-0 rounded-2xl border border-border bg-surface p-4 shadow-sm sm:p-5">
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-xs font-medium text-muted sm:text-sm">{label}</p>
+        {icon ? <span className="hidden rounded-lg bg-accent-soft p-2 text-accent sm:inline-flex">{icon}</span> : null}
       </div>
-      <p className="mt-2 font-display text-3xl font-semibold tabular-nums">{value}</p>
-      {detail ? <p className="mt-1 text-xs text-muted">{detail}</p> : null}
+      <p className="mt-1 truncate font-display text-xl font-semibold tabular-nums sm:mt-2 sm:text-3xl">{value}</p>
+      {detail ? <p className="mt-1 line-clamp-3 text-[11px] leading-snug text-muted sm:text-xs">{detail}</p> : null}
     </div>
   );
 }

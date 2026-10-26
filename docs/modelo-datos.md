@@ -28,6 +28,11 @@ erDiagram
   DonationConcept ||--o{ Donation : ""
   PaymentMethod ||--o{ Donation : ""
   Donation |o--o| Donation : "corrige a"
+  Member ||--o{ GivingReport : reporta
+  GivingReport }o--|| DonationConcept : clasifica
+  GivingReport }o--|| PaymentMethod : "método"
+  GivingReport |o--o| Donation : "aprobada como"
+  User ||--o{ Expense : registra
 
   User ||--o{ Announcement : autor
   User ||--o{ AuditLog : actor
@@ -53,6 +58,8 @@ erDiagram
 | **DonationConcept** | id, name, isActive | Diezmo, ofrenda, misiones… |
 | **PaymentMethod** | id, name, isActive | Efectivo, transferencia… |
 | **Donation** | id, receivedAt (date), amount `numeric(12,2)` CHECK > 0, currency (`MXN`), conceptId, methodId, memberId?, reference?, notes?, status (`VALID`/`VOIDED`), voidedAt?, voidedById?, voidReason?, correctsId?, createdById, createdAt | Nunca `DELETE`. Anulación requiere motivo. Totales solo suman `VALID`. |
+| **GivingReport** | id, receivedAt, amount, currency, conceptId, methodId, memberId, submittedById, isAnonymous, status (`PENDING`/`APPROVED`/`REJECTED`), reviewedAt?, reviewedById?, reviewNote?, donationId? | Envío de una ofrenda ya entregada, no procesa pagos. Solo una aprobación de tesorería crea el ingreso oficial. Se oculta la identidad en reportes anónimos. |
+| **Expense** | id, spentAt, amount, currency, category, description, method, reference?, notes?, status (`VALID`/`VOIDED`), voidedAt?, voidedById?, voidReason?, createdById | Registro de egreso; no se borra físicamente. Anulación requiere motivo. El corte semanal resta solo egresos vigentes. |
 | **Announcement** | id, title, body (texto plano/markdown sanitizado), authorId, visibility, isFeatured, publishedAt?, expiresAt?, status (`DRAFT`/`PUBLISHED`/`ARCHIVED`), timestamps | Públicos vigentes = `PUBLISHED ∧ PUBLIC ∧ (expiresAt null ∨ > ahora)`. |
 | **ChurchSettings** | id (fila única `"default"`), name, logoPath?, address?, phone?, email?, timezone (`America/Mexico_City`), currency (`MXN`), aboutText?, scheduleText?, terminology (JSON), updatedById | Una fila. |
 | **AuditLog** | id, actorId?, action (`donation.void`…), entityType, entityId, metadata (JSON sin secretos), ip?, createdAt | Solo inserción. Índice `(entityType, entityId)`, `createdAt`. |
@@ -68,6 +75,8 @@ erDiagram
 |---|---|---|
 | Member | Desactivar | Solo por solicitud de cancelación de datos (derechos ARCO) mediante proceso administrativo futuro que anonimiza. |
 | Donation | Anular | Nunca desde la aplicación. |
+| GivingReport | Aprobar o devolver a revisión | No se elimina; aprobada crea una aportación inmutable asociada. |
+| Expense | Anular | Nunca desde la aplicación. |
 | Event | Cancelar | No. |
 | Announcement | Archivar | No en v1. |
 | Attendance | Editar estado | Se puede borrar una marca capturada por error (vuelve a "pendiente"), auditado. |

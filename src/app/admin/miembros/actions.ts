@@ -6,6 +6,17 @@ import { formToObject, toActionState, type ActionState } from "@/lib/action-stat
 import { getActor } from "@/lib/session";
 import type { MemberStatus } from "@/generated/prisma/client";
 import { createMember, setMemberStatus, updateMember } from "@/modules/members/service";
+import { createPortalAccount } from "@/modules/users/service";
+
+export async function createPortalAccountAction(memberId: string, _prev: ActionState, form: FormData): Promise<ActionState> {
+  try {
+    await createPortalAccount(await getActor(), memberId, formToObject(form));
+  } catch (error) {
+    return toActionState(error, form);
+  }
+  revalidatePath(`/admin/miembros/${memberId}`);
+  return { ok: true, message: "Acceso al portal creado. Comparte la contraseña inicial por un medio seguro." };
+}
 
 export async function createMemberAction(_prev: ActionState, form: FormData): Promise<ActionState> {
   let id: string;

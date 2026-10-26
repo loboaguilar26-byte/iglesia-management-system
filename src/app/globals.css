@@ -47,6 +47,46 @@
   }
 }
 
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #0d1320;
+  --surface: #141c2c;
+  --surface-2: #182236;
+  --foreground: #ebe7df;
+  --muted: #9ba5b8;
+  --border: #253149;
+  --primary: #8fb3e0;
+  --primary-strong: #b5cdee;
+  --primary-foreground: #0d1320;
+  --accent: #e2b65e;
+  --accent-soft: #2e2716;
+  --danger: #f97066;
+  --success: #47cd89;
+  --warning: #fdb022;
+  --sidebar: #0a101b;
+  --sidebar-foreground: #c9d4e6;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --background: #f7f4ee;
+  --surface: #ffffff;
+  --surface-2: #fbf9f5;
+  --foreground: #1b2130;
+  --muted: #5d6474;
+  --border: #e5ddcf;
+  --primary: #1f3a5f;
+  --primary-strong: #142740;
+  --primary-foreground: #ffffff;
+  --accent: #b7832a;
+  --accent-soft: #f6ead3;
+  --danger: #b42318;
+  --success: #157f3b;
+  --warning: #a15c07;
+  --sidebar: #13233d;
+  --sidebar-foreground: #d9e2f0;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);
@@ -73,6 +113,159 @@
 body {
   background: var(--background);
   color: var(--foreground);
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+.book-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 42%, rgb(39 68 105 / 70%), transparent 48%),
+    var(--brand-deep);
+  color: white;
+  animation: book-intro-fade 700ms ease 2300ms forwards;
+}
+
+.book-intro__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+.book-intro__book {
+  position: relative;
+  width: min(56vw, 17rem);
+  aspect-ratio: 1.45;
+  perspective: 900px;
+  filter: drop-shadow(0 1.5rem 1.5rem rgb(0 0 0 / 35%));
+  animation: book-intro-rise 700ms cubic-bezier(.2,.8,.2,1) both;
+}
+
+.book-intro__pages,
+.book-intro__cover {
+  position: absolute;
+  inset-block: 4%;
+  width: 50%;
+  border: 1px solid rgb(255 255 255 / 18%);
+}
+
+.book-intro__pages {
+  background: repeating-linear-gradient(to bottom, #f8f0dc 0 3px, #e8ddc5 4px 5px);
+}
+
+.book-intro__pages--left {
+  inset-inline-start: 1%;
+  border-radius: 0.7rem 0 0 0.7rem;
+  transform: rotateY(0deg);
+  transform-origin: right center;
+  animation: book-intro-page-left 1200ms cubic-bezier(.2,.7,.2,1) 400ms both;
+}
+
+.book-intro__pages--right {
+  inset-inline-end: 1%;
+  border-radius: 0 0.7rem 0.7rem 0;
+  transform: rotateY(0deg);
+  transform-origin: left center;
+  animation: book-intro-page-right 1200ms cubic-bezier(.2,.7,.2,1) 400ms both;
+}
+
+.book-intro__cover {
+  z-index: 1;
+  inset-inline-start: 0;
+  width: 51%;
+  border: 2px solid #d8ad5d;
+  border-radius: 0.8rem 0.2rem 0.2rem 0.8rem;
+  background: linear-gradient(115deg, #24466f, #132944 75%);
+  transform-origin: left center;
+  animation: book-intro-cover 1300ms cubic-bezier(.2,.7,.2,1) 250ms both;
+}
+
+.book-intro__cover::after {
+  position: absolute;
+  inset: 13%;
+  border: 1px solid rgb(226 182 94 / 75%);
+  border-radius: 0.6rem 0.1rem 0.1rem 0.6rem;
+  content: "";
+}
+
+.book-intro__spine {
+  position: absolute;
+  z-index: 2;
+  inset-block: 3%;
+  left: 50%;
+  width: 0.45rem;
+  border-radius: 50%;
+  background: linear-gradient(90deg, #9a6c27, #edcf86, #9a6c27);
+  transform: translateX(-50%);
+}
+
+.book-intro__eyebrow {
+  margin-top: 2rem;
+  color: #e2b65e;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  animation: book-intro-text 500ms ease 800ms both;
+}
+
+.book-intro__name {
+  margin-top: 0.5rem;
+  font-family: var(--font-fraunces);
+  font-size: clamp(1.5rem, 5vw, 2.5rem);
+  font-weight: 600;
+  animation: book-intro-text 500ms ease 950ms both;
+}
+
+.book-intro__skip {
+  margin-top: 1.5rem;
+  border: 1px solid rgb(255 255 255 / 35%);
+  border-radius: 999px;
+  padding: 0.55rem 1rem;
+  color: rgb(255 255 255 / 80%);
+  font-size: 0.8rem;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.book-intro__skip:hover,
+.book-intro__skip:focus-visible {
+  background: rgb(255 255 255 / 12%);
+  color: white;
+}
+
+@keyframes book-intro-cover {
+  from { transform: rotateY(0deg); }
+  to { transform: rotateY(-155deg); }
+}
+
+@keyframes book-intro-page-left {
+  from { transform: rotateY(0deg); }
+  to { transform: rotateY(-12deg); }
+}
+
+@keyframes book-intro-page-right {
+  from { transform: rotateY(0deg); }
+  to { transform: rotateY(12deg); }
+}
+
+@keyframes book-intro-rise {
+  from { opacity: 0; transform: translateY(1rem) scale(.9); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes book-intro-text {
+  from { opacity: 0; transform: translateY(0.5rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes book-intro-fade {
+  to { opacity: 0; visibility: hidden; }
 }
 
 h1,

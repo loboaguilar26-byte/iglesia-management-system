@@ -5,13 +5,18 @@ import { ActionButton } from "@/components/ui/action-button";
 import { Alert } from "@/components/ui/alert";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/layout";
 import { can } from "@/lib/authz";
-import { formatDate, formatDateOnly, formatDateTime } from "@/lib/dates";
+import { formatDate, formatDateOnly, formatDateTime, toDateInput } from "@/lib/dates";
 import { AppError } from "@/lib/errors";
 import { requirePageActor } from "@/lib/session";
 import { MEMBER_STATUS_LABEL } from "@/modules/members/schema";
 import { getMember } from "@/modules/members/service";
 import { getChurchTimezone } from "@/modules/settings/service";
-import { setMemberStatusAction, updateMemberAction } from "../actions";
+import { ActionForm, SubmitButton } from "@/components/ui/action-form";
+import { Field } from "@/components/ui/field";
+import { PASSWORD_MIN_LENGTH } from "@/lib/auth-rules";
+import { memberFollowUps, FOLLOWUP_KIND_LABEL } from "@/modules/followups/service";
+import { FollowUpForm } from "../../seguimiento/followup-form";
+import { createPortalAccountAction, setMemberStatusAction, updateMemberAction } from "../actions";
 import { MemberForm } from "../member-form";
 import { statusTone } from "../status-tone";
 
@@ -29,6 +34,8 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/a
     }),
     getChurchTimezone(),
   ]);
+  const followUps = can(actor, "followup:read") ? await memberFollowUps(actor, m.id) : null;
+  const today = toDateInput(new Date(), tz);
 
   return (
     <div className="flex max-w-5xl flex-col gap-6">
@@ -40,6 +47,7 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/a
             <Badge tone={statusTone[m.status]}>{MEMBER_STATUS_LABEL[m.status]}</Badge>
             {m.isMinor ? <Badge tone="warning">Menor de edad</Badge> : null}
             {m.position ? <span>{m.position}</span> : null}
+            {m.birthDate ? <span>Cumpleaños: {formatDateOnly(m.birthDate).slice(0, 5)}</span> : null}
           </span>
         }
         actions={
@@ -113,6 +121,31 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/a
             </Card>
           ) : null}
 
+          {can(actor, "users:read") ? (
+            <Card title="Acceso al portal" description="Permite que la persona consulte sus propios datos, ministerios, asistencia y aportaciones.">
+              {m.user ? (
+                <div className="flex flex-col gap-2 text-sm">
+                  <p>
+                    Cuenta: <span className="font-medium">{m.user.email}</span> {m.user.isActive ? <Badge tone="success">Activa</Badge> : <Badge>Inactiva</Badge>}
+                  </p>
+                  <Link href={`/admin/usuarios/${m.user.id}`} className="text-primary hover:underline">Administrar cuenta →</Link>
+                </div>
+              ) : m.isMinor ? (
+                <p className="text-sm text-muted">No se crean cuentas para menores de edad.</p>
+              ) : m.status === "INACTIVE" ? (
+                <p className="text-sm text-muted">Reactiva a la persona para darle acceso.</p>
+              ) : can(actor, "users:create") && can(actor, "roles:assign") ? (
+                <ActionForm action={createPortalAccountAction.bind(null, m.id)}>
+                  <Field label="Correo para iniciar sesión" name="email" type="email" defaultValue={m.email ?? ""} required />
+                  <Field label="Contraseña inicial" name="password" type="password" autoComplete="new-password" required hint={`Mínimo ${PASSWORD_MIN_LENGTH} caracteres.`} />
+                  <SubmitButton>Crear acceso</SubmitButton>
+                </ActionForm>
+              ) : (
+                <p className="text-sm text-muted">Sin acceso al portal.</p>
+              )}
+            </Card>
+          ) : null}
+
           <Card title="Historial">
             <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs text-muted">
               <dt>Creado</dt><dd>{formatDateTime(m.createdAt, tz)}{m.createdBy ? ` por ${m.createdBy.name}` : ""}</dd>
@@ -121,6 +154,30 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/a
           </Card>
         </div>
       </div>
+
+      {followUps ? (
+        <section id="seguimiento" className="scroll-mt-20">
+          <Card title="Seguimiento" description="Contactos pastorales con esta persona y próximas acciones.">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+              {followUps.length === 0 ? (
+                <EmptyState title="Sin contactos registrados" description={m.status === "VISITOR" ? "Es visitante: registra el primer contacto para darle la bienvenida." : undefined} />
+              ) : (
+                <ol className="relative flex flex-col gap-3 border-l-2 border-border pl-5">
+                  {followUps.map((f) => (
+                    <li key={f.id} className="relative">
+                      <span aria-hidden className="absolute -left-[27px] top-1.5 size-3 rounded-full bg-accent ring-4 ring-surface" />
+                      <p className="text-sm"><span className="font-medium">{FOLLOWUP_KIND_LABEL[f.kind]}</span> · {formatDateOnly(f.contactedOn)}{f.createdBy ? <span className="text-muted"> · {f.createdBy.name}</span> : null}</p>
+                      {f.notes ? <p className="mt-1 whitespace-pre-line text-sm text-muted">{f.notes}</p> : null}
+                      {f.nextAction || f.nextActionOn ? <p className="mt-1 text-xs text-accent">Siguiente: {f.nextAction ?? "seguimiento"}{f.nextActionOn ? ` (${formatDateOnly(f.nextActionOn)})` : ""}</p> : null}
+                    </li>
+                  ))}
+                </ol>
+              )}
+              {can(actor, "followup:write") ? <FollowUpForm memberId={m.id} today={today} /> : null}
+            </div>
+          </Card>
+        </section>
+      ) : null}
     </div>
   );
 }

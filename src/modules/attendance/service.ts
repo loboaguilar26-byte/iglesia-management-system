@@ -62,7 +62,8 @@ export async function getAttendanceSheet(actor: Actor | null, eventId: string) {
 }
 
 const entrySchema = z.object({
-  visitorCount: z.coerce.number().int().min(0, "No puede ser negativo").max(100000),
+  // Sin valor = no se modifica el conteo de visitantes del evento.
+  visitorCount: z.coerce.number().int().min(0, "No puede ser negativo").max(100000).optional(),
   entries: z.array(z.object({ memberId: z.string().min(1), status: z.enum(["PRESENT", "ABSENT", ""]) })).max(5000),
 });
 
@@ -97,7 +98,7 @@ export async function saveAttendance(actor: Actor | null, eventId: string, input
       if (c.to) await tx.attendance.update({ where: { eventId_memberId: { eventId, memberId: c.memberId } }, data: { status: c.to, recordedById: a.userId } });
       else await tx.attendance.delete({ where: { eventId_memberId: { eventId, memberId: c.memberId } } });
     }
-    if (visitorCount !== event.visitorCount) await tx.event.update({ where: { id: eventId }, data: { visitorCount } });
+    if (visitorCount !== undefined && visitorCount !== event.visitorCount) await tx.event.update({ where: { id: eventId }, data: { visitorCount } });
     await recordAudit(tx, a, {
       action: changes.length ? "attendance.correct" : "attendance.record",
       entityType: "Event",

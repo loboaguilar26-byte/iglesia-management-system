@@ -34,6 +34,24 @@ export const filterSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
 });
 
+const givingReportSchema = z.object({
+  receivedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida"),
+  amount: z.string().trim().min(1, "Escribe el monto"),
+  conceptId: z.string().min(1, "Selecciona el concepto"),
+  methodId: z.string().min(1, "Selecciona el método"),
+  anonymous: bool,
+});
+
+const expenseSchema = z.object({
+  spentAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida"),
+  amount: z.string().trim().min(1, "Escribe el monto"),
+  category: z.string().trim().min(2, "Escribe la categoría").max(60),
+  description: z.string().trim().min(3, "Describe el gasto").max(240),
+  method: z.string().trim().min(2, "Escribe el método de pago").max(60),
+  reference: z.string().trim().max(80).optional().transform((v) => (v ? v : null)),
+  notes: z.string().trim().max(500).optional().transform((v) => (v ? v : null)),
+});
+
 const dateOnly = (s: string) => new Date(`${s}T00:00:00Z`);
 
 async function toData(input: unknown) {
@@ -162,6 +180,142 @@ export async function createDonation(actor: Actor | null, input: unknown) {
   });
 }
 
+/** Informes enviados por el portal; todavía no forman parte de los ingresos oficiales. */
+export async function submitGivingReport(actor: Actor | null, input: unknown) {
+  const a = requirePermission(actor, "portal:access");
+  const memberId = a.memberId;
+  if (!memberId) throw new AppError("NOT_FOUND", "Tu cuenta aún no está vinculada a una ficha de miembro.");
+  const data = parseInput(givingReportSchema, input);
+  let amount: Decimal;
+  try {
+    amount = parseAmount(data.amount);
+  } catch (e) {
+    throw new AppError("VALIDATION_ERROR", undefined, { amount: [(e as Error).message] });
+  }
+  const receivedAt = dateOnly(data.receivedAt);
+  if (receivedAt.getTime() > Date.now() + 86400000) throw new AppError("VALIDATION_ERROR", undefined, { receivedAt: ["No puede ser una fecha futura"] });
+  const [member, concept, method, settings] = await Promise.all([
+    db.member.findUnique({ where: { id: memberId }, select: { isMinor: true, status: true } }),
+    db.donationConcept.findFirst({ where: { id: data.conceptId, isActive: true }, select: { id: true } }),
+    db.paymentMethod.findFirst({ where: { id: data.methodId, isActive: true }, select: { id: true } }),
+    db.churchSettings.findUnique({ where: { id: "default" }, select: { currency: true } }),
+  ]);
+  if (!member || member.isMinor || member.status === "INACTIVE") throw new AppError("FORBIDDEN", "Tu cuenta no puede reportar una ofrenda.");
+  if (!concept) throw new AppError("VALIDATION_ERROR", undefined, { conceptId: ["Concepto inválido"] });
+  if (!method) throw new AppError("VALIDATION_ERROR", undefined, { methodId: ["Método inválido"] });
+  return db.$transaction(async (tx) => {
+    const report = await tx.givingReport.create({
+      data: {
+        receivedAt,
+        amount: amount.toFixed(2),
+        currency: settings?.currency ?? "MXN",
+        conceptId: concept.id,
+        methodId: method.id,
+        memberId,
+        submittedById: a.userId,
+        isAnonymous: data.anonymous,
+      },
+      select: { id: true },
+    });
+    await recordAudit(tx, data.anonymous ? null : a, {
+      action: "giving_report.submit",
+      entityType: "GivingReport",
+      entityId: report.id,
+      metadata: { amount: amount.toFixed(2), anonymous: data.anonymous },
+    });
+    return report;
+  });
+}
+
+export async function myGivingReports(actor: Actor | null) {
+  const a = requirePermission(actor, "portal:access");
+  if (!a.memberId) return [];
+  const rows = await db.givingReport.findMany({
+    where: { submittedById: a.userId },
+    orderBy: { createdAt: "desc" },
+    take: 8,
+    select: { id: true, receivedAt: true, amount: true, currency: true, isAnonymous: true, status: true, reviewNote: true, concept: { select: { name: true } } },
+  });
+  return rows.map((r) => ({ ...r, amount: r.amount.toFixed(2) }));
+}
+
+export async function givingFormOptions(actor: Actor | null) {
+  requirePermission(actor, "portal:access");
+  const [concepts, methods] = await Promise.all([
+    db.donationConcept.findMany({ where: { isActive: true }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
+    db.paymentMethod.findMany({ where: { isActive: true }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
+  ]);
+  return { concepts, methods };
+}
+
+/** Solo tesorería ve los informes pendientes; la identidad se oculta si se marcó anónima. */
+export async function listGivingReports(actor: Actor | null) {
+  requirePermission(actor, "finance:review_giving");
+  const rows = await db.givingReport.findMany({
+    where: { status: "PENDING" },
+    orderBy: [{ receivedAt: "asc" }, { createdAt: "asc" }],
+    select: {
+      id: true,
+      receivedAt: true,
+      amount: true,
+      currency: true,
+      isAnonymous: true,
+      concept: { select: { name: true } },
+      method: { select: { name: true } },
+      member: { select: { firstName: true, lastName: true } },
+    },
+  });
+  return rows.map(({ member, ...r }) => ({
+    ...r,
+    amount: r.amount.toFixed(2),
+    donorName: r.isAnonymous ? null : `${member.firstName} ${member.lastName}`,
+  }));
+}
+
+export async function approveGivingReport(actor: Actor | null, id: string) {
+  const a = requirePermission(actor, "finance:review_giving");
+  return db.$transaction(async (tx) => {
+    const report = await tx.givingReport.findUnique({ where: { id } });
+    if (!report) throw new AppError("NOT_FOUND", "Ofrenda reportada no encontrada.");
+    if (report.status !== "PENDING") throw new AppError("CONFLICT", "Esta ofrenda ya fue revisada.");
+    const donation = await tx.donation.create({
+      data: {
+        receivedAt: report.receivedAt,
+        amount: report.amount,
+        currency: report.currency,
+        conceptId: report.conceptId,
+        methodId: report.methodId,
+        memberId: report.isAnonymous ? null : report.memberId,
+        createdById: a.userId,
+      },
+      select: { id: true },
+    });
+    const updated = await tx.givingReport.updateMany({
+      where: { id, status: "PENDING" },
+      data: { status: "APPROVED", reviewedAt: new Date(), reviewedById: a.userId, donationId: donation.id },
+    });
+    if (updated.count !== 1) throw new AppError("CONFLICT", "Esta ofrenda ya fue revisada.");
+    await recordAudit(tx, a, { action: "giving_report.approve", entityType: "GivingReport", entityId: id, metadata: { donationId: donation.id, amount: report.amount.toString(), anonymous: report.isAnonymous } });
+    return donation;
+  });
+}
+
+export async function rejectGivingReport(actor: Actor | null, id: string, input: unknown) {
+  const a = requirePermission(actor, "finance:review_giving");
+  const { reason } = parseInput(reasonSchema, input);
+  await db.$transaction(async (tx) => {
+    const report = await tx.givingReport.findUnique({ where: { id }, select: { status: true } });
+    if (!report) throw new AppError("NOT_FOUND", "Ofrenda reportada no encontrada.");
+    if (report.status !== "PENDING") throw new AppError("CONFLICT", "Esta ofrenda ya fue revisada.");
+    const updated = await tx.givingReport.updateMany({
+      where: { id, status: "PENDING" },
+      data: { status: "REJECTED", reviewedAt: new Date(), reviewedById: a.userId, reviewNote: reason },
+    });
+    if (updated.count !== 1) throw new AppError("CONFLICT", "Esta ofrenda ya fue revisada.");
+    await recordAudit(tx, a, { action: "giving_report.reject", entityType: "GivingReport", entityId: id, metadata: { reason } });
+  });
+}
+
 export async function voidDonation(actor: Actor | null, id: string, input: unknown) {
   const a = requirePermission(actor, "finance:void");
   const { reason } = parseInput(reasonSchema, input);
@@ -193,6 +347,115 @@ export async function correctDonation(actor: Actor | null, id: string, input: un
       metadata: { correctsId: id, reason, before: original.amount.toString(), after: data.amount },
     });
     return created;
+  });
+}
+
+export async function listExpenses(actor: Actor | null, input: unknown) {
+  requirePermission(actor, "finance:read");
+  const f = parseInput(filterSchema, input);
+  const where = {
+    spentAt: { gte: dateOnly(f.from), lte: dateOnly(f.to) },
+    ...(f.includeVoided ? {} : { status: "VALID" as const }),
+  };
+  const pageSize = 50;
+  const [data, total] = await Promise.all([
+    db.expense.findMany({ where, orderBy: [{ spentAt: "desc" }, { createdAt: "desc" }], skip: (f.page - 1) * pageSize, take: pageSize, include: { createdBy: { select: { name: true } }, voidedBy: { select: { name: true } } } }),
+    db.expense.count({ where }),
+  ]);
+  return { data, meta: { page: f.page, pageSize, total } };
+}
+
+export async function expenseSummary(actor: Actor | null, input: unknown) {
+  requirePermission(actor, "finance:read");
+  const f = parseInput(filterSchema, input);
+  const summary = await db.expense.aggregate({
+    where: { spentAt: { gte: dateOnly(f.from), lte: dateOnly(f.to) }, status: "VALID" },
+    _sum: { amount: true },
+    _count: true,
+  });
+  return { total: new Decimal(summary._sum.amount?.toString() ?? 0).toFixed(2), count: summary._count };
+}
+
+export async function createExpense(actor: Actor | null, input: unknown) {
+  const a = requirePermission(actor, "finance:create");
+  const data = parseInput(expenseSchema, input);
+  let amount: Decimal;
+  try {
+    amount = parseAmount(data.amount);
+  } catch (e) {
+    throw new AppError("VALIDATION_ERROR", undefined, { amount: [(e as Error).message] });
+  }
+  const spentAt = dateOnly(data.spentAt);
+  if (spentAt.getTime() > Date.now() + 86400000) throw new AppError("VALIDATION_ERROR", undefined, { spentAt: ["No puede ser una fecha futura"] });
+  return db.$transaction(async (tx) => {
+    const settings = await tx.churchSettings.findUnique({ where: { id: "default" }, select: { currency: true } });
+    const expense = await tx.expense.create({
+      data: { ...data, spentAt, amount: amount.toFixed(2), currency: settings?.currency ?? "MXN", createdById: a.userId },
+    });
+    await recordAudit(tx, a, { action: "expense.create", entityType: "Expense", entityId: expense.id, metadata: { amount: amount.toFixed(2), category: data.category } });
+    return expense;
+  });
+}
+
+export async function voidExpense(actor: Actor | null, id: string, input: unknown) {
+  const a = requirePermission(actor, "finance:void");
+  const { reason } = parseInput(reasonSchema, input);
+  await db.$transaction(async (tx) => {
+    const expense = await tx.expense.findUnique({ where: { id }, select: { status: true, amount: true } });
+    if (!expense) throw new AppError("NOT_FOUND", "Gasto no encontrado.");
+    if (expense.status === "VOIDED") throw new AppError("CONFLICT", "El gasto ya está anulado.");
+    await tx.expense.update({ where: { id }, data: { status: "VOIDED", voidedAt: new Date(), voidedById: a.userId, voidReason: reason } });
+    await recordAudit(tx, a, { action: "expense.void", entityType: "Expense", entityId: id, metadata: { reason, amount: expense.amount.toString() } });
+  });
+}
+
+/** Resumen semanal por fecha de recepción y egreso; los informes sin aprobar no se incluyen. */
+export async function weeklyFinanceSummary(actor: Actor | null, input: unknown) {
+  requirePermission(actor, "finance:read");
+  const f = parseInput(filterSchema, input);
+  const from = dateOnly(f.from);
+  const to = dateOnly(f.to);
+  const [income, expenses] = await Promise.all([
+    db.$queryRaw<{ week: Date; total: string; count: number }[]>`
+      SELECT date_trunc('week', "receivedAt")::date AS week, SUM(amount)::text AS total, COUNT(*)::int AS count
+      FROM donation
+      WHERE status = 'VALID' AND "receivedAt" >= ${from} AND "receivedAt" <= ${to}
+      GROUP BY 1`,
+    db.$queryRaw<{ week: Date; total: string; count: number }[]>`
+      SELECT date_trunc('week', "spentAt")::date AS week, SUM(amount)::text AS total, COUNT(*)::int AS count
+      FROM expense
+      WHERE status = 'VALID' AND "spentAt" >= ${from} AND "spentAt" <= ${to}
+      GROUP BY 1`,
+  ]);
+  const weeks = new Map<string, { income: Decimal; expenses: Decimal; incomeCount: number; expenseCount: number }>();
+  for (const row of income) {
+    const key = new Date(row.week).toISOString().slice(0, 10);
+    weeks.set(key, {
+      income: new Decimal(row.total),
+      expenses: new Decimal(0),
+      incomeCount: row.count,
+      expenseCount: 0,
+    });
+  }
+  for (const row of expenses) {
+    const key = new Date(row.week).toISOString().slice(0, 10);
+    const week = weeks.get(key) ?? { income: new Decimal(0), expenses: new Decimal(0), incomeCount: 0, expenseCount: 0 };
+    week.expenses = new Decimal(row.total);
+    week.expenseCount = row.count;
+    weeks.set(key, week);
+  }
+  return [...weeks.entries()].sort(([a], [b]) => b.localeCompare(a)).map(([weekStart, totals]) => {
+    const weekEnd = new Date(`${weekStart}T00:00:00Z`);
+    weekEnd.setUTCDate(weekEnd.getUTCDate() + 6);
+    return {
+      weekStart,
+      weekEnd: weekEnd.toISOString().slice(0, 10),
+      income: totals.income.toFixed(2),
+      expenses: totals.expenses.toFixed(2),
+      balance: totals.income.minus(totals.expenses).toFixed(2),
+      incomeCount: totals.incomeCount,
+      expenseCount: totals.expenseCount,
+    };
   });
 }
 

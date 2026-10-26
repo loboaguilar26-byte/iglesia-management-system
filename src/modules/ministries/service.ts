@@ -18,6 +18,7 @@ export async function listMinistries(actor: Actor | null, { includeInactive = tr
       name: true,
       description: true,
       isActive: true,
+      isPublic: true,
       memberships: {
         where: { endDate: null },
         select: { role: true, member: { select: { firstName: true, lastName: true } } },

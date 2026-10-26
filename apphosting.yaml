@@ -1,0 +1,26 @@
+# Configuración de Firebase App Hosting (Cloud Run gestionado).
+# Los secretos se guardan en Cloud Secret Manager; nunca en este archivo ni en git:
+#   firebase apphosting:secrets:set DATABASE_URL
+#   firebase apphosting:secrets:set BETTER_AUTH_SECRET
+
+runConfig:
+  minInstances: 0 # sin tráfico no hay instancias encendidas (menor costo)
+  maxInstances: 2
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 512
+
+env:
+  - variable: DATABASE_URL
+    secret: DATABASE_URL
+  - variable: BETTER_AUTH_SECRET
+    secret: BETTER_AUTH_SECRET
+  - variable: BETTER_AUTH_URL
+    value: https://iglesia--iglesia-gestion-mx.us-central1.hosted.app
+  - variable: DEFAULT_TIMEZONE
+    value: America/Mexico_City
+  # IP real del cliente para el límite de intentos (detrás del balanceador de Google). Ver docs/despliegue.md.
+  - variable: AUTH_IP_HEADERS
+    value: x-forwarded-for
+  - variable: AUTH_TRUSTED_PROXIES
+    value: 35.191.0.0/16,130.211.0.0/22

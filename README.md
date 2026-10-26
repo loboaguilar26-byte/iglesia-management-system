@@ -7,7 +7,22 @@ Sistema integral de gestión multidenominacional de iglesias: sitio público ins
 ## Qué incluye
 - **Sitio público:** inicio, nosotros, horarios, eventos, comunicados, contacto y aviso de privacidad, editables desde el panel.
 - **Panel `/admin`:** inicio con indicadores, miembros, ministerios, eventos y calendario, asistencia, tesorería, comunicados, reportes (PDF/Excel), usuarios y roles, configuración.
+- **Ofrendas y gastos:** los miembros pueden reportar una entrega ya realizada; tesorería la valida antes de sumarla a ingresos. Los egresos se registran y anulan con trazabilidad; la tesorería muestra cortes semanales.
+- **Tema claro/oscuro:** selector manual disponible en el sitio público, el portal y el panel; la preferencia queda guardada en el navegador.
+- **Bienvenida animada:** una Biblia se abre al entrar por primera vez a la portada en cada pestaña; puede omitirse y respeta la preferencia de movimiento reducido del dispositivo.
 - Permisos por rol aplicados en el servidor (ver [docs/permisos.md](docs/permisos.md)).
+
+## Multiplataforma (PC, Android, iPhone)
+- Diseño adaptable: menú lateral en PC, barra de navegación inferior y menú deslizable en celular, tablas convertidas en tarjetas en pantallas pequeñas.
+- **App instalable (PWA):** en Android y en Chrome/Edge de PC aparece el botón **"Instalar app"** (pie del sitio) o la opción del navegador; en iPhone: Compartir → *Agregar a inicio*. Se abre a pantalla completa con ícono propio.
+- Sin conexión muestra una página de aviso; no se guardan datos personales en el dispositivo.
+
+## Apartados
+| Apartado | Ruta | Para quién |
+|---|---|---|
+| Sitio público | `/` | Visitantes (sin cuenta) |
+| Portal del miembro | `/mi-cuenta` | Miembros con cuenta (solo sus propios datos) |
+| Panel administrativo | `/admin` | Personal según su rol |
 
 ## Inicio rápido
 ```bash

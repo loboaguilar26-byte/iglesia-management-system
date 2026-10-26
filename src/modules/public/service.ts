@@ -19,6 +19,7 @@ export async function getPublicSite() {
         name: true,
         tagline: true,
         welcomeText: true,
+        firstVisitText: true,
         aboutText: true,
         mission: true,
         vision: true,
@@ -44,7 +45,7 @@ export async function getPublicSite() {
     }),
   ]);
   return {
-    settings: settings ?? { name: "Iglesia", tagline: null, welcomeText: null, aboutText: null, mission: null, vision: null, valuesText: null, scheduleText: null, address: null, phone: null, email: null, whatsapp: null, mapUrl: null, facebookUrl: null, instagramUrl: null, youtubeUrl: null, privacyNotice: null, logoPath: null, timezone: "America/Mexico_City" },
+    settings: settings ?? { name: "Iglesia", tagline: null, welcomeText: null, firstVisitText: null, aboutText: null, mission: null, vision: null, valuesText: null, scheduleText: null, address: null, phone: null, email: null, whatsapp: null, mapUrl: null, facebookUrl: null, instagramUrl: null, youtubeUrl: null, privacyNotice: null, logoPath: null, timezone: "America/Mexico_City" },
     schedules,
   };
 }
@@ -77,6 +78,30 @@ export async function getPublicEvent(id: string) {
   cacheTag(PUBLIC_TAG);
   cacheLife("minutes");
   return db.event.findFirst({ where: { id, visibility: "PUBLIC" }, select: publicEventSelect });
+}
+
+/** Ministerios marcados como públicos: solo nombre y descripción (nunca integrantes). */
+export async function getPublicMinistries() {
+  "use cache";
+  cacheTag(PUBLIC_TAG);
+  cacheLife("minutes");
+  return db.ministry.findMany({
+    where: { isPublic: true, isActive: true },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true, description: true },
+  });
+}
+
+/** Eventos públicos de un mes (para el calendario del sitio). */
+export async function getPublicEventsInRange(fromIso: string, toIso: string) {
+  "use cache";
+  cacheTag(PUBLIC_TAG);
+  cacheLife("minutes");
+  return db.event.findMany({
+    where: { visibility: "PUBLIC", startsAt: { gte: new Date(fromIso), lt: new Date(toIso) } },
+    orderBy: { startsAt: "asc" },
+    select: publicEventSelect,
+  });
 }
 
 export async function getPublicAnnouncements(take = 20) {

@@ -30,7 +30,9 @@ export const PERMISSIONS = {
   "ministries:manage_members": "Gestionar integrantes de ministerios",
 
   "finance:read": "Consultar aportaciones",
+  "finance:dashboard": "Consultar totales financieros del panel",
   "finance:create": "Registrar aportaciones",
+  "finance:review_giving": "Validar ofrendas reportadas por miembros",
   "finance:update": "Corregir aportaciones",
   "finance:void": "Anular aportaciones",
   "finance:export": "Exportar información financiera",
@@ -52,6 +54,9 @@ export const PERMISSIONS = {
 
   "audit:read": "Consultar bitácora de auditoría (no financiera)",
   "audit:read_finance": "Consultar bitácora de auditoría financiera",
+
+  "followup:read": "Consultar el seguimiento pastoral de visitantes y miembros",
+  "followup:write": "Registrar contactos de seguimiento",
 
   "portal:access": "Acceder al portal personal del miembro (solo sus propios datos)",
 } as const;
@@ -75,6 +80,7 @@ export const ROLES: Record<RoleKey, { name: string; description: string; permiss
       ...all("attendance:"),
       ...all("events:"),
       ...all("ministries:"),
+      "finance:dashboard",
       ...all("announcements:"),
       "reports:members",
       "reports:attendance",
@@ -98,6 +104,7 @@ export const ROLES: Record<RoleKey, { name: string; description: string; permiss
       "reports:attendance",
       "reports:ministries",
       "settings:read",
+      ...all("followup:"),
     ],
   },
   SECRETARY: {
@@ -113,6 +120,7 @@ export const ROLES: Record<RoleKey, { name: string; description: string; permiss
       "reports:attendance",
       "reports:ministries",
       "settings:read",
+      ...all("followup:"),
     ],
   },
   TREASURER: {

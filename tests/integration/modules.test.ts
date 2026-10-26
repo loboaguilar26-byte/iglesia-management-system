@@ -1,10 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Actor } from "@/lib/authz";
+import { toDateInput } from "@/lib/dates";
 import { db } from "@/lib/db";
 import { saveAttendance } from "@/modules/attendance/service";
 import { getDashboard } from "@/modules/dashboard/service";
-import { correctDonation, createDonation, donationSummary, listDonations, voidDonation } from "@/modules/finance/service";
-import { createMember, listMembers, lookupMembers, setMemberStatus } from "@/modules/members/service";
+import {
+  approveGivingReport,
+  correctDonation,
+  createDonation,
+  createExpense,
+  donationSummary,
+  expenseSummary,
+  listDonations,
+  listGivingReports,
+  myGivingReports,
+  submitGivingReport,
+  voidDonation,
+  weeklyFinanceSummary,
+} from "@/modules/finance/service";
+import { createMember, getMember, listMembers, lookupMembers, setMemberStatus } from "@/modules/members/service";
 import { addMembership, getMinistry, saveMinistry } from "@/modules/ministries/service";
 import { buildReport } from "@/modules/reports/service";
 import { createTestUser, resetDatabase } from "../support/db";
@@ -13,7 +27,8 @@ import { createTestUser, resetDatabase } from "../support/db";
 vi.mock("next/cache", () => ({ cacheTag: () => {}, cacheLife: () => {}, updateTag: () => {} }));
 
 const TZ = "America/Mexico_City";
-const today = new Date().toISOString().slice(0, 10);
+// Fecha de hoy en la zona horaria de la iglesia (como la usa el sistema).
+const today = toDateInput(new Date(), TZ);
 
 async function expectCode(promise: Promise<unknown>, code: string) {
   await expect(promise).rejects.toMatchObject({ code });
@@ -85,6 +100,23 @@ describe("miembros", () => {
     await expectCode(addMembership(actor, youth.id, { memberId: extra.id, role: "COORDINATOR", startDate: today }), "FORBIDDEN");
     await expect(addMembership(actor, youth.id, { memberId: extra.id, role: "MEMBER", startDate: today })).resolves.toBeUndefined();
     await expectCode(addMembership(actor, youth.id, { memberId: extra.id, role: "MEMBER", startDate: today }), "CONFLICT");
+
+    const { id: typeId } = await db.eventType.findFirstOrThrow({ where: { name: "Culto" }, select: { id: true } });
+    const startsAt = new Date(`${today}T10:00:00.000Z`);
+    const endsAt = new Date(`${today}T11:00:00.000Z`);
+    const [inScopeEvent, outOfScopeEvent] = await Promise.all([
+      db.event.create({ data: { title: "Jóvenes", typeId, startsAt, endsAt, ministryId: youth.id } }),
+      db.event.create({ data: { title: "Niños", typeId, startsAt, endsAt, ministryId: other.id } }),
+    ]);
+    await db.attendance.createMany({
+      data: [
+        { eventId: inScopeEvent.id, memberId: inside.id, status: "PRESENT" },
+        { eventId: outOfScopeEvent.id, memberId: inside.id, status: "PRESENT" },
+      ],
+    });
+    expect((await getMember(actor, inside.id)).attendance).toMatchObject([
+      { event: { id: inScopeEvent.id, title: "Jóvenes" } },
+    ]);
   });
 });
 
@@ -125,13 +157,25 @@ describe("tesorería", () => {
     admin = await createTestUser(["ADMIN"]);
   });
 
-  it("solo el tesorero accede; el administrador no tiene acceso automático", async () => {
+  it("el administrador solo ve totales en el panel; tesorería completa sigue restringida", async () => {
     const ids = await catalogIds();
     await expectCode(createDonation(admin, { receivedAt: today, amount: "100", ...ids, anonymous: "on" }), "FORBIDDEN");
     await expectCode(listDonations(admin, { from: today, to: today }), "FORBIDDEN");
     const dashboard = await getDashboard(admin, TZ);
     expect(dashboard).not.toHaveProperty("finance");
+    expect(dashboard.financeSummary).toMatchObject({ todayTotal: "0.00", todayCount: 0, weekTotal: "0.00", weekCount: 0 });
     await expectCode(buildReport(admin, "ingresos", { desde: today, hasta: today }), "FORBIDDEN");
+  });
+
+  it("muestra al administrador los ingresos aprobados del día y de la semana", async () => {
+    const ids = await catalogIds();
+    await createDonation(treasurer, { receivedAt: today, amount: "125.50", ...ids, anonymous: "on" });
+    await createDonation(treasurer, { receivedAt: today, amount: "24.50", ...ids, anonymous: "on" });
+
+    const dashboard = await getDashboard(admin, TZ);
+    expect(dashboard.financeSummary).toMatchObject({ todayTotal: "150.00", todayCount: 2, weekTotal: "150.00", weekCount: 2 });
+    expect(dashboard).not.toHaveProperty("finance");
+    await expectCode(listDonations(admin, { from: today, to: today }), "FORBIDDEN");
   });
 
   it("suma con precisión decimal, registra anónimas y corrige con trazabilidad", async () => {
@@ -163,6 +207,47 @@ describe("tesorería", () => {
     expect(report.totals?.total).toBe("$500.00");
     expect(dashboard.finance?.monthTotal).toBe("500.00");
   });
+
+  it("valida los reportes de ofrenda antes de sumarlos y protege el anonimato", async () => {
+    const ids = await catalogIds();
+    const member = await db.member.create({ data: { firstName: "Ana", lastName: "Anónima", searchName: "ana anonima" } });
+    const memberUser = await createTestUser(["MEMBER"], "Ana Anónima");
+    await db.user.update({ where: { id: memberUser.userId }, data: { memberId: member.id } });
+    const memberActor = { ...memberUser, memberId: member.id };
+    const report = await submitGivingReport(memberActor, { receivedAt: today, amount: "125.50", ...ids, anonymous: "on" });
+
+    expect(await donationSummary(treasurer, { from: today, to: today })).toMatchObject({ total: "0.00", count: 0 });
+    expect(await listGivingReports(treasurer)).toMatchObject([{ id: report.id, donorName: null, amount: "125.50" }]);
+    await expectCode(approveGivingReport(admin, report.id), "FORBIDDEN");
+    await approveGivingReport(treasurer, report.id);
+
+    const [giving, donations] = await Promise.all([
+      myGivingReports(memberActor),
+      db.givingReport.findUniqueOrThrow({ where: { id: report.id }, select: { donationId: true } }),
+    ]);
+    expect(giving[0]).toMatchObject({ id: report.id, status: "APPROVED", isAnonymous: true });
+    const donation = await db.donation.findUniqueOrThrow({ where: { id: donations.donationId! } });
+    expect(donation.memberId).toBeNull();
+    expect(donation.amount.toString()).toBe("125.5");
+    expect((await donationSummary(treasurer, { from: today, to: today })).total).toBe("125.50");
+    await expectCode(approveGivingReport(treasurer, report.id), "CONFLICT");
+  });
+
+  it("lleva gastos con anulación y calcula balance neto semanal", async () => {
+    const ids = await catalogIds();
+    await createDonation(treasurer, { receivedAt: today, amount: "150.00", ...ids, anonymous: "on" });
+    const expense = await createExpense(treasurer, {
+      spentAt: today,
+      amount: "35.50",
+      category: "Mantenimiento",
+      description: "Reparación de una puerta",
+      method: "Transferencia",
+    });
+    const weekly = await weeklyFinanceSummary(treasurer, { from: today, to: today });
+    expect(weekly[0]).toMatchObject({ income: "150.00", expenses: "35.50", balance: "114.50", incomeCount: 1, expenseCount: 1 });
+    expect((await expenseSummary(treasurer, { from: today, to: today })).total).toBe("35.50");
+    await expect(db.expense.delete({ where: { id: expense.id } })).rejects.toThrow();
+  });
 });
 
 describe("sitio público", () => {
@@ -187,5 +272,68 @@ describe("sitio público", () => {
     expect(serialized).not.toContain("privado@example.test");
     expect(serialized).not.toContain("5599999999");
     expect(Object.keys(events[0]).sort()).toEqual(["description", "endsAt", "id", "location", "startsAt", "status", "title", "type"]);
+  });
+});
+
+describe("seguimiento y reportes nuevos", () => {
+  it("registra contactos, calcula pendientes y respeta permisos", async () => {
+    await resetDatabase();
+    const { addFollowUp, followUpBoard } = await import("@/modules/followups/service");
+    const pastor = await createTestUser(["PASTOR"]);
+    const secretary = await createTestUser(["SECRETARY"]);
+    const treasurer = await createTestUser(["TREASURER"]);
+    const visitor = await createMember(secretary, { firstName: "Visi", lastName: "Tante", status: "VISITOR" });
+
+    let board = await followUpBoard(pastor, today);
+    expect(board.uncontacted.map((m) => m.id)).toContain(visitor.id);
+
+    const next = new Date(Date.now() + 2 * 86400_000).toISOString().slice(0, 10);
+    await addFollowUp(secretary, visitor.id, { kind: "CALL", contactedOn: today, notes: "Bienvenida", nextAction: "Invitar a jóvenes", nextActionOn: next });
+    board = await followUpBoard(pastor, today);
+    expect(board.uncontacted.map((m) => m.id)).not.toContain(visitor.id);
+    expect(board.pending.map((p) => p.memberId)).toContain(visitor.id);
+
+    await expectCode(addFollowUp(treasurer, visitor.id, { kind: "CALL", contactedOn: today }), "FORBIDDEN");
+    await expectCode(followUpBoard(treasurer, today), "FORBIDDEN");
+    await expectCode(addFollowUp(secretary, visitor.id, { kind: "CALL", contactedOn: today, nextActionOn: "2000-01-01" }), "VALIDATION_ERROR");
+
+    const report = await buildReport(pastor, "visitantes", { desde: "2020-01-01", hasta: today });
+    expect(report.rows).toHaveLength(1);
+    expect(report.rows[0]).toMatchObject({ contactos: 1 });
+  });
+
+  it("constancia de aportaciones: solo del donante, sin anuladas ni anónimas", async () => {
+    await resetDatabase();
+    const treasurer = await createTestUser(["TREASURER"]);
+    const secretary = await createTestUser(["SECRETARY"]);
+    const ids = await catalogIds();
+    const donor = await createMember(secretary, { firstName: "Dona", lastName: "Dor" });
+    const other = await createMember(secretary, { firstName: "Otra", lastName: "Persona" });
+    await createDonation(treasurer, { receivedAt: today, amount: "100", ...ids, memberId: donor.id });
+    const voided = await createDonation(treasurer, { receivedAt: today, amount: "999", ...ids, memberId: donor.id });
+    await voidDonation(treasurer, voided.id, { reason: "Capturada por error" });
+    await createDonation(treasurer, { receivedAt: today, amount: "50", ...ids, memberId: other.id });
+    await createDonation(treasurer, { receivedAt: today, amount: "70", ...ids, anonymous: "on" });
+
+    const r = await buildReport(treasurer, "constancia", { persona: donor.id, anio: Number(today.slice(0, 4)) });
+    expect(r.rows).toHaveLength(1);
+    expect(r.totals?.monto).toBe("$100.00");
+    await expectCode(buildReport(secretary, "constancia", { persona: donor.id }), "FORBIDDEN");
+  });
+
+  it("asistencia por persona y cumpleaños", async () => {
+    await resetDatabase();
+    const secretary = await createTestUser(["SECRETARY"]);
+    const { typeId } = await catalogIds();
+    const m = await createMember(secretary, { firstName: "Asis", lastName: "Tente", birthDate: "1990-" + today.slice(5) });
+    const ev = await db.event.create({ data: { title: "Culto", typeId, startsAt: new Date(Date.now() - 3600_000), endsAt: new Date() } });
+    await saveAttendance(secretary, ev.id, { entries: [{ memberId: m.id, status: "PRESENT" }] });
+    const r = await buildReport(secretary, "asistencia-persona", { persona: m.id, desde: "2020-01-01", hasta: today });
+    expect(r.rows).toHaveLength(1);
+    expect(r.totals?.estado).toBe("100%");
+    const b = await buildReport(secretary, "cumpleanos", { mes: Number(today.slice(5, 7)) });
+    expect(b.rows.map((x) => x.nombre)).toContain("Asis Tente");
+    // La visita no modifica el conteo de visitantes si no se envía.
+    expect(await db.event.findUnique({ where: { id: ev.id } })).toMatchObject({ visitorCount: 0 });
   });
 });

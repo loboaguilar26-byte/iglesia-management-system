@@ -2,6 +2,8 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { getPublicSite } from "@/modules/public/service";
 import { Suspense } from "react";
+import { InstallAppButton } from "@/components/pwa";
+import { BookOpeningIntro } from "./book-opening-intro";
 import { SiteHeader } from "./site-header";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -22,6 +24,7 @@ export default async function PublicLayout({ children }: LayoutProps<"/">) {
   ].filter(Boolean) as { href: string; label: string }[];
   return (
     <div className="flex min-h-screen flex-col">
+      <BookOpeningIntro churchName={s.name} />
       <a href="#contenido" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-surface focus:px-4 focus:py-2">Saltar al contenido</a>
       <Suspense fallback={<div className="h-16 border-b border-border/70 bg-background" />}>
         <SiteHeader name={s.name} logo={s.logoPath} />
@@ -44,11 +47,15 @@ export default async function PublicLayout({ children }: LayoutProps<"/">) {
             <ul className="flex flex-col gap-1 opacity-85">
               {social.map((l) => <li key={l.label}><a href={l.href} target="_blank" rel="noopener noreferrer" className="hover:text-white hover:underline">{l.label}</a></li>)}
               <li><Link href="/privacidad" className="hover:text-white hover:underline">Aviso de privacidad</Link></li>
+              <li><Link href="/login?next=/mi-cuenta" className="hover:text-white hover:underline">Portal del miembro</Link></li>
               <li><Link href="/login" className="hover:text-white hover:underline">Acceso administrativo</Link></li>
             </ul>
           </div>
         </div>
-        <p className="border-t border-white/10 py-4 text-center text-xs opacity-60">© {s.name}</p>
+        <div className="flex flex-wrap items-center justify-center gap-4 border-t border-white/10 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] text-xs">
+          <span className="opacity-60">© {s.name}</span>
+          <InstallAppButton className="text-white" />
+        </div>
       </footer>
     </div>
   );

@@ -65,6 +65,9 @@ async function main() {
     });
   }
 
+  const now = new Date();
+  const today = zonedParts(now, tz);
+
   const ministryNames = ["Alabanza y música", "Jóvenes", "Niños", "Enseñanza", "Servicio", "Evangelización", "Oración"];
   const ministries = [];
   for (const name of ministryNames) {
@@ -88,6 +91,8 @@ async function main() {
           joinDate: status === "VISITOR" ? null : new Date(Date.UTC(joinYear, Math.floor(rand() * 12), 1 + Math.floor(rand() * 27))),
           status,
           isMinor: i % 13 === 5,
+          // Algunos cumpleaños caen en el mes actual para mostrar la lista del Inicio.
+          birthDate: rand() > 0.35 ? new Date(Date.UTC(1960 + Math.floor(rand() * 45), i % 3 === 0 ? today.month - 1 : Math.floor(rand() * 12), 1 + Math.floor(rand() * 27))) : null,
           createdById: author.id,
           updatedById: author.id,
         },
@@ -95,6 +100,21 @@ async function main() {
     );
   }
   const active = members.filter((m) => m.status === "ACTIVE");
+  // Seguimiento de algunos visitantes (otros quedan "sin contactar").
+  for (const [k, v] of members.filter((m) => m.status === "VISITOR").entries()) {
+    if (k % 2) continue;
+    await db.followUp.create({
+      data: {
+        memberId: v.id,
+        kind: k % 4 === 0 ? "CALL" : "MESSAGE",
+        contactedOn: new Date(Date.UTC(today.year, today.month - 1, today.day - 5)),
+        notes: "Contacto de bienvenida (demostración).",
+        nextAction: "Invitar a la reunión dominical",
+        nextActionOn: new Date(Date.UTC(today.year, today.month - 1, today.day + (k % 4 === 0 ? -1 : 3))),
+        createdById: author.id,
+      },
+    });
+  }
   for (const [idx, ministry] of ministries.entries()) {
     const group = active.filter((_, i) => (i + idx) % 4 === 0 || (i * 7 + idx) % 9 === 0).slice(0, 9);
     for (const [j, m] of group.entries()) {
@@ -103,8 +123,6 @@ async function main() {
   }
 
   const types = Object.fromEntries((await db.eventType.findMany()).map((t) => [t.name, t.id]));
-  const now = new Date();
-  const today = zonedParts(now, tz);
   const sundayOffset = -today.weekday;
   const at = (dayOffset: number, hour: number, minute = 0) => zonedToUtc({ year: today.year, month: today.month, day: today.day + dayOffset, hour, minute }, tz);
 

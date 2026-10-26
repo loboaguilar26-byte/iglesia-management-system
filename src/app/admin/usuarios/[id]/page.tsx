@@ -9,6 +9,9 @@ import { AppError } from "@/lib/errors";
 import { requirePageActor } from "@/lib/session";
 import { getUser } from "@/modules/users/service";
 import { ActiveForm, RolesForm } from "./user-forms";
+import { MemberPicker } from "@/components/member-picker";
+import { ActionForm, SubmitButton } from "@/components/ui/action-form";
+import { linkMemberAction } from "../actions";
 
 export const metadata: Metadata = { title: "Usuario" };
 
@@ -49,6 +52,26 @@ export default async function UserDetailPage({ params, searchParams }: PageProps
         ) : (
           <p className="text-sm">{user.roles.map((r) => r.name).join(", ") || "Sin roles"}</p>
         )}
+      </section>
+
+      <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+        <h2 className="mb-1 font-medium">Ficha de miembro vinculada</h2>
+        <p className="mb-4 text-sm text-muted">
+          Necesaria para el portal del miembro y para que un Coordinador gestione los ministerios que coordina.
+        </p>
+        {user.member ? (
+          <p className="mb-3 text-sm">
+            Vinculada a <Link href={`/admin/miembros/${user.member.id}`} className="font-medium text-primary hover:underline">{user.member.name}</Link>
+          </p>
+        ) : (
+          <p className="mb-3 text-sm text-muted">Sin ficha vinculada.</p>
+        )}
+        {can(actor, "users:update") ? (
+          <ActionForm action={linkMemberAction.bind(null, user.id)}>
+            <MemberPicker name="memberId" label={user.member ? "Cambiar por" : "Vincular con"} hint="Deja vacío y guarda para desvincular." />
+            <SubmitButton>Guardar vínculo</SubmitButton>
+          </ActionForm>
+        ) : null}
       </section>
 
       {!isSelf && can(actor, "users:deactivate") ? (

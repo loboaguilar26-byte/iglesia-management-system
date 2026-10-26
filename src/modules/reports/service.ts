@@ -19,6 +19,10 @@ export const REPORT_TYPES = {
   "asistencia-periodo": { label: "Asistencia por periodo", permission: "reports:attendance" },
   ministerios: { label: "Participación por ministerio", permission: "reports:ministries" },
   ingresos: { label: "Ingresos por periodo", permission: "reports:finance" },
+  "asistencia-persona": { label: "Asistencia por persona", permission: "reports:attendance" },
+  visitantes: { label: "Visitantes y seguimiento", permission: "reports:members" },
+  cumpleanos: { label: "Cumpleaños del mes", permission: "reports:members" },
+  constancia: { label: "Constancia de aportaciones", permission: "reports:finance" },
 } as const satisfies Record<string, { label: string; permission: Permission }>;
 export type ReportType = keyof typeof REPORT_TYPES;
 
@@ -43,7 +47,12 @@ const paramsSchema = z.object({
   estado: z.enum(["VISITOR", "ACTIVE", "INACTIVE", ""]).optional(),
   evento: z.string().optional(),
   agrupar: z.enum(["semana", "mes"]).optional(),
+  persona: z.string().optional(),
+  anio: z.coerce.number().int().min(2000).max(2100).optional(),
+  mes: z.coerce.number().int().min(1).max(12).optional(),
 });
+
+const MONTH_NAMES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 
 export function availableReports(actor: Actor) {
   return (Object.entries(REPORT_TYPES) as [ReportType, (typeof REPORT_TYPES)[ReportType]][]).filter(([, r]) => can(actor, r.permission));
@@ -68,6 +77,104 @@ export async function buildReport(actor: Actor | null, type: string, input: unkn
   };
 
   switch (type as ReportType) {
+    case "asistencia-persona": {
+      if (!p.persona) throw new AppError("VALIDATION_ERROR", "Selecciona a la persona.", { persona: ["Requerido"] });
+      const r = range();
+      const scope = await eventScopeWhere(a, "reports:attendance");
+      const person = await db.member.findUnique({ where: { id: p.persona }, select: { firstName: true, lastName: true } });
+      if (!person) throw new AppError("NOT_FOUND", "Persona no encontrada.");
+      const records = await db.attendance.findMany({
+        where: { memberId: p.persona, event: { AND: [scope ?? {}, { startsAt: { gte: r.from, lt: r.to } }] } },
+        orderBy: { event: { startsAt: "asc" } },
+        select: { status: true, event: { select: { title: true, startsAt: true, type: { select: { name: true } } } } },
+      });
+      const present = records.filter((x) => x.status === "PRESENT").length;
+      return {
+        ...base,
+        period: `${person.firstName} ${person.lastName} · ${r.label}`,
+        filters: canFully(a, "reports:attendance") ? [] : ["Solo eventos de tus ministerios"],
+        columns: [{ key: "fecha", label: "Fecha" }, { key: "evento", label: "Evento" }, { key: "tipo", label: "Tipo" }, { key: "estado", label: "Asistencia" }],
+        rows: records.map((x) => ({ fecha: formatDateTime(x.event.startsAt, tz), evento: x.event.title, tipo: x.event.type.name, estado: x.status === "PRESENT" ? "Presente" : "Ausente" })),
+        totals: { fecha: "Total", evento: `Presente en ${present} de ${records.length} registros`, estado: records.length ? `${Math.round((present / records.length) * 100)}%` : "—" },
+        notes: ["Solo eventos con asistencia registrada; los no capturados no cuentan como ausencia."],
+      };
+    }
+    case "visitantes": {
+      const r = range();
+      const visitors = await db.member.findMany({
+        where: { status: "VISITOR", createdAt: { gte: r.from, lt: r.to } },
+        orderBy: { createdAt: "asc" },
+        select: {
+          firstName: true,
+          lastName: true,
+          createdAt: true,
+          _count: { select: { attendances: { where: { status: "PRESENT" } }, followUps: true } },
+          followUps: { orderBy: { contactedOn: "desc" }, take: 1, select: { contactedOn: true } },
+        },
+      });
+      const contacted = visitors.filter((v) => v._count.followUps > 0).length;
+      return {
+        ...base,
+        period: r.label,
+        filters: ["Personas registradas como visitantes en el periodo"],
+        columns: [
+          { key: "nombre", label: "Nombre" },
+          { key: "registro", label: "Registro" },
+          { key: "asistencias", label: "Asistencias", align: "right" },
+          { key: "contactos", label: "Contactos", align: "right" },
+          { key: "ultimo", label: "Último contacto" },
+        ],
+        rows: visitors.map((v) => ({
+          nombre: `${v.lastName}, ${v.firstName}`,
+          registro: formatDate(v.createdAt, tz),
+          asistencias: v._count.attendances,
+          contactos: can(a, "followup:read") ? v._count.followUps : "—",
+          ultimo: can(a, "followup:read") && v.followUps[0] ? formatDateOnly(v.followUps[0].contactedOn) : "—",
+        })),
+        totals: { nombre: `Total: ${visitors.length}`, contactos: can(a, "followup:read") ? `${contacted} contactados` : "—" },
+      };
+    }
+    case "cumpleanos": {
+      if (!canFully(a, "members:read")) throw new AppError("FORBIDDEN");
+      const month = p.mes ?? Number(new Intl.DateTimeFormat("en-US", { timeZone: tz, month: "numeric" }).format(new Date()));
+      const rows = await db.$queryRaw<{ firstName: string; lastName: string; day: number; status: string }[]>`
+        SELECT "firstName", "lastName", EXTRACT(DAY FROM "birthDate")::int AS day, status::text
+        FROM member WHERE "birthDate" IS NOT NULL AND status <> 'INACTIVE' AND EXTRACT(MONTH FROM "birthDate") = ${month}
+        ORDER BY day, "lastName"`;
+      return {
+        ...base,
+        period: MONTH_NAMES[month - 1],
+        columns: [{ key: "dia", label: "Día", align: "right" }, { key: "nombre", label: "Nombre" }, { key: "estado", label: "Estado" }],
+        rows: rows.map((x) => ({ dia: x.day, nombre: `${x.firstName} ${x.lastName}`, estado: MEMBER_STATUS_LABEL[x.status as keyof typeof MEMBER_STATUS_LABEL] ?? x.status })),
+        totals: { nombre: `Total: ${rows.length}` },
+        notes: ["No incluye el año de nacimiento (minimización de datos)."],
+      };
+    }
+    case "constancia": {
+      if (!p.persona) throw new AppError("VALIDATION_ERROR", "Selecciona al donante.", { persona: ["Requerido"] });
+      const year = p.anio ?? new Date().getUTCFullYear();
+      const person = await db.member.findUnique({ where: { id: p.persona }, select: { firstName: true, lastName: true } });
+      if (!person) throw new AppError("NOT_FOUND", "Persona no encontrada.");
+      const donations = await db.donation.findMany({
+        where: { memberId: p.persona, status: "VALID", receivedAt: { gte: new Date(Date.UTC(year, 0, 1)), lt: new Date(Date.UTC(year + 1, 0, 1)) } },
+        orderBy: { receivedAt: "asc" },
+        select: { receivedAt: true, amount: true, reference: true, concept: { select: { name: true } }, method: { select: { name: true } } },
+      });
+      const total = donations.reduce((t, d) => t.plus(d.amount.toString()), new Decimal(0));
+      const cur = settings.currency;
+      return {
+        ...base,
+        title: `Constancia de aportaciones ${year}`,
+        period: `${person.firstName} ${person.lastName} · enero – diciembre ${year}`,
+        columns: [{ key: "fecha", label: "Fecha" }, { key: "concepto", label: "Concepto" }, { key: "metodo", label: "Método" }, { key: "referencia", label: "Referencia" }, { key: "monto", label: "Monto", align: "right" }],
+        rows: donations.map((d) => ({ fecha: formatDateOnly(d.receivedAt), concepto: d.concept.name, metodo: d.method.name, referencia: d.reference ?? "", monto: formatMoney(d.amount.toString(), cur) })),
+        totals: { fecha: `${donations.length} aportaciones`, monto: formatMoney(total.toFixed(2), cur) },
+        notes: [
+          "Constancia informativa de aportaciones registradas a nombre de la persona (excluye anuladas y anónimas).",
+          "No es un comprobante fiscal (CFDI).",
+        ],
+      };
+    }
     case "miembros": {
       const members = await db.member.findMany({
         where: p.estado ? { status: p.estado } : {},

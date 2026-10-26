@@ -76,7 +76,7 @@ export function AttendanceSheet({ rows, visitorCount, action, canRecord }: {
         })}
       </ul>
       {canRecord ? (
-        <div className="sticky bottom-4 flex justify-end">
+        <div className="sticky bottom-20 flex justify-end lg:bottom-4">
           <Button type="submit" disabled={pending} size="lg" className="shadow-lg">{pending ? "Guardando…" : "Guardar asistencia"}</Button>
         </div>
       ) : null}

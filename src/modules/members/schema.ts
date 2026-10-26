@@ -34,6 +34,12 @@ export const memberSchema = z.object({
     .optional()
     .refine((v) => !v || /^\d{4}-\d{2}-\d{2}$/.test(v), "Fecha inválida")
     .transform((v) => (v ? new Date(`${v}T00:00:00Z`) : null)),
+  birthDate: z
+    .string()
+    .optional()
+    .refine((v) => !v || /^\d{4}-\d{2}-\d{2}$/.test(v), "Fecha inválida")
+    .refine((v) => !v || v <= new Date().toISOString().slice(0, 10), "No puede ser una fecha futura")
+    .transform((v) => (v ? new Date(`${v}T00:00:00Z`) : null)),
   status: z.enum(MEMBER_STATUSES).default("ACTIVE"),
   position: optional(80),
   isMinor: bool,

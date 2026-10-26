@@ -22,4 +22,9 @@ export const cancelSchema = z.object({
 });
 
 export const EVENT_STATUS_LABEL = { SCHEDULED: "Programado", CANCELLED: "Cancelado", COMPLETED: "Realizado" } as const;
+
+/** Estado para mostrar: un evento programado que ya terminó se presenta como realizado. */
+export function displayStatus(e: { status: keyof typeof EVENT_STATUS_LABEL; endsAt: Date }, now: Date) {
+  return e.status === "SCHEDULED" && e.endsAt < now ? "COMPLETED" : e.status;
+}
 export const VISIBILITY_LABEL = { PUBLIC: "Público", PRIVATE: "Interno" } as const;
