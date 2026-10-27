@@ -5,7 +5,7 @@
 **Monolito modular** en Next.js (App Router, TypeScript) que expone:
 1. Sitio público (`/`) — Server Components, solo DTOs públicos.
 2. Panel administrativo (`/admin`) — protegido por sesión + permisos.
-3. API REST versionada (`/api/v1/...`) — consumida por el panel cuando conviene y, en el futuro, por la app móvil (React Native + Expo).
+3. API REST versionada (`/api/v1/...`) — consumida por el panel cuando conviene y por integraciones externas. La app móvil (Capacitor) abre la misma web, ver `movil.md`.
 
 Toda la lógica de negocio vive en `src/modules/<modulo>/` y **no** depende de React. Las páginas, Server Actions y rutas API son adaptadores delgados que llaman a los servicios.
 
@@ -82,7 +82,7 @@ tests/ (unit, integration) · e2e/ (Playwright)
 
 - **Better Auth** con adaptador Prisma: correo + contraseña, recuperación, sesiones en BD (revocables), rate limiting en BD (no en memoria: compatible con serverless).
 - Web: cookie de sesión `HttpOnly`.
-- Móvil (fase 9): plugin de bearer/Expo de Better Auth contra la misma API.
+- Móvil: la app Android/iOS (Capacitor) abre la plataforma web y usa la misma cookie de sesión. Si algún día hay un cliente nativo propio, usaría el plugin de token (bearer) de Better Auth contra `/api/v1`.
 - Registro público **deshabilitado**; usuarios los crea un administrador.
 
 ## Errores de API

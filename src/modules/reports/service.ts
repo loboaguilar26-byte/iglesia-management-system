@@ -330,6 +330,7 @@ export async function auditExport(actor: Actor, type: string, format: string, fi
 }
 
 export async function eventOptionsForReport(actor: Actor) {
+  requirePermission(actor, "reports:attendance");
   const scope = await eventScopeWhere(actor, "reports:attendance");
   return db.event.findMany({
     where: { AND: [scope ?? {}, { status: { not: "CANCELLED" }, startsAt: { lte: new Date() } }] },
