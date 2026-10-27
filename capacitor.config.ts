@@ -23,22 +23,22 @@ const config: CapacitorConfig = {
   },
   android: {
     allowMixedContent: false,
-    backgroundColor: "#2a170c",
+    backgroundColor: "#08111f",
   },
   ios: {
     contentInset: "automatic",
-    backgroundColor: "#2a170c",
+    backgroundColor: "#08111f",
   },
   plugins: {
     SplashScreen: {
       launchShowDuration: 1500,
       launchAutoHide: true,
-      backgroundColor: "#2a170c",
+      backgroundColor: "#08111f",
       showSpinner: false,
     },
     StatusBar: {
       style: "DARK",
-      backgroundColor: "#2a170c",
+      backgroundColor: "#08111f",
     },
   },
 };

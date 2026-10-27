@@ -60,7 +60,8 @@ Ninguna cuenta de pago, llave de firma ni publicación se crea sin autorización
 
 ## Actualizar íconos
 
-Los recursos se generan desde `public/eclaria-mark.svg` y `public/eclaria-logo.svg`:
+Los recursos se generan desde el logotipo real: `public/eclaria-icon.png` (emblema sin texto, recortado
+de `public/eclaria-logo.jpg`) y `public/eclaria-logo.jpg` (pantalla de inicio):
 
 ```bash
 pnpm mobile:assets

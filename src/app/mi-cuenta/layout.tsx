@@ -34,7 +34,7 @@ async function PortalShell({ children }: { children: ReactNode }) {
               <img src={`/media/logo?v=${encodeURIComponent(settings.logoPath)}`} alt="" className="size-9 rounded-lg object-contain" />
             ) : (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src="/eclaria-mark.svg" alt="" className="size-9 rounded-lg object-contain" />
+              <img src="/eclaria-icon.png" alt="" className="size-9 rounded-lg object-contain" />
             )}
             <span className="min-w-0">
               <span className="block truncate font-display font-semibold leading-tight">{settings.name}</span>

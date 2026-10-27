@@ -1,4 +1,5 @@
-// Genera los íconos y pantallas de inicio de Android e iOS a partir de los SVG de Eclaria.
+// Genera los íconos y pantallas de inicio de Android e iOS a partir del logotipo real de Eclaria:
+// public/eclaria-icon.png (emblema cuadrado, sin texto) y public/eclaria-logo.jpg (logotipo completo).
 // Reescribe cada imagen que crea Capacitor conservando su tamaño. Uso: pnpm mobile:assets
 import { readdir, stat, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
@@ -8,11 +9,9 @@ import path from "node:path";
 const require = createRequire(import.meta.url);
 const sharp = require(require.resolve("sharp", { paths: [path.dirname(require.resolve("next/package.json"))] }));
 
-const BG = "#2a170c";
-const ICON = "public/eclaria-mark.svg";
-const LOGO = "public/eclaria-logo.svg";
-const ICON_PNG = "assets/icon-only.png";
-const LOGO_PNG = "assets/logo.png";
+const BG = "#070b14";
+const ICON = "public/eclaria-icon.png";
+const LOGO = "public/eclaria-logo.jpg";
 
 async function* walk(dir) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
@@ -29,8 +28,8 @@ async function size(file) {
 
 /** Logo centrado sobre un fondo sólido (pantallas de inicio). */
 async function splash(file, { width, height }) {
-  const side = Math.round(Math.min(width, height) * 0.32);
-  const logo = await sharp(ICON).resize(side, side).png().toBuffer();
+  const side = Math.round(Math.min(width, height) * 0.5);
+  const logo = await sharp(LOGO).resize(side, side).png().toBuffer();
   const img = await sharp({ create: { width, height, channels: 4, background: BG } }).composite([{ input: logo, gravity: "center" }]).png().toBuffer();
   await writeFile(file, img);
 }
@@ -47,17 +46,11 @@ async function icon(file, { width }, round = false) {
 
 /** Primer plano del ícono adaptativo de Android: la marca dentro de la zona segura (66 %). */
 async function foreground(file, { width }) {
-  const inner = Math.round(width * 0.62);
+  const inner = Math.round(width * 0.72);
   const logo = await sharp(ICON).resize(inner, inner).png().toBuffer();
   const img = await sharp({ create: { width, height: width, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } }).composite([{ input: logo, gravity: "center" }]).png().toBuffer();
   await writeFile(file, img);
 }
-
-await sharp(ICON).resize(1024, 1024).png().toFile(ICON_PNG);
-await sharp(LOGO).resize(1024, 1024, {
-  fit: "contain",
-  background: { r: 0, g: 0, b: 0, alpha: 0 },
-}).png().toFile(LOGO_PNG);
 
 let count = 0;
 for (const root of ["android/app/src/main/res", "ios/App/App/Assets.xcassets"]) {
