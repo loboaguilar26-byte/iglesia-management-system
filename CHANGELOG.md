@@ -4,6 +4,27 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Sin publicar]
 
+### Añadido — Organización del repositorio
+- README con mapa de carpetas y comandos, guía [CONTRIBUTING.md](CONTRIBUTING.md), índice de `docs/`, plantillas de PR e issues.
+- `main` protegida: los cambios entran por PR con el CI en verde.
+- Dependabot no propone saltos de versión mayor de TypeScript ni de `@types/node`.
+
+### Cambiado — Limpieza
+- Se elimina código sin uso y se agrega `pnpm check:unused` (knip).
+
+### Añadido — Marca Eclaria, confesiones y app móvil
+- **Marca Eclaria:** logotipo real, paleta azul noche y dorado, e intro de la paloma volando sobre la Biblia (una vez por sesión, se puede omitir, respeta "reducir movimiento").
+- **Confesiones:** cita en la iglesia o una capilla y mensaje anónimo; contacto, mensajes y respuestas cifrados (AES-256-GCM); solo el rol Sacerdote los lee; límite de envíos sin guardar la IP.
+- **App Android e iOS** con Capacitor 8: ícono y pantalla de inicio de la marca, pantalla sin conexión, botón atrás nativo (ver [docs/movil.md](docs/movil.md)).
+
+### Añadido — Portal del miembro ampliado
+- Agenda con confirmación de asistencia y descarga al calendario (.ics); ministerios con solicitud para unirse; peticiones de oración con nota pastoral; aportaciones por año con constancia en PDF; asistencia con rachas; descarga de "mis datos".
+- Panel: peticiones de oración (Pastor), solicitudes en cada ministerio y confirmaciones en cada evento.
+
+### Añadido — Capillas, iglesias y franquicias
+- **Capillas:** sedes con encargado, personas, ingresos, historial y alta/baja/archivo.
+- **Iglesias y franquicias:** panorama de la red, preparación de cada sede, equipo por iglesia con jerarquía de roles y activación con motivo.
+
 ### Añadido — Bienvenida y resumen de ingresos
 - Animación de apertura de Biblia al entrar al sitio público, con opción para omitirla, límite de una vez por pestaña y respeto a la preferencia de movimiento reducido.
 - El inicio administrativo muestra ingresos aprobados del día y de la semana a Administradores y Tesoreros, sin exponer movimientos ni egresos a quienes no tengan acceso completo a Tesorería.
