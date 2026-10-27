@@ -256,7 +256,3 @@ export async function setUserActive(actor: Actor | null, userId: string, input: 
   });
   return getUser(a, userId);
 }
-
-export async function listRoles() {
-  return db.role.findMany({ select: { key: true, name: true, description: true }, orderBy: { name: "asc" } });
-}

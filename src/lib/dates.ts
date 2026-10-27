@@ -111,14 +111,6 @@ export function parseDateOnly(value: string): Date {
   return d;
 }
 
-/** Inicio y fin (exclusivo) de un mes de la iglesia, como instantes UTC. */
-export function monthRange(year: number, month: number, timeZone = DEFAULT_TIMEZONE) {
-  const start = zonedToUtc({ year, month, day: 1 }, timeZone);
-  const next = month === 12 ? { year: year + 1, month: 1 } : { year, month: month + 1 };
-  const end = zonedToUtc({ ...next, day: 1 }, timeZone);
-  return { start, end };
-}
-
 /** Lunes de la semana (zona de la iglesia) que contiene la fecha, como "YYYY-MM-DD". */
 export function weekStartKey(date: Date, timeZone = DEFAULT_TIMEZONE): string {
   const p = zonedParts(date, timeZone);

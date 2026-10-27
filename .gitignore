@@ -57,3 +57,6 @@ verify.log
 # Firebase
 .firebase/
 firebase-debug.log
+
+# Herramientas locales de cada persona
+.qodo/

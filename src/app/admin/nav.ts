@@ -1,10 +1,10 @@
 import type { Permission } from "@/lib/permissions";
 
 export type NavIcon = "home" | "members" | "ministries" | "events" | "attendance" | "finance" | "giving" | "expenses" | "announcements" | "reports" | "users" | "settings" | "audit" | "followup" | "chapels" | "churches" | "prayer" | "confessions";
-export type NavItem = { href: string; label: string; icon: NavIcon; permission?: Permission; anyOf?: Permission[] };
+type NavItem = { href: string; label: string; icon: NavIcon; permission?: Permission; anyOf?: Permission[] };
 export type NavGroup = { label: string | null; items: NavItem[] };
 
-export const NAV_GROUPS: NavGroup[] = [
+const NAV_GROUPS: NavGroup[] = [
   { label: null, items: [{ href: "/admin", label: "Inicio", icon: "home" }] },
   {
     label: "Congregación",
