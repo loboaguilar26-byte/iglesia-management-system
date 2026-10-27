@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import type { ActionState } from "@/lib/action-state";
 import { updateChurchAction } from "../actions";
-import { ChurchBanner, ChurchMonogram } from "../church-visuals";
+import { ChurchBanner, ChurchMonogram } from "@/components/visuals";
 
 type Church = {
   id: string;

@@ -6,6 +6,7 @@ import { formToObject, toActionState, type ActionState } from "@/lib/action-stat
 import { refreshPublicSite } from "@/lib/public-cache";
 import { getActor } from "@/lib/session";
 import { addMembership, endMembership, saveMinistry, setMinistryActive } from "@/modules/ministries/service";
+import { reviewJoinRequest } from "@/modules/portal/engagement";
 
 export async function createMinistryAction(_prev: ActionState, form: FormData): Promise<ActionState> {
   let id: string;
@@ -59,4 +60,15 @@ export async function endMembershipAction(ministryId: string, membershipId: stri
   }
   revalidatePath(`/admin/ministerios/${ministryId}`);
   return { ok: true, message: "Participación finalizada." };
+}
+
+export async function reviewJoinRequestAction(ministryId: string, requestId: string, decision: "APPROVED" | "REJECTED", _prev: ActionState, form: FormData): Promise<ActionState> {
+  try {
+    await reviewJoinRequest(await getActor(), requestId, { decision, note: formToObject(form).note });
+  } catch (error) {
+    return toActionState(error, form);
+  }
+  revalidatePath(`/admin/ministerios/${ministryId}`);
+  revalidatePath("/mi-cuenta/ministerios");
+  return { ok: true, message: decision === "APPROVED" ? "Solicitud aprobada: la persona ya es integrante." : "Solicitud rechazada." };
 }

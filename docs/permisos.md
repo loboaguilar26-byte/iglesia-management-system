@@ -85,3 +85,14 @@ Leyenda: ✅ total · 🔸 acotado a lo asignado (scope) · — sin acceso
 - Los cumpleaños del mes solo se muestran con acceso completo al directorio (no al Coordinador acotado).
 - La constancia de aportaciones requiere `reports:finance` (Tesorero).
 - El Tesorero puede aprobar o devolver reportes de ofrendas. Los reportes pendientes no se incluyen en ingresos; los anónimos no revelan el nombre del miembro al personal financiero.
+
+## Permisos añadidos (27/10/2026) — participación desde el portal
+
+| Permiso | Admin | Pastor | Secretario | Tesorero | Coordinador | Miembro |
+|---|---|---|---|---|---|---|
+| prayer:read / prayer:manage (peticiones de oración) | — | ✅ | — | — | — | — |
+
+- Las **peticiones de oración** son datos sensibles: solo las ve el propio miembro y quien tiene `prayer:read`. La bitácora registra la acción, nunca el contenido. El Administrador no las ve por defecto.
+- Las **solicitudes para unirse a un ministerio** las resuelve quien tiene `ministries:manage_members` (el Coordinador solo en sus ministerios). Al aprobar se crea la participación con función Integrante.
+- Las **confirmaciones de asistencia** (RSVP) se muestran como totales a quien tiene `events:read`; los nombres solo con acceso completo al directorio.
+- Con `portal:access` el miembro descarga su **constancia anual** (solo sus aportaciones con nombre) y una **copia de sus datos** (derecho de acceso, LFPDPPP), sin notas pastorales internas. Ambas descargas quedan en la bitácora.

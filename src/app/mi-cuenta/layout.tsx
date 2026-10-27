@@ -7,6 +7,7 @@ import { getSettingsInternal } from "@/modules/settings/service";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BookOpeningIntro } from "../(public)/book-opening-intro";
 import { SignOutButton } from "../admin/sign-out-button";
+import { PortalNav } from "./portal-nav";
 
 export const metadata: Metadata = { title: "Mi cuenta", robots: { index: false } };
 export const instant = false;
@@ -48,6 +49,7 @@ async function PortalShell({ children }: { children: ReactNode }) {
             <SignOutButton />
           </nav>
         </div>
+        <PortalNav />
       </header>
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-10">{children}</main>
     </div>

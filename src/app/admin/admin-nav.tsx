@@ -19,6 +19,7 @@ import {
   X,
   Building2,
   Church,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -42,6 +43,7 @@ const ICONS: Record<NavIcon, typeof Users> = {
   followup: HeartHandshake,
   chapels: Church,
   churches: Building2,
+  prayer: Sparkles,
 };
 
 function isActive(pathname: string, href: string) {

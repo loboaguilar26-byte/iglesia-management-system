@@ -12,6 +12,7 @@ import { AppError } from "@/lib/errors";
 import { requirePageActor } from "@/lib/session";
 import { EVENT_STATUS_LABEL, VISIBILITY_LABEL } from "@/modules/events/schema";
 import { getEvent, listEventTypes, ministryOptionsFor } from "@/modules/events/service";
+import { eventRsvpSummary } from "@/modules/portal/engagement";
 import { getChurchTimezone } from "@/modules/settings/service";
 import { cancelEventAction, updateEventAction } from "../actions";
 import { EventForm } from "../event-form";
@@ -26,7 +27,7 @@ export default async function EventPage({ params, searchParams }: PageProps<"/ad
     if (err instanceof AppError && (err.code === "NOT_FOUND" || err.code === "FORBIDDEN")) notFound();
     throw err;
   });
-  const [tz, types, ministries] = await Promise.all([getChurchTimezone(), listEventTypes(), ministryOptionsFor(actor)]);
+  const [tz, types, ministries, rsvp] = await Promise.all([getChurchTimezone(), listEventTypes(), ministryOptionsFor(actor), eventRsvpSummary(actor, e.id)]);
   const cancelled = e.status === "CANCELLED";
   const canEdit = can(actor, "events:update") && !cancelled;
 
@@ -85,6 +86,27 @@ export default async function EventPage({ params, searchParams }: PageProps<"/ad
               <dt className="text-muted">Descripción</dt><dd className="whitespace-pre-line">{e.description ?? "—"}</dd>
             </dl>
           )}
+        </Card>
+        <Card title="Confirmaciones del portal" description="Respuestas de los miembros desde su portal (no sustituye la asistencia).">
+          <div className="grid grid-cols-3 gap-3 text-center">
+            {[
+              { label: "Asistirán", value: rsvp.going, tone: "text-success" },
+              { label: "Tal vez", value: rsvp.maybe, tone: "text-accent" },
+              { label: "No podrán", value: rsvp.notGoing, tone: "text-muted" },
+            ].map((x) => (
+              <div key={x.label} className="rounded-xl bg-surface-2 p-3">
+                <p className={`font-display text-2xl font-semibold tabular-nums ${x.tone}`}>{x.value}</p>
+                <p className="text-xs text-muted">{x.label}</p>
+              </div>
+            ))}
+          </div>
+          {rsvp.people.length ? (
+            <ul className="mt-4 flex flex-wrap gap-1.5">
+              {rsvp.people.map((p) => (
+                <li key={p.id}><Link href={`/admin/miembros/${p.id}`} className="inline-flex rounded-full border border-border px-2.5 py-1 text-xs hover:border-primary hover:text-primary">{p.firstName} {p.lastName}</Link></li>
+              ))}
+            </ul>
+          ) : null}
         </Card>
         {can(actor, "events:cancel") && !cancelled ? (
           <Card title="Cancelar evento" description="El evento se conserva y se muestra como cancelado.">

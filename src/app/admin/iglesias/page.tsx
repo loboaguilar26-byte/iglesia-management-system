@@ -23,7 +23,7 @@ import { can } from "@/lib/authz";
 import { formatDate } from "@/lib/dates";
 import { requirePageActor } from "@/lib/session";
 import { getNetworkOverview, type NetworkInsight } from "@/modules/churches/service";
-import { ChurchMonogram, ProgressBar, ProgressRing } from "./church-visuals";
+import { ChurchMonogram, ProgressBar, ProgressRing } from "@/components/visuals";
 import { CreateChurchForm } from "./create-church-form";
 
 export const metadata: Metadata = { title: "Iglesias y franquicias" };

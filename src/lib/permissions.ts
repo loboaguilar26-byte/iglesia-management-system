@@ -66,6 +66,9 @@ export const PERMISSIONS = {
   "followup:read": "Consultar el seguimiento pastoral de visitantes y miembros",
   "followup:write": "Registrar contactos de seguimiento",
 
+  "prayer:read": "Consultar peticiones de oración (equipo pastoral)",
+  "prayer:manage": "Atender peticiones de oración y dejar nota pastoral",
+
   "portal:access": "Acceder al portal personal del miembro (solo sus propios datos)",
 } as const;
 
@@ -123,6 +126,7 @@ export const ROLES: Record<
       "reports:ministries",
       "settings:read",
       ...all("followup:"),
+      ...all("prayer:"),
     ],
   },
   SECRETARY: {

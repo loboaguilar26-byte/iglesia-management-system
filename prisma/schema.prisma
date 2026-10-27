@@ -36,19 +36,21 @@ model User {
   member   Member? @relation(fields: [memberId], references: [id])
   memberId String? @unique
 
-  membersCreated         Member[]         @relation("MemberCreatedBy")
-  membersUpdated         Member[]         @relation("MemberUpdatedBy")
+  membersCreated         Member[]              @relation("MemberCreatedBy")
+  membersUpdated         Member[]              @relation("MemberUpdatedBy")
   attendanceRecorded     Attendance[]
-  donationsCreated       Donation[]       @relation("DonationCreatedBy")
-  donationsVoided        Donation[]       @relation("DonationVoidedBy")
-  givingReportsSubmitted GivingReport[]   @relation("GivingReportSubmitter")
-  givingReportsReviewed  GivingReport[]   @relation("GivingReportReviewer")
-  expensesCreated        Expense[]        @relation("ExpenseCreatedBy")
-  expensesVoided         Expense[]        @relation("ExpenseVoidedBy")
+  donationsCreated       Donation[]            @relation("DonationCreatedBy")
+  donationsVoided        Donation[]            @relation("DonationVoidedBy")
+  givingReportsSubmitted GivingReport[]        @relation("GivingReportSubmitter")
+  givingReportsReviewed  GivingReport[]        @relation("GivingReportReviewer")
+  expensesCreated        Expense[]             @relation("ExpenseCreatedBy")
+  expensesVoided         Expense[]             @relation("ExpenseVoidedBy")
   announcements          Announcement[]
   churchSettingsUpdated  ChurchSettings[]
   followUps              FollowUp[]
-  chapelsManaged         Chapel[]         @relation("ChapelManagerUser")
+  chapelsManaged         Chapel[]              @relation("ChapelManagerUser")
+  prayersHandled         PrayerRequest[]       @relation("PrayerHandledBy")
+  joinRequestsReviewed   MinistryJoinRequest[] @relation("JoinRequestReviewer")
 
   @@map("user")
 }
@@ -288,8 +290,11 @@ model Member {
   givingReports       GivingReport[]
   followUps           FollowUp[]
   chapelId            String?
-  chapel              Chapel?              @relation(fields: [chapelId], references: [id], onDelete: Restrict)
-  chapelsLed          Chapel[]             @relation("ChapelManagerMember")
+  chapel              Chapel?               @relation(fields: [chapelId], references: [id], onDelete: Restrict)
+  chapelsLed          Chapel[]              @relation("ChapelManagerMember")
+  rsvps               EventRsvp[]
+  prayerRequests      PrayerRequest[]
+  joinRequests        MinistryJoinRequest[]
 
   @@index([searchName])
   @@index([status])
@@ -338,6 +343,7 @@ model Event {
 
   attendances  Attendance[]
   responsibles EventResponsible[]
+  rsvps        EventRsvp[]
   chapelId     String?
   chapel       Chapel?            @relation(fields: [chapelId], references: [id], onDelete: Restrict)
 
@@ -386,18 +392,19 @@ enum MinistryRole {
 }
 
 model Ministry {
-  id          String               @id @default(cuid())
-  name        String               @unique
-  description String?
-  isActive    Boolean              @default(true)
+  id           String                @id @default(cuid())
+  name         String                @unique
+  description  String?
+  isActive     Boolean               @default(true)
   /// Se muestra (nombre y descripción) en el sitio público.
-  isPublic    Boolean              @default(false)
-  createdAt   DateTime             @default(now()) @db.Timestamptz(3)
-  updatedAt   DateTime             @updatedAt @db.Timestamptz(3)
-  memberships MinistryMembership[]
-  events      Event[]
-  chapelId    String?
-  chapel      Chapel?              @relation(fields: [chapelId], references: [id], onDelete: Restrict)
+  isPublic     Boolean               @default(false)
+  createdAt    DateTime              @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime              @updatedAt @db.Timestamptz(3)
+  memberships  MinistryMembership[]
+  joinRequests MinistryJoinRequest[]
+  events       Event[]
+  chapelId     String?
+  chapel       Chapel?               @relation(fields: [chapelId], references: [id], onDelete: Restrict)
 
   @@map("ministry")
 }
@@ -722,4 +729,82 @@ model Chapel {
 
   @@index([status])
   @@map("chapel")
+}
+
+// ───── Participación desde el portal del miembro ─────
+
+enum RsvpResponse {
+  GOING
+  MAYBE
+  NOT_GOING
+}
+
+/// Confirmación de asistencia de un miembro a un evento (no sustituye el registro de asistencia).
+model EventRsvp {
+  eventId   String
+  memberId  String
+  response  RsvpResponse
+  updatedAt DateTime     @updatedAt @db.Timestamptz(3)
+  event     Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  member    Member       @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, memberId])
+  @@index([memberId])
+  @@map("event_rsvp")
+}
+
+enum PrayerStatus {
+  OPEN
+  PRAYING
+  ANSWERED
+  CLOSED
+}
+
+/// Petición de oración. Solo la ven el propio miembro y quienes tienen prayer:read (pastoral).
+model PrayerRequest {
+  id             String       @id @default(cuid())
+  memberId       String
+  subject        String       @db.VarChar(120)
+  body           String       @db.VarChar(2000)
+  /// true = solo el equipo pastoral; false = puede compartirse con el equipo de oración (sin datos de contacto).
+  isConfidential Boolean      @default(true)
+  status         PrayerStatus @default(OPEN)
+  pastoralNote   String?      @db.VarChar(1000)
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime     @updatedAt @db.Timestamptz(3)
+  closedAt       DateTime?    @db.Timestamptz(3)
+  handledById    String?
+  member         Member       @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  handledBy      User?        @relation("PrayerHandledBy", fields: [handledById], references: [id], onDelete: SetNull)
+
+  @@index([memberId, createdAt])
+  @@index([status, createdAt])
+  @@map("prayer_request")
+}
+
+enum JoinRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+/// Solicitud de un miembro para unirse a un ministerio; la resuelve quien gestiona sus integrantes.
+model MinistryJoinRequest {
+  id           String            @id @default(cuid())
+  ministryId   String
+  memberId     String
+  message      String?           @db.VarChar(500)
+  status       JoinRequestStatus @default(PENDING)
+  responseNote String?           @db.VarChar(500)
+  createdAt    DateTime          @default(now()) @db.Timestamptz(3)
+  reviewedAt   DateTime?         @db.Timestamptz(3)
+  reviewedById String?
+  ministry     Ministry          @relation(fields: [ministryId], references: [id], onDelete: Cascade)
+  member       Member            @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  reviewedBy   User?             @relation("JoinRequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([ministryId, status])
+  @@index([memberId])
+  @@map("ministry_join_request")
 }
