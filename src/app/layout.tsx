@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: { default: "Gestión de iglesia", template: "%s · Gestión de iglesia" },
-  description: "Sistema de gestión y administración de la iglesia.",
+  title: { default: "Eclaria", template: "%s · Eclaria" },
+  description: "Gestión integral de iglesias.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
