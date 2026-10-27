@@ -1,63 +1,86 @@
-# Eclaria · Iglesia Management System
+# Eclaria · Gestión integral de iglesias
 
-Sistema integral de gestión multidenominacional de iglesias: sitio público institucional y panel administrativo privado (miembros, asistencia, eventos, ministerios, aportaciones, comunicados, reportes y configuración). Preparado para una futura app móvil (React Native + Expo).
+Sistema multidenominacional para administrar una iglesia y su red de capillas: sitio público, panel administrativo, portal del miembro y app para Android e iOS, todo sobre la misma base.
 
-> **Estado:** sitio público y los 10 módulos administrativos (RF-01 a RF-10) implementados y probados localmente. Pendiente: estabilización, despliegue (requiere autorización) y preparación móvil.
-
-## Qué incluye
-- **Sitio público:** inicio, nosotros, horarios, eventos, comunicados, contacto, confesiones confidenciales y aviso de privacidad, editables desde el panel.
-- **Panel `/admin`:** inicio con indicadores, miembros, ministerios, eventos y calendario, asistencia, tesorería, comunicados, confesiones, reportes (PDF/Excel), usuarios y roles, configuración.
-- **Ofrendas y gastos:** los miembros pueden reportar una entrega ya realizada; tesorería la valida antes de sumarla a ingresos. Los egresos se registran y anulan con trazabilidad; la tesorería muestra cortes semanales.
-- **Tema claro/oscuro:** selector manual disponible en el sitio público, el portal y el panel; la preferencia queda guardada en el navegador.
-- **Bienvenida animada:** una paloma vuela sobre un libro que se abre; puede omitirse y respeta la preferencia de movimiento reducido del dispositivo.
-- **Marca Eclaria:** identidad vectorial para el sitio, los paneles y el ícono de la app instalable; el nombre de la congregación se puede personalizar desde Configuración.
-- **Confesiones:** solicitud pendiente de cita en la iglesia principal o una capilla, mensajes anónimos cifrados y acceso sacerdotal.
-- Permisos por rol aplicados en el servidor (ver [docs/permisos.md](docs/permisos.md)).
-
-## Multiplataforma (PC, Android, iPhone)
-- Diseño adaptable: menú lateral en PC, barra de navegación inferior y menú deslizable en celular, tablas convertidas en tarjetas en pantallas pequeñas.
-- **App instalable (PWA):** en Android y en Chrome/Edge de PC aparece el botón **"Instalar app"** (pie del sitio) o la opción del navegador; en iPhone: Compartir → *Agregar a inicio*. Se abre a pantalla completa con ícono propio.
-- Sin conexión muestra una página de aviso; no se guardan datos personales en el dispositivo.
+> Repositorio **privado**. No subas `.env`, contraseñas, llaves ni datos reales de la congregación.
 
 ## Apartados
+
 | Apartado | Ruta | Para quién |
 |---|---|---|
-| Sitio público | `/` | Visitantes (sin cuenta) |
-| Portal del miembro | `/mi-cuenta` | Miembros con cuenta (solo sus propios datos) |
+| Sitio público | `/` | Visitantes, sin cuenta: inicio, nosotros, horarios, eventos, ministerios, comunicados, contacto, confesiones y privacidad |
 | Panel administrativo | `/admin` | Personal según su rol |
+| Portal del miembro | `/mi-cuenta` | Miembros con cuenta: solo sus propios datos |
+| App móvil | `android/`, `ios/` | La misma plataforma dentro de una app nativa (Capacitor) |
+
+**Panel:** inicio con indicadores, capillas, miembros, seguimiento pastoral, peticiones de oración, confesiones, ministerios, eventos y asistencia, tesorería (ofrendas, validación, gastos), comunicados, reportes PDF/Excel, iglesias y franquicias, usuarios y roles, bitácora y configuración.
+
+**Portal del miembro:** agenda con confirmación de asistencia y descarga al calendario, ministerios (solicitar unirse), oración, aportaciones con constancia anual en PDF, asistencia con rachas y descarga de "mis datos" (derecho de acceso LFPDPPP).
+
+**Confesiones:** cita en la iglesia o una capilla y mensaje anónimo; todo se cifra (AES-256-GCM) y solo el rol Sacerdote lo lee.
+
+Los permisos se comprueban en el servidor; ver [docs/permisos.md](docs/permisos.md).
 
 ## Inicio rápido
+
+Requisitos: Node 22 o superior, pnpm 11 y PostgreSQL 17 (ver [docs/instalacion.md](docs/instalacion.md)).
+
 ```bash
+cp .env.example .env    # y completa los valores (genera tus propias claves)
 pnpm install
-pnpm db:migrate
-pnpm db:seed          # roles, permisos y catálogos
-pnpm setup:admin      # primer administrador
-pnpm db:seed:demo     # opcional: datos ficticios de demostración
-pnpm dev
+pnpm db:deploy          # aplica las migraciones
+pnpm db:seed            # roles, permisos y catálogos
+pnpm setup:admin        # primer administrador
+pnpm db:seed:demo       # opcional: datos ficticios de demostración
+pnpm dev                # http://localhost:3000
 ```
 
-## Stack
-Next.js 16 (App Router) · TypeScript · Tailwind CSS 4 · PostgreSQL 17 · Prisma 7 · Better Auth · Zod · Vitest · Playwright · GitHub Actions.
+## Comandos
 
-## Documentación
-| Documento | Contenido |
+| Comando | Para qué |
 |---|---|
-| [docs/investigacion.md](docs/investigacion.md) | Procesos de iglesias, referencias, marco legal México |
-| [docs/requisitos.md](docs/requisitos.md) | RF-01…RF-11, RNF, pendientes de validar |
-| [docs/arquitectura.md](docs/arquitectura.md) | Arquitectura y estructura de carpetas |
-| [docs/modelo-datos.md](docs/modelo-datos.md) | Entidades, relaciones y reglas |
-| [docs/permisos.md](docs/permisos.md) | Matriz de roles y permisos |
-| [docs/plan-desarrollo.md](docs/plan-desarrollo.md) | Fases y criterios de aceptación |
-| [docs/decisiones-tecnicas.md](docs/decisiones-tecnicas.md) | ADRs |
-| [docs/analisis-alojamiento.md](docs/analisis-alojamiento.md) | Comparación de hosting y recomendación |
-| [docs/seguridad.md](docs/seguridad.md) | Controles de seguridad y privacidad |
-| [docs/instalacion.md](docs/instalacion.md) | Instalación local |
-| [docs/pruebas.md](docs/pruebas.md) | Estrategia y registro de pruebas |
-| [docs/despliegue.md](docs/despliegue.md) | Despliegue y respaldos |
+| `pnpm dev` | Servidor de desarrollo |
+| `pnpm build` / `pnpm start` | Compilación y servidor de producción |
+| `pnpm lint` · `pnpm typecheck` | Estilo y tipos |
+| `pnpm check:unused` | Archivos, exports y dependencias sin uso (knip) |
+| `pnpm test` · `pnpm test:e2e` | Pruebas unitarias/integración (Vitest) y de punta a punta (Playwright) |
+| `pnpm db:migrate` | Crear una migración nueva en desarrollo |
+| `pnpm db:deploy` · `pnpm db:seed` | Aplicar migraciones y datos base |
+| `pnpm mobile:apk` | APK de prueba de Android ([docs/movil.md](docs/movil.md)) |
 
-## Instalación
-Ver [docs/instalacion.md](docs/instalacion.md).
+Antes de compilar (`pnpm build`) detén `pnpm dev`: ambos usan la carpeta `.next`.
 
-## Reglas del repositorio
-- Repositorio **privado**. No subir `.env`, secretos ni datos reales de la congregación.
-- Ramas `feat/*`, `fix/*`, `docs/*`; integración a `main` por pull request.
+## Estructura de carpetas
+
+```
+.
+├── src/
+│   ├── app/                 Páginas y rutas (Next.js App Router)
+│   │   ├── (public)/        Sitio público
+│   │   ├── (auth)/          Inicio de sesión y recuperación de contraseña
+│   │   ├── admin/           Panel administrativo (un folder por apartado)
+│   │   ├── mi-cuenta/       Portal del miembro
+│   │   └── api/v1/          API REST (mismos permisos que el panel)
+│   ├── modules/             Lógica de negocio por tema: service.ts (reglas y permisos) y schema.ts (validación)
+│   ├── components/          Componentes de interfaz compartidos (ui/ = botones, campos, tarjetas)
+│   ├── lib/                 Utilidades: autenticación, permisos, fechas, dinero, errores, bitácora
+│   └── generated/           Cliente de Prisma (se genera; no se edita ni se sube)
+├── prisma/                  Esquema de la base de datos, migraciones y datos iniciales (seed)
+├── tests/                   Pruebas unitarias e integración (Vitest)
+├── e2e/                     Pruebas de punta a punta (Playwright)
+├── docs/                    Documentación del proyecto (índice en docs/README.md)
+├── public/                  Logotipo, íconos y service worker
+├── android/ · ios/          Proyectos nativos de la app (Capacitor)
+├── mobile/www/              Pantalla "sin conexión" incluida en la app
+├── scripts/                 Primer administrador, íconos móviles y verificación completa
+├── dataconnect/             Configuración de la base de datos en Firebase
+└── .github/                 CI, Dependabot y plantillas de PR e issues
+```
+
+## Cómo colaborar
+
+Todo cambio entra a `main` por pull request y con el CI en verde. El flujo completo está en [CONTRIBUTING.md](CONTRIBUTING.md); el historial de cambios, en [CHANGELOG.md](CHANGELOG.md).
+
+## Stack
+
+Next.js 16 (App Router, Cache Components) · React 19 · TypeScript · Tailwind CSS 4 · PostgreSQL 17 · Prisma 7 · Better Auth · Zod · Capacitor 8 · Vitest · Playwright · GitHub Actions.
