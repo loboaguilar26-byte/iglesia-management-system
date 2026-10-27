@@ -23,6 +23,7 @@ export const ENTITY_LABEL: Record<string, string> = {
   PaymentMethod: "Método de pago",
   Report: "Reporte",
   Chapel: "Capilla",
+  Church: "Iglesia",
 };
 
 const ACTION_LABEL: Record<string, string> = {
