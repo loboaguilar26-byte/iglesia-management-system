@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Inter } from "next/font/google";
+import { NativeBridge } from "@/components/native-bridge";
 import { ServiceWorkerRegister } from "@/components/pwa";
 import "./globals.css";
 
@@ -44,6 +45,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col font-sans">
         {children}
         <ServiceWorkerRegister />
+        <NativeBridge />
       </body>
     </html>
   );

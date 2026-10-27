@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 
-const SIZES = new Set([192, 512]);
+// 1024: imagen base para generar los íconos y la pantalla de inicio de la app móvil.
+const SIZES = new Set([192, 512, 1024]);
 
 /**
  * Ícono de la app instalable (Android/PC) con la marca IgleTech.

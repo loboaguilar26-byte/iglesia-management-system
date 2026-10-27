@@ -5,6 +5,11 @@ const nextConfig: NextConfig = {
   partialPrefetching: true,
   // Bibliotecas de Node que leen sus propios archivos (fuentes de PDF): no se empaquetan.
   serverExternalPackages: ["pdfkit", "exceljs"],
+  // En desarrollo, permite abrir el sitio desde la app móvil por la red local (ver docs/movil.md).
+  allowedDevOrigins: (process.env.AUTH_TRUSTED_ORIGINS ?? "")
+    .split(",")
+    .map((o) => o.trim().replace(/^https?:\/\//, "").replace(/:\d+$/, ""))
+    .filter(Boolean),
   experimental: {
     // Permite subir el logotipo (máx. 1 MB) mediante Server Actions.
     serverActions: { bodySizeLimit: "2mb" },

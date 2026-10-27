@@ -14,6 +14,9 @@ function listFromEnv(value: string | undefined) {
 export const auth = betterAuth({
   appName: "IgleTech",
   database: prismaAdapter(db, { provider: "postgresql" }),
+  // Orígenes adicionales a BETTER_AUTH_URL (p. ej., la IP de la PC en la red local para probar
+  // la app móvil). Lista separada por comas; vacío = solo BETTER_AUTH_URL.
+  trustedOrigins: listFromEnv(process.env.AUTH_TRUSTED_ORIGINS),
   emailAndPassword: {
     enabled: true,
     // No hay registro público: los usuarios los crea un administrador.
