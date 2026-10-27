@@ -12,7 +12,7 @@ Formato: decisión · alternativas evaluadas · motivo. Estado: **Aceptada** sal
 
 ## ADR-003 Autenticación con Better Auth
 - Alternativas: Auth.js (NextAuth) — su proveedor de credenciales está desaconsejado por los propios autores y no trae recuperación de contraseña; Lucia — descontinuado como biblioteca; Clerk/Auth0 — servicios externos de pago y datos fuera de nuestro control.
-- Motivo: Better Auth incluye correo+contraseña, hash seguro, recuperación con tokens de un uso, sesiones en BD revocables, rate limiting configurable con almacenamiento en BD y soporte para clientes móviles (Expo/bearer). Se auto-aloja: los datos quedan en nuestra BD.
+- Motivo: Better Auth incluye correo+contraseña, hash seguro, recuperación con tokens de un uso, sesiones en BD revocables, rate limiting configurable con almacenamiento en BD y soporte para clientes móviles por token (bearer) si se necesitaran. Se auto-aloja: los datos quedan en nuestra BD.
 - Condición: fijar versión ≥ la que corrige CVE-2026-45364 (evasión de rate limit con IPv6) y revisar avisos de seguridad en cada actualización.
 
 ## ADR-004 Validación con Zod
@@ -53,3 +53,10 @@ Formato: decisión · alternativas evaluadas · motivo. Estado: **Aceptada** sal
 
 ## ADR-015 IP del cliente para límite de intentos
 - Better Auth no confía en encabezados de proxy por defecto (no se puede falsificar la IP), pero sin IP usa un contador compartido por ruta: detrás de un proxy, todos los usuarios compartirían el límite de 5 intentos/min. En producción se debe definir `AUTH_IP_HEADERS` (y `AUTH_TRUSTED_PROXIES` si hay cadena de proxies) según el proveedor. Ver `despliegue.md`.
+
+## ADR-016 App móvil con Capacitor
+- En lugar de una app nativa separada (React Native/Expo), Android e iOS usan **Capacitor 8**: un contenedor nativo que abre la plataforma web. Un solo código para web, panel, portal y app; cada mejora llega a la app sin publicar otra versión.
+- Consecuencias: la app necesita el sistema publicado con HTTPS (en red local se permite HTTP solo para pruebas); comparte la sesión por cookie; iOS se compila en una Mac. Detalles en `movil.md`.
+
+## ADR-017 Política de contenido (CSP)
+- `script-src` permite `'unsafe-inline'` (scripts en línea de Next y el ajuste de tema) y, **solo en desarrollo**, `'unsafe-eval'` para la recarga en caliente. Mejora futura: nonces por petición para quitar `'unsafe-inline'`.

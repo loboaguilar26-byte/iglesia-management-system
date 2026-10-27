@@ -83,7 +83,7 @@
 | RNF-04 Usabilidad | Español, `dd/mm/aaaa`, MXN, responsive, teclado, contraste AA, estados de carga/vacío/error, confirmación en acciones delicadas. |
 | RNF-05 Rendimiento | Listados paginados (25 por página por defecto); índices en búsquedas; respuesta < 500 ms p95 con 5 000 miembros (supuesto). |
 | RNF-06 Mantenibilidad | TypeScript estricto, módulos por dominio, lint + typecheck + tests en CI. |
-| RNF-07 Portabilidad móvil | API REST `/api/v1` con OpenAPI; auth por bearer token para clientes móviles. |
+| RNF-07 Portabilidad móvil | Diseño adaptable y app Android/iOS con Capacitor sobre la misma web (`docs/movil.md`); API REST `/api/v1` para integraciones. |
 | RNF-08 Disponibilidad | Respaldos diarios de BD; procedimiento de restauración documentado. |
 
 ## Pendientes de validación con la iglesia [P]
