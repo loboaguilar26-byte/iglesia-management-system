@@ -11,11 +11,11 @@ const IMAGE_TYPES = [
   { ext: "webp", mime: "image/webp", magic: [0x52, 0x49, 0x46, 0x46], extra: { offset: 8, bytes: [0x57, 0x45, 0x42, 0x50] } },
 ] as const;
 
-export const MAX_IMAGE_BYTES = 1024 * 1024;
+const MAX_IMAGE_BYTES = 1024 * 1024;
 const NAME_PATTERN = /^[\w-]+\.(png|jpg|webp)$/;
 
 /** Detecta el tipo real por su firma (no por la extensión ni el tipo declarado). */
-export function detectImage(bytes: Uint8Array) {
+function detectImage(bytes: Uint8Array) {
   return IMAGE_TYPES.find(
     (t) =>
       t.magic.every((b, i) => bytes[i] === b) &&

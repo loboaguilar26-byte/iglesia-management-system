@@ -11,7 +11,7 @@ import { assertChapelAssignable } from "../chapels/service";
 
 const bool = z.preprocess((v) => v === "on" || v === true || v === "true", z.boolean());
 
-export const donationSchema = z
+const donationSchema = z
   .object({
     receivedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha inválida"),
     amount: z.string().trim().min(1, "Escribe el monto"),
@@ -27,7 +27,7 @@ export const donationSchema = z
 
 const reasonSchema = z.object({ reason: z.string().trim().min(5, "Describe el motivo (mín. 5 caracteres)").max(500) });
 
-export const filterSchema = z.object({
+const filterSchema = z.object({
   from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   conceptId: z.string().optional(),

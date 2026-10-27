@@ -7,7 +7,7 @@ export type ErrorCode =
   | "RATE_LIMITED"
   | "INTERNAL";
 
-export const HTTP_STATUS: Record<ErrorCode, number> = {
+const HTTP_STATUS: Record<ErrorCode, number> = {
   UNAUTHENTICATED: 401,
   FORBIDDEN: 403,
   NOT_FOUND: 404,

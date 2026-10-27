@@ -9,7 +9,7 @@ import { formatMoney } from "@/lib/money";
 import { parseInput } from "@/lib/validation";
 import type { Report } from "@/modules/reports/service";
 import { getSettingsInternal } from "@/modules/settings/service";
-import { coordinatedMinistryIds, requireMinistryScope } from "../scope";
+import { requireMinistryScope } from "../scope";
 
 /*
  * Funciones del portal que el miembro usa por sí mismo (agenda, ministerios, oración,
@@ -121,7 +121,7 @@ export async function myEventIcs(actor: Actor | null, eventId: string) {
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     "BEGIN:VEVENT",
-    `UID:${e.id}@igletech`,
+    `UID:${e.id}@eclaria`,
     `DTSTAMP:${icsDate(e.updatedAt)}`,
     `DTSTART:${icsDate(e.startsAt)}`,
     `DTEND:${icsDate(e.endsAt)}`,
@@ -205,16 +205,6 @@ export async function pendingJoinRequests(actor: Actor | null, ministryId: strin
     orderBy: { createdAt: "asc" },
     select: { id: true, message: true, createdAt: true, member: { select: { id: true, firstName: true, lastName: true, status: true } } },
   });
-}
-
-/** Total de solicitudes pendientes en los ministerios que el actor puede gestionar. */
-export async function pendingJoinRequestCount(actor: Actor) {
-  if (!canFully(actor, "ministries:manage_members")) {
-    const ids = await coordinatedMinistryIds(actor);
-    if (!ids.length) return 0;
-    return db.ministryJoinRequest.count({ where: { status: "PENDING", ministryId: { in: ids } } });
-  }
-  return db.ministryJoinRequest.count({ where: { status: "PENDING" } });
 }
 
 const reviewSchema = z.object({
