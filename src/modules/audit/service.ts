@@ -22,6 +22,7 @@ export const ENTITY_LABEL: Record<string, string> = {
   DonationConcept: "Concepto",
   PaymentMethod: "Método de pago",
   Report: "Reporte",
+  Chapel: "Capilla",
 };
 
 const ACTION_LABEL: Record<string, string> = {
@@ -33,6 +34,7 @@ const ACTION_LABEL: Record<string, string> = {
   cancel: "canceló",
   publish: "publicó",
   archived: "archivó",
+  archive: "archivó",
   published: "publicó",
   activate: "activó",
   deactivate: "desactivó",

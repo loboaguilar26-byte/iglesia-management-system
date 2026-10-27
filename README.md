@@ -1,4 +1,4 @@
-# Iglesia Management System
+# IgleTech · Iglesia Management System
 
 Sistema integral de gestión multidenominacional de iglesias: sitio público institucional y panel administrativo privado (miembros, asistencia, eventos, ministerios, aportaciones, comunicados, reportes y configuración). Preparado para una futura app móvil (React Native + Expo).
 
@@ -10,6 +10,7 @@ Sistema integral de gestión multidenominacional de iglesias: sitio público ins
 - **Ofrendas y gastos:** los miembros pueden reportar una entrega ya realizada; tesorería la valida antes de sumarla a ingresos. Los egresos se registran y anulan con trazabilidad; la tesorería muestra cortes semanales.
 - **Tema claro/oscuro:** selector manual disponible en el sitio público, el portal y el panel; la preferencia queda guardada en el navegador.
 - **Bienvenida animada:** una Biblia se abre al entrar por primera vez a la portada en cada pestaña; puede omitirse y respeta la preferencia de movimiento reducido del dispositivo.
+- **Marca IgleTech:** identidad vectorial propia para el sitio, los paneles y el ícono de la app instalable; el nombre de la congregación se puede personalizar desde Configuración.
 - Permisos por rol aplicados en el servidor (ver [docs/permisos.md](docs/permisos.md)).
 
 ## Multiplataforma (PC, Android, iPhone)

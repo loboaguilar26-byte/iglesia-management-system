@@ -9,6 +9,7 @@ import { formatDateOnly } from "@/lib/dates";
 import { requirePageActor } from "@/lib/session";
 import { MEMBER_STATUSES, MEMBER_STATUS_LABEL } from "@/modules/members/schema";
 import { listMembers, memberStatusCounts } from "@/modules/members/service";
+import { chapelOptions } from "@/modules/chapels/service";
 import { statusTone } from "./status-tone";
 
 export const metadata: Metadata = { title: "Miembros" };
@@ -20,8 +21,9 @@ export default async function MembersPage({ searchParams }: PageProps<"/admin/mi
   const sp = await searchParams;
   const q = typeof sp.q === "string" ? sp.q : "";
   const status = typeof sp.estado === "string" ? sp.estado : "";
-  const [{ data, meta }, counts] = await Promise.all([listMembers(actor, { q, status, page: sp.page }), memberStatusCounts(actor)]);
-  const hrefFor = (p: number) => `/admin/miembros?${new URLSearchParams({ q, estado: status, page: String(p) })}`;
+  const chapel = typeof sp.capilla === "string" ? sp.capilla : "";
+  const [{ data, meta }, counts, chapels] = await Promise.all([listMembers(actor, { q, status, chapelId: chapel || undefined, page: sp.page }), memberStatusCounts(actor), can(actor, "chapels:read") ? chapelOptions() : Promise.resolve([])]);
+  const hrefFor = (p: number) => `/admin/miembros?${new URLSearchParams({ q, estado: status, ...(chapel ? { capilla: chapel } : {}), page: String(p) })}`;
   const tabs = [
     { value: "", label: "Todos", count: counts.total },
     { value: "ACTIVE", label: "Activos", count: counts.ACTIVE },
@@ -57,6 +59,16 @@ export default async function MembersPage({ searchParams }: PageProps<"/admin/mi
           <option value="">Todos los estados</option>
           {MEMBER_STATUSES.map((s) => <option key={s} value={s}>{MEMBER_STATUS_LABEL[s]}</option>)}
         </select>
+        {chapels.length ? (
+          <>
+            <label htmlFor="capilla" className="sr-only">Capilla</label>
+            <select id="capilla" name="capilla" defaultValue={chapel} className="min-h-10 rounded-lg border border-border bg-surface px-3">
+              <option value="">Todas las sedes</option>
+              <option value="principal">Sede principal</option>
+              {chapels.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </>
+        ) : null}
         <button className={buttonClass("secondary")} type="submit">Filtrar</button>
       </form>
       {data.length === 0 ? (

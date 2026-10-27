@@ -55,6 +55,9 @@ export const PERMISSIONS = {
   "audit:read": "Consultar bitácora de auditoría (no financiera)",
   "audit:read_finance": "Consultar bitácora de auditoría financiera",
 
+  "chapels:read": "Consultar capillas (sedes) y sus indicadores",
+  "chapels:manage": "Dar de alta, editar, desactivar y archivar capillas",
+
   "followup:read": "Consultar el seguimiento pastoral de visitantes y miembros",
   "followup:write": "Registrar contactos de seguimiento",
 
@@ -74,6 +77,8 @@ export const ROLES: Record<RoleKey, { name: string; description: string; permiss
     name: "Administrador",
     description: "Administra usuarios, roles y configuración. Sin acceso financiero por defecto.",
     permissions: [
+      "chapels:read",
+      "chapels:manage",
       ...all("users:"),
       "roles:assign",
       ...all("members:").filter((p) => p !== "members:read_notes"),
@@ -93,6 +98,7 @@ export const ROLES: Record<RoleKey, { name: string; description: string; permiss
     name: "Pastor",
     description: "Supervisa la congregación, eventos y ministerios.",
     permissions: [
+      "chapels:read",
       "users:read",
       "members:read",
       "members:read_notes",
@@ -111,6 +117,7 @@ export const ROLES: Record<RoleKey, { name: string; description: string; permiss
     name: "Secretario",
     description: "Gestiona el directorio, la asistencia, los eventos y los comunicados.",
     permissions: [
+      "chapels:read",
       ...all("members:").filter((p) => p !== "members:read_notes"),
       ...all("attendance:"),
       ...all("events:"),
@@ -127,6 +134,7 @@ export const ROLES: Record<RoleKey, { name: string; description: string; permiss
     name: "Tesorero",
     description: "Registra y reporta las aportaciones económicas.",
     permissions: [
+      "chapels:read",
       ...all("finance:"),
       "reports:finance",
       "audit:read_finance",

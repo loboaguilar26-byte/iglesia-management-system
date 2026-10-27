@@ -7,6 +7,7 @@ import { AppError } from "@/lib/errors";
 import { parseAmount } from "@/lib/money";
 import { parseInput } from "@/lib/validation";
 import type { Prisma } from "@/generated/prisma/client";
+import { assertChapelAssignable } from "../chapels/service";
 
 const bool = z.preprocess((v) => v === "on" || v === true || v === "true", z.boolean());
 
@@ -20,6 +21,7 @@ export const donationSchema = z
     memberId: z.string().optional().transform((v) => (v ? v : null)),
     reference: z.string().trim().max(80).optional().transform((v) => (v ? v : null)),
     notes: z.string().trim().max(500).optional().transform((v) => (v ? v : null)),
+    chapelId: z.string().optional().transform((v) => (v ? v : null)),
   })
   .refine((d) => d.anonymous || d.memberId, { message: "Selecciona a la persona o marca la aportación como anónima", path: ["memberId"] });
 
@@ -30,6 +32,8 @@ export const filterSchema = z.object({
   to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   conceptId: z.string().optional(),
   methodId: z.string().optional(),
+  /** "principal" = sede principal (sin capilla). */
+  chapelId: z.string().optional(),
   includeVoided: bool.optional(),
   page: z.coerce.number().int().min(1).default(1),
 });
@@ -70,6 +74,7 @@ async function toData(input: unknown) {
   ]);
   if (!concept) throw new AppError("VALIDATION_ERROR", undefined, { conceptId: ["Concepto inválido"] });
   if (!method) throw new AppError("VALIDATION_ERROR", undefined, { methodId: ["Método inválido"] });
+  await assertChapelAssignable(db, d.chapelId);
   const settings = await db.churchSettings.findUnique({ where: { id: "default" }, select: { currency: true } });
   return {
     receivedAt,
@@ -81,6 +86,7 @@ async function toData(input: unknown) {
     memberId: d.anonymous ? null : d.memberId,
     reference: d.reference,
     notes: d.notes,
+    chapelId: d.chapelId,
   };
 }
 
@@ -89,6 +95,7 @@ function periodWhere(f: z.infer<typeof filterSchema>): Prisma.DonationWhereInput
     receivedAt: { gte: dateOnly(f.from), lte: dateOnly(f.to) },
     ...(f.conceptId ? { conceptId: f.conceptId } : {}),
     ...(f.methodId ? { methodId: f.methodId } : {}),
+    ...(f.chapelId ? { chapelId: f.chapelId === "principal" ? null : f.chapelId } : {}),
   };
 }
 

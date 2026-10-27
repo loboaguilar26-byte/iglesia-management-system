@@ -31,18 +31,19 @@ model User {
   member   Member? @relation(fields: [memberId], references: [id])
   memberId String? @unique
 
-  membersCreated        Member[]         @relation("MemberCreatedBy")
-  membersUpdated        Member[]         @relation("MemberUpdatedBy")
-  attendanceRecorded    Attendance[]
-  donationsCreated      Donation[]       @relation("DonationCreatedBy")
-  donationsVoided       Donation[]       @relation("DonationVoidedBy")
-  givingReportsSubmitted GivingReport[]  @relation("GivingReportSubmitter")
-  givingReportsReviewed  GivingReport[]  @relation("GivingReportReviewer")
-  expensesCreated        Expense[]       @relation("ExpenseCreatedBy")
-  expensesVoided         Expense[]       @relation("ExpenseVoidedBy")
-  announcements         Announcement[]
-  churchSettingsUpdated ChurchSettings[]
-  followUps             FollowUp[]
+  membersCreated         Member[]         @relation("MemberCreatedBy")
+  membersUpdated         Member[]         @relation("MemberUpdatedBy")
+  attendanceRecorded     Attendance[]
+  donationsCreated       Donation[]       @relation("DonationCreatedBy")
+  donationsVoided        Donation[]       @relation("DonationVoidedBy")
+  givingReportsSubmitted GivingReport[]   @relation("GivingReportSubmitter")
+  givingReportsReviewed  GivingReport[]   @relation("GivingReportReviewer")
+  expensesCreated        Expense[]        @relation("ExpenseCreatedBy")
+  expensesVoided         Expense[]        @relation("ExpenseVoidedBy")
+  announcements          Announcement[]
+  churchSettingsUpdated  ChurchSettings[]
+  followUps              FollowUp[]
+  chapelsManaged         Chapel[]         @relation("ChapelManagerUser")
 
   @@map("user")
 }
@@ -188,6 +189,9 @@ model Member {
   donations           Donation[]
   givingReports       GivingReport[]
   followUps           FollowUp[]
+  chapelId            String?
+  chapel              Chapel?              @relation(fields: [chapelId], references: [id], onDelete: Restrict)
+  chapelsLed          Chapel[]             @relation("ChapelManagerMember")
 
   @@index([searchName])
   @@index([status])
@@ -236,6 +240,8 @@ model Event {
 
   attendances  Attendance[]
   responsibles EventResponsible[]
+  chapelId     String?
+  chapel       Chapel?            @relation(fields: [chapelId], references: [id], onDelete: Restrict)
 
   @@index([startsAt])
   @@index([visibility, status, startsAt])
@@ -292,6 +298,8 @@ model Ministry {
   updatedAt   DateTime             @updatedAt @db.Timestamptz(3)
   memberships MinistryMembership[]
   events      Event[]
+  chapelId    String?
+  chapel      Chapel?              @relation(fields: [chapelId], references: [id], onDelete: Restrict)
 
   @@map("ministry")
 }
@@ -315,9 +323,9 @@ model MinistryMembership {
 // ───────────────────────── Finanzas ─────────────────────────
 
 model DonationConcept {
-  id        String     @id @default(cuid())
-  name      String     @unique
-  isActive  Boolean    @default(true)
+  id        String         @id @default(cuid())
+  name      String         @unique
+  isActive  Boolean        @default(true)
   donations Donation[]
   reports   GivingReport[]
 
@@ -325,9 +333,9 @@ model DonationConcept {
 }
 
 model PaymentMethod {
-  id        String     @id @default(cuid())
-  name      String     @unique
-  isActive  Boolean    @default(true)
+  id        String         @id @default(cuid())
+  name      String         @unique
+  isActive  Boolean        @default(true)
   donations Donation[]
   reports   GivingReport[]
 
@@ -346,32 +354,35 @@ enum GivingReportStatus {
 }
 
 model Donation {
-  id          String          @id @default(cuid())
-  receivedAt  DateTime        @db.Date
+  id           String          @id @default(cuid())
+  receivedAt   DateTime        @db.Date
   /// CHECK (amount > 0) en SQL.
-  amount      Decimal         @db.Decimal(12, 2)
-  currency    String          @default("MXN") @db.Char(3)
-  conceptId   String
-  methodId    String
+  amount       Decimal         @db.Decimal(12, 2)
+  currency     String          @default("MXN") @db.Char(3)
+  conceptId    String
+  methodId     String
   /// null = aportación anónima.
-  memberId    String?
-  reference   String?
-  notes       String?
-  status      DonationStatus  @default(VALID)
-  voidedAt    DateTime?       @db.Timestamptz(3)
-  voidedById  String?
-  voidReason  String?
+  memberId     String?
+  reference    String?
+  notes        String?
+  status       DonationStatus  @default(VALID)
+  voidedAt     DateTime?       @db.Timestamptz(3)
+  voidedById   String?
+  voidReason   String?
   /// Registro anulado al que esta aportación corrige.
-  correctsId  String?         @unique
-  createdById String
-  createdAt   DateTime        @default(now()) @db.Timestamptz(3)
-  concept     DonationConcept @relation(fields: [conceptId], references: [id], onDelete: Restrict)
-  method      PaymentMethod   @relation(fields: [methodId], references: [id], onDelete: Restrict)
-  member      Member?         @relation(fields: [memberId], references: [id], onDelete: Restrict)
-  voidedBy    User?           @relation("DonationVoidedBy", fields: [voidedById], references: [id], onDelete: Restrict)
-  createdBy   User            @relation("DonationCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
-  corrects    Donation?       @relation("DonationCorrection", fields: [correctsId], references: [id], onDelete: Restrict)
-  correctedBy Donation?       @relation("DonationCorrection")
+  correctsId   String?         @unique
+  createdById  String
+  createdAt    DateTime        @default(now()) @db.Timestamptz(3)
+  concept      DonationConcept @relation(fields: [conceptId], references: [id], onDelete: Restrict)
+  method       PaymentMethod   @relation(fields: [methodId], references: [id], onDelete: Restrict)
+  member       Member?         @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  voidedBy     User?           @relation("DonationVoidedBy", fields: [voidedById], references: [id], onDelete: Restrict)
+  createdBy    User            @relation("DonationCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  corrects     Donation?       @relation("DonationCorrection", fields: [correctsId], references: [id], onDelete: Restrict)
+  correctedBy  Donation?       @relation("DonationCorrection")
+  /// Capilla que recibió la aportación (null = sede principal).
+  chapelId     String?
+  chapel       Chapel?         @relation(fields: [chapelId], references: [id], onDelete: Restrict)
   givingReport GivingReport?
 
   @@index([receivedAt])
@@ -382,28 +393,28 @@ model Donation {
 
 /// Ofrenda reportada por un miembro; solo se convierte en ingreso al ser aprobada por tesorería.
 model GivingReport {
-  id           String             @id @default(cuid())
-  receivedAt   DateTime           @db.Date
-  amount       Decimal            @db.Decimal(12, 2)
-  currency     String             @default("MXN") @db.Char(3)
-  conceptId    String
-  methodId     String
-  memberId     String
+  id            String             @id @default(cuid())
+  receivedAt    DateTime           @db.Date
+  amount        Decimal            @db.Decimal(12, 2)
+  currency      String             @default("MXN") @db.Char(3)
+  conceptId     String
+  methodId      String
+  memberId      String
   submittedById String
-  isAnonymous  Boolean            @default(false)
-  status       GivingReportStatus @default(PENDING)
-  reviewedAt   DateTime?          @db.Timestamptz(3)
-  reviewedById String?
-  reviewNote   String?
-  donationId   String?            @unique
-  createdAt    DateTime           @default(now()) @db.Timestamptz(3)
-  updatedAt    DateTime           @updatedAt @db.Timestamptz(3)
-  concept      DonationConcept    @relation(fields: [conceptId], references: [id], onDelete: Restrict)
-  method       PaymentMethod      @relation(fields: [methodId], references: [id], onDelete: Restrict)
-  member       Member             @relation(fields: [memberId], references: [id], onDelete: Restrict)
-  submittedBy  User               @relation("GivingReportSubmitter", fields: [submittedById], references: [id], onDelete: Restrict)
-  reviewedBy   User?              @relation("GivingReportReviewer", fields: [reviewedById], references: [id], onDelete: Restrict)
-  donation     Donation?          @relation(fields: [donationId], references: [id], onDelete: Restrict)
+  isAnonymous   Boolean            @default(false)
+  status        GivingReportStatus @default(PENDING)
+  reviewedAt    DateTime?          @db.Timestamptz(3)
+  reviewedById  String?
+  reviewNote    String?
+  donationId    String?            @unique
+  createdAt     DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime           @updatedAt @db.Timestamptz(3)
+  concept       DonationConcept    @relation(fields: [conceptId], references: [id], onDelete: Restrict)
+  method        PaymentMethod      @relation(fields: [methodId], references: [id], onDelete: Restrict)
+  member        Member             @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  submittedBy   User               @relation("GivingReportSubmitter", fields: [submittedById], references: [id], onDelete: Restrict)
+  reviewedBy    User?              @relation("GivingReportReviewer", fields: [reviewedById], references: [id], onDelete: Restrict)
+  donation      Donation?          @relation(fields: [donationId], references: [id], onDelete: Restrict)
 
   @@index([status, receivedAt])
   @@index([submittedById, createdAt])
@@ -575,4 +586,42 @@ model ServiceSchedule {
 
   @@index([dayOfWeek, startTime])
   @@map("service_schedule")
+}
+
+// ───────────────────────── Capillas (sedes) ─────────────────────────
+
+enum ChapelStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+/// Capilla o sede filial. Personas, eventos, ministerios y aportaciones pueden pertenecer a una capilla;
+/// sin capilla = sede principal. Nunca se borra: se desactiva o se archiva con motivo.
+model Chapel {
+  id              String       @id @default(cuid())
+  name            String       @unique
+  code            String       @unique @db.VarChar(12)
+  status          ChapelStatus @default(ACTIVE)
+  address         String?
+  phone           String?
+  email           String?
+  description     String?
+  openedOn        DateTime?    @db.Date
+  managerMemberId String?
+  managerUserId   String?
+  archivedAt      DateTime?    @db.Timestamptz(3)
+  statusReason    String?
+  createdAt       DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime     @updatedAt @db.Timestamptz(3)
+  managerMember   Member?      @relation("ChapelManagerMember", fields: [managerMemberId], references: [id], onDelete: SetNull)
+  managerUser     User?        @relation("ChapelManagerUser", fields: [managerUserId], references: [id], onDelete: SetNull)
+
+  members    Member[]
+  events     Event[]
+  ministries Ministry[]
+  donations  Donation[]
+
+  @@index([status])
+  @@map("chapel")
 }

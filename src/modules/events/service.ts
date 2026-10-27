@@ -7,6 +7,7 @@ import { parseInput } from "@/lib/validation";
 import type { Prisma } from "@/generated/prisma/client";
 import { coordinatedMinistryIds, eventScopeWhere, requireEventScope } from "../scope";
 import { getChurchTimezone } from "../settings/service";
+import { assertChapelAssignable } from "../chapels/service";
 import { cancelSchema, eventSchema } from "./schema";
 
 export async function listEventTypes() {
@@ -84,6 +85,7 @@ export async function createEvent(actor: Actor | null, input: unknown) {
   const a = requirePermission(actor, "events:create");
   const { responsibles, ...data } = await toData(input);
   await assertCanUseMinistry(a, data.ministryId);
+  await assertChapelAssignable(db, data.chapelId);
   return db.$transaction(async (tx) => {
     const event = await tx.event.create({
       data: { ...data, responsibles: { create: responsibles.map((memberId) => ({ memberId })) } },
@@ -97,7 +99,8 @@ export async function updateEvent(actor: Actor | null, id: string, input: unknow
   const a = await requireEventScope(actor, "events:update", id);
   const { responsibles, ...data } = await toData(input);
   if (!canFully(a, "events:update")) await assertCanUseMinistry(a, data.ministryId);
-  const before = await db.event.findUnique({ where: { id }, select: { status: true } });
+  const before = await db.event.findUnique({ where: { id }, select: { status: true, chapelId: true } });
+  await assertChapelAssignable(db, data.chapelId, before?.chapelId);
   if (before?.status === "CANCELLED") throw new AppError("CONFLICT", "Un evento cancelado no se puede editar.");
   await db.$transaction(async (tx) => {
     await tx.event.update({ where: { id }, data });

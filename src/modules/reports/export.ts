@@ -16,7 +16,7 @@ export async function toXlsx(report: Report): Promise<Uint8Array> {
   const head = ws.addRow(report.columns.map((c) => c.label));
   head.font = { bold: true, color: { argb: "FFFFFFFF" } };
   head.eachCell((cell) => {
-    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1A3253" } };
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF4A2B18" } };
   });
   for (const r of report.rows) ws.addRow(report.columns.map((c) => r[c.key] ?? ""));
   if (report.totals) {
@@ -44,7 +44,7 @@ export function toPdf(report: Report): Promise<Uint8Array> {
 
     const left = doc.page.margins.left;
     const width = doc.page.width - left - doc.page.margins.right;
-    doc.fillColor("#1a3253").font("Helvetica-Bold").fontSize(16).text(report.church);
+    doc.fillColor("#4a2b18").font("Helvetica-Bold").fontSize(16).text(report.church);
     doc.fillColor("#000").fontSize(13).text(report.title);
     doc.font("Helvetica").fontSize(9).fillColor("#555");
     if (report.period) doc.text(`Periodo: ${report.period}`);
@@ -67,9 +67,9 @@ export function toPdf(report: Report): Promise<Uint8Array> {
       doc.x = left;
       doc.y = y + h;
     };
-    drawRow(report.columns.map((c) => c.label), { bold: true, fill: "#1a3253", color: "#ffffff" });
-    report.rows.forEach((r, i) => drawRow(report.columns.map((c) => String(r[c.key] ?? "")), { fill: i % 2 ? "#f7f4ee" : undefined }));
-    if (report.totals) drawRow(report.columns.map((c) => String(report.totals![c.key] ?? "")), { bold: true, fill: "#f6ead3" });
+    drawRow(report.columns.map((c) => c.label), { bold: true, fill: "#4a2b18", color: "#ffffff" });
+    report.rows.forEach((r, i) => drawRow(report.columns.map((c) => String(r[c.key] ?? "")), { fill: i % 2 ? "#f8f3ec" : undefined }));
+    if (report.totals) drawRow(report.columns.map((c) => String(report.totals![c.key] ?? "")), { bold: true, fill: "#f4e5cc" });
     if (!report.rows.length) doc.moveDown().font("Helvetica-Oblique").text("Sin registros en el periodo.");
     doc.moveDown();
     doc.font("Helvetica-Oblique").fontSize(8).fillColor("#555");

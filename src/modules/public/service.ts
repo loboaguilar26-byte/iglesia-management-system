@@ -45,7 +45,7 @@ export async function getPublicSite() {
     }),
   ]);
   return {
-    settings: settings ?? { name: "Iglesia", tagline: null, welcomeText: null, firstVisitText: null, aboutText: null, mission: null, vision: null, valuesText: null, scheduleText: null, address: null, phone: null, email: null, whatsapp: null, mapUrl: null, facebookUrl: null, instagramUrl: null, youtubeUrl: null, privacyNotice: null, logoPath: null, timezone: "America/Mexico_City" },
+    settings: settings ?? { name: "IgleTech", tagline: null, welcomeText: null, firstVisitText: null, aboutText: null, mission: null, vision: null, valuesText: null, scheduleText: null, address: null, phone: null, email: null, whatsapp: null, mapUrl: null, facebookUrl: null, instagramUrl: null, youtubeUrl: null, privacyNotice: null, logoPath: null, timezone: "America/Mexico_City" },
     schedules,
   };
 }

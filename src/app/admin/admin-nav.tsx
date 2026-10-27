@@ -17,6 +17,7 @@ import {
   Wallet,
   ReceiptText,
   X,
+  Church,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -38,6 +39,7 @@ const ICONS: Record<NavIcon, typeof Users> = {
   settings: Settings,
   audit: History,
   followup: HeartHandshake,
+  chapels: Church,
 };
 
 function isActive(pathname: string, href: string) {

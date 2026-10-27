@@ -12,7 +12,7 @@ function listFromEnv(value: string | undefined) {
 }
 
 export const auth = betterAuth({
-  appName: "Gestión de Iglesia",
+  appName: "IgleTech",
   database: prismaAdapter(db, { provider: "postgresql" }),
   emailAndPassword: {
     enabled: true,

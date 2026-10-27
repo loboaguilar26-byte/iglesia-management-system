@@ -41,6 +41,7 @@ export const memberSchema = z.object({
     .refine((v) => !v || v <= new Date().toISOString().slice(0, 10), "No puede ser una fecha futura")
     .transform((v) => (v ? new Date(`${v}T00:00:00Z`) : null)),
   status: z.enum(MEMBER_STATUSES).default("ACTIVE"),
+  chapelId: z.string().optional().transform((v) => (v ? v : null)),
   position: optional(80),
   isMinor: bool,
   notes: optional(4000),
@@ -51,6 +52,8 @@ export type MemberInput = z.infer<typeof memberSchema>;
 export const listMembersSchema = z.object({
   q: z.string().trim().max(100).optional(),
   status: z.enum(MEMBER_STATUSES).or(z.literal("")).optional(),
+  /** "principal" = sin capilla (sede principal). */
+  chapelId: z.string().optional(),
   ministryId: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(25),

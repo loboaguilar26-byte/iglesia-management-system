@@ -1,3 +1,4 @@
+import { CountUp } from "@/components/count-up";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -33,7 +34,7 @@ export function Card({ title, description, children, className = "", actions }: 
   actions?: ReactNode;
 }) {
   return (
-    <section className={`rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-6 ${className}`}>
+    <section className={`rounded-2xl border border-border bg-surface p-5 shadow-sm transition-shadow duration-300 hover:shadow-md sm:p-6 ${className}`}>
       {title || actions ? (
         <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
           <div>
@@ -60,12 +61,13 @@ export function EmptyState({ title, description, action }: { title: string; desc
 
 export function StatCard({ label, value, detail, icon }: { label: string; value: ReactNode; detail?: ReactNode; icon?: ReactNode }) {
   return (
-    <div className="min-w-0 rounded-2xl border border-border bg-surface p-4 shadow-sm sm:p-5">
+    <div className="group relative min-w-0 overflow-hidden rounded-2xl border border-border bg-surface p-4 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md sm:p-5">
+      <span aria-hidden className="absolute inset-x-0 top-0 h-1 origin-left scale-x-0 bg-gradient-to-r from-accent to-primary transition-transform duration-500 group-hover:scale-x-100" />
       <div className="flex items-start justify-between gap-2">
         <p className="text-xs font-medium text-muted sm:text-sm">{label}</p>
-        {icon ? <span className="hidden rounded-lg bg-accent-soft p-2 text-accent sm:inline-flex">{icon}</span> : null}
+        {icon ? <span className="hidden rounded-lg bg-accent-soft p-2 text-accent transition duration-300 group-hover:rotate-6 group-hover:scale-110 sm:inline-flex">{icon}</span> : null}
       </div>
-      <p className="mt-1 truncate font-display text-xl font-semibold tabular-nums sm:mt-2 sm:text-3xl">{value}</p>
+      <p className="mt-1 truncate font-display text-xl font-semibold tabular-nums sm:mt-2 sm:text-3xl">{typeof value === "number" ? <CountUp value={value} /> : value}</p>
       {detail ? <p className="mt-1 line-clamp-3 text-[11px] leading-snug text-muted sm:text-xs">{detail}</p> : null}
     </div>
   );

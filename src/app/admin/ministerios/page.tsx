@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ChapelSelect } from "@/components/chapel-select";
 import { ActionForm, SubmitButton } from "@/components/ui/action-form";
 import { CheckboxField, Field, TextArea } from "@/components/ui/field";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/layout";
@@ -27,7 +28,7 @@ export default async function MinistriesPage() {
             const coordinators = m.memberships.filter((x) => x.role === "COORDINATOR");
             return (
               <li key={m.id}>
-                <Link href={`/admin/ministerios/${m.id}`} className="flex h-full flex-col gap-3 rounded-2xl border border-border bg-surface p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                <Link href={`/admin/ministerios/${m.id}`} className="flex h-full flex-col gap-3 rounded-2xl border border-border bg-surface p-5 shadow-sm lift">
                   <div className="flex items-start justify-between gap-2">
                     <h2 className="font-display text-xl font-semibold">{m.name}</h2>
                     <span className="flex gap-1">{m.isPublic ? <Badge tone="success">Público</Badge> : null}{m.isActive ? null : <Badge>Inactivo</Badge>}</span>
@@ -48,6 +49,7 @@ export default async function MinistriesPage() {
           <ActionForm action={createMinistryAction}>
             <Field label="Nombre" name="name" required placeholder="Alabanza y música" />
             <TextArea label="Descripción" name="description" rows={3} />
+            <ChapelSelect />
             <CheckboxField label="Mostrar en el sitio público" name="isPublic" hint="Solo se publican el nombre y la descripción, nunca los integrantes." />
             <SubmitButton>Crear ministerio</SubmitButton>
           </ActionForm>
