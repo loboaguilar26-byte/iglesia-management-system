@@ -1,0 +1,6 @@
+{
+  "$schema": "https://unpkg.com/knip@6.41.0/schema.json",
+  "entry": ["e2e/prepare-db.ts", "public/sw.js"],
+  "ignoreDependencies": ["sharp"],
+  "ignoreBinaries": ["gradlew"]
+}

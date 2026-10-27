@@ -47,7 +47,6 @@ export const memberSchema = z.object({
   notes: optional(4000),
   confirmDuplicate: bool,
 });
-export type MemberInput = z.infer<typeof memberSchema>;
 
 export const listMembersSchema = z.object({
   q: z.string().trim().max(100).optional(),

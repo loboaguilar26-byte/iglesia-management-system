@@ -45,7 +45,6 @@ export const settingsSchema = z.object({
   timezone: z.string().refine(isValidTimeZone, "Zona horaria inválida"),
   currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/, "Código de 3 letras, p. ej. MXN"),
 });
-export type SettingsInput = z.infer<typeof settingsSchema>;
 
 const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Formato HH:MM");
 

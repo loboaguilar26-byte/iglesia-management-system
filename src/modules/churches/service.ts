@@ -189,7 +189,7 @@ type ReadinessProfile = {
 } | null;
 
 /** Puntos de configuración que hacen a una sede "lista para operar". */
-export function churchReadiness(church: { code: string | null; profile: ReadinessProfile; teamCount: number }) {
+function churchReadiness(church: { code: string | null; profile: ReadinessProfile; teamCount: number }) {
   const p = church.profile;
   const customColors =
     !!p && !(DEFAULT_COLORS.includes(p.primaryColor.toLowerCase()) && DEFAULT_COLORS.includes(p.accentColor.toLowerCase()));
