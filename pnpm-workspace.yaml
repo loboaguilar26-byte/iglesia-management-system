@@ -4,3 +4,7 @@ allowBuilds:
   "@prisma/engines": true
   prisma: true
   esbuild: true
+
+# uuid < 11.1.1 tiene un aviso de seguridad (GHSA-w5hq-g745-h8pq); llega vía exceljs y @capacitor/cli.
+overrides:
+  uuid: "^11.1.1"
