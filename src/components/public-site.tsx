@@ -11,6 +11,6 @@ export function PublicFooter({ name }: { name: string }) {
   return <footer className="mt-16 border-t border-border bg-surface"><div className="mx-auto flex max-w-6xl flex-wrap justify-between gap-4 px-4 py-8 text-sm text-muted sm:px-6"><span>{name}</span><div className="flex gap-4"><Link href="/contacto" className="hover:text-primary">Contacto</Link><Link href="/privacidad" className="hover:text-primary">Privacidad</Link></div></div></footer>;
 }
 
-export function PublicShell({ name, children }: { name: string; children: ReactNode }) { return <div className="flex min-h-screen flex-col"><BibleOpeningIntro /><PublicHeader name={name} /><main className="flex-1">{children}</main><PublicFooter name={name} /></div>; }
+export function PublicShell({ name, children, intro = false }: { name: string; children: ReactNode; intro?: boolean }) { return <div className="flex min-h-screen flex-col">{intro ? <BibleOpeningIntro /> : null}<PublicHeader name={name} /><main className="flex-1">{children}</main><PublicFooter name={name} /></div>; }
 
 export function PublicSection({ title, eyebrow, children }: { title: string; eyebrow?: string; children: ReactNode }) { return <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6"><div className="mb-8">{eyebrow ? <p className="text-sm font-semibold uppercase tracking-[0.18em] text-accent">{eyebrow}</p> : null}<h2 className="mt-2 text-3xl font-semibold tracking-tight">{title}</h2></div>{children}</section>; }

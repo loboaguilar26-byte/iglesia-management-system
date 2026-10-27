@@ -3,22 +3,17 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 
-const INTRO_KEY = "eclaria-intro-seen";
-
 export function BibleOpeningIntro() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    let seen = false;
-    try { seen = window.localStorage.getItem(INTRO_KEY) === "1"; } catch { /* almacenamiento no disponible */ }
-    if (seen) return;
     const showTimer = window.setTimeout(() => setVisible(true), 0);
-    const hideTimer = window.setTimeout(() => { setVisible(false); try { window.localStorage.setItem(INTRO_KEY, "1"); } catch { /* sin persistencia */ } }, 3900);
+    const hideTimer = window.setTimeout(() => setVisible(false), 4200);
     return () => { window.clearTimeout(showTimer); window.clearTimeout(hideTimer); };
   }, []);
 
   if (!visible) return null;
-  const close = () => { setVisible(false); try { window.localStorage.setItem(INTRO_KEY, "1"); } catch { /* sin persistencia */ } };
+  const close = () => setVisible(false);
 
   return <div className="eclaria-intro" role="dialog" aria-label="Presentación de Eclaria">
     <button className="eclaria-intro__skip" type="button" onClick={close}>Saltar intro</button>
