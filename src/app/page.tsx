@@ -1,17 +1,20 @@
 import Link from "next/link";
+import { CalendarDays, Clock, MapPin, Users } from "lucide-react";
 import { buttonClass } from "@/components/ui/button";
+import { PublicShell, PublicSection } from "@/components/public-site";
+import { formatDateTime } from "@/lib/dates";
+import { getPublicAnnouncements, getPublicEvents, getPublicMinistries, getPublicSite } from "@/modules/public/service";
 
-// Página pública provisional. El sitio público configurable se construye en la Fase 2.
-export default function HomePage() {
-  return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-6 px-4 py-16 text-center">
-      <h1 className="text-3xl font-semibold">Sitio en construcción</h1>
-      <p className="max-w-md text-muted">
-        La información pública de la iglesia (horarios, eventos y comunicados) estará disponible próximamente.
-      </p>
-      <Link href="/admin" className={buttonClass("secondary")}>
-        Acceso administrativo
-      </Link>
-    </main>
-  );
+export default async function HomePage() {
+  const [{ settings, schedules }, events, announcements, ministries] = await Promise.all([getPublicSite(), getPublicEvents(4), getPublicAnnouncements(3), getPublicMinistries()]);
+  const nextEvent = events[0];
+  return <PublicShell name={settings.name}>
+    <section className="bg-primary px-4 py-20 text-primary-foreground sm:px-6"><div className="mx-auto max-w-6xl"><p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary-foreground/70">Bienvenidos</p><h1 className="mt-3 max-w-3xl text-5xl font-bold tracking-tight sm:text-6xl">{settings.name}</h1>{settings.tagline ? <p className="mt-5 max-w-2xl text-xl text-primary-foreground/85">{settings.tagline}</p> : <p className="mt-5 max-w-2xl text-lg text-primary-foreground/80">Un espacio para conocer, servir y crecer juntos.</p>}<div className="mt-8 flex flex-wrap gap-3"><Link href="/horarios" className={buttonClass("secondary", "bg-surface text-foreground")}>Planea tu visita</Link><Link href="/eventos" className={buttonClass("ghost", "border border-primary-foreground/30 text-primary-foreground")}>Ver eventos</Link></div></div></section>
+    {settings.welcomeText ? <PublicSection title="Te damos la bienvenida"><p className="max-w-3xl text-lg leading-8 text-muted">{settings.welcomeText}</p></PublicSection> : null}
+    <PublicSection title="Nuestras reuniones" eyebrow="Te esperamos"><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{schedules.length ? schedules.slice(0, 6).map((schedule) => <div key={schedule.id} className="rounded-2xl border border-border bg-surface p-5 shadow-sm"><Clock className="size-6 text-primary" aria-hidden /><h3 className="mt-4 text-lg font-semibold">{schedule.name}</h3><p className="mt-2 text-muted">{["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"][schedule.dayOfWeek]} · {schedule.startTime}{schedule.endTime ? `–${schedule.endTime}` : ""}</p>{schedule.location ? <p className="mt-1 text-sm text-muted">{schedule.location}</p> : null}</div>) : <p className="text-muted">Pronto publicaremos nuestros horarios.</p>}</div><Link href="/horarios" className="mt-6 inline-block font-semibold text-primary hover:underline">Ver horarios completos →</Link></PublicSection>
+    <PublicSection title="Próximos eventos" eyebrow="Agenda"><div className="grid gap-4 md:grid-cols-2">{nextEvent ? events.map((event) => <Link key={event.id} href={`/eventos/${event.id}`} className="rounded-2xl border border-border bg-surface p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-primary"><div className="flex items-center gap-2 text-sm text-primary"><CalendarDays className="size-4" aria-hidden />{formatDateTime(event.startsAt, settings.timezone)}</div><h3 className="mt-3 text-xl font-semibold">{event.title}</h3>{event.location ? <p className="mt-2 flex items-center gap-2 text-sm text-muted"><MapPin className="size-4" aria-hidden />{event.location}</p> : null}<p className="mt-3 line-clamp-2 text-sm text-muted">{event.description ?? event.type.name}</p></Link>) : <p className="text-muted">No hay eventos públicos programados por ahora.</p>}</div><Link href="/eventos" className="mt-6 inline-block font-semibold text-primary hover:underline">Ver calendario completo →</Link></PublicSection>
+    {announcements.length ? <PublicSection title="Comunicados" eyebrow="Mantente informado"><div className="grid gap-4 md:grid-cols-3">{announcements.map((announcement) => <Link key={announcement.id} href={`/comunicados/${announcement.id}`} className="rounded-2xl border border-border bg-surface p-5 shadow-sm"><h3 className="text-lg font-semibold">{announcement.title}</h3><p className="mt-2 line-clamp-3 text-sm text-muted">{announcement.body}</p></Link>)}</div></PublicSection> : null}
+    {ministries.length ? <PublicSection title="Ministerios" eyebrow="Comunidad"><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{ministries.slice(0, 6).map((ministry) => <div key={ministry.id} className="rounded-2xl border border-border bg-surface p-5 shadow-sm"><Users className="size-6 text-primary" aria-hidden /><h3 className="mt-4 text-lg font-semibold">{ministry.name}</h3>{ministry.description ? <p className="mt-2 text-sm text-muted">{ministry.description}</p> : null}</div>)}</div><Link href="/ministerios" className="mt-6 inline-block font-semibold text-primary hover:underline">Conoce los ministerios →</Link></PublicSection> : null}
+    {settings.address ? <section className="border-t border-border bg-surface"><div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-10 sm:px-6"><div><h2 className="text-xl font-semibold">Visítanos</h2><p className="mt-2 text-muted">{settings.address}</p></div><Link href="/contacto" className={buttonClass("primary")}>Contacto</Link></div></section> : null}
+  </PublicShell>;
 }

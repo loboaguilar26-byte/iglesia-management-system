@@ -1,11 +1,11 @@
 "use client";
 
-import { Building2, CalendarDays, Home, Menu, Users, UsersRound } from "lucide-react";
+import { BarChart3, Bell, Building2, CalendarDays, Home, Menu, Settings, Users, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { NavItem } from "./nav";
 
-const ICONS = { home: Home, users: Users, churches: Building2, members: UsersRound, events: CalendarDays };
+const ICONS = { home: Home, users: Users, churches: Building2, members: UsersRound, events: CalendarDays, ministries: UsersRound, announcements: Bell, reports: BarChart3, settings: Settings };
 
 function isActive(pathname: string, href: string) {
   return href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);

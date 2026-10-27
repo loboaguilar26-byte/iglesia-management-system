@@ -1,0 +1,9 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { can } from "@/lib/authz";
+import { requirePageActor } from "@/lib/session";
+import { getOperationalReport } from "@/modules/reports/service";
+
+export const metadata: Metadata = { title: "Reportes" };
+
+export default async function ReportsPage() { const actor = await requirePageActor(); if (!can(actor, "reports:members")) notFound(); const report = await getOperationalReport(actor); const cards = [["Miembros", report.members, "Directorio total"], ["Miembros activos", report.activeMembers, "Personas activas"], ["Visitantes", report.visitors, "Seguimiento pendiente"], ["Ministerios", report.ministries, "Ministerios activos"], ["Próximos eventos", report.upcomingEvents, "Eventos programados"], ["Asistencias presentes", report.present, "Registros marcados presentes"], ["Asistencias ausentes", report.absent, "Registros marcados ausentes"], ["Eventos registrados", report.events, "Histórico total"]] as const; return <div className="flex max-w-6xl flex-col gap-6"><div><p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">Resumen</p><h1 className="mt-2 text-3xl font-semibold">Reportes operativos</h1><p className="mt-2 text-sm text-muted">Una vista rápida de la operación actual de la iglesia.</p></div><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{cards.map(([label, value, detail]) => <div key={label} className="rounded-2xl border border-border bg-surface p-5 shadow-sm"><p className="text-sm text-muted">{label}</p><p className="mt-3 text-3xl font-semibold text-primary">{value}</p><p className="mt-1 text-xs text-muted">{detail}</p></div>)}</div><p className="text-sm text-muted">Los reportes financieros se incorporarán en la siguiente etapa, con controles separados para tesorería.</p></div>; }
