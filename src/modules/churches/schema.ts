@@ -54,8 +54,3 @@ export const churchTeamSchema = z.object({
   roleId: z.string().trim().min(1).optional(),
   isPrimary: z.boolean().default(false),
 });
-
-export type UpdateChurchInput = z.infer<typeof updateChurchSchema>;
-
-export type CreateChurchInput = z.infer<typeof createChurchSchema>;
-

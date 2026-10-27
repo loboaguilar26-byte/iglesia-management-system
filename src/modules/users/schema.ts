@@ -7,7 +7,7 @@ export const passwordSchema = z
   .min(PASSWORD_MIN_LENGTH, `Mínimo ${PASSWORD_MIN_LENGTH} caracteres`)
   .max(PASSWORD_MAX_LENGTH, `Máximo ${PASSWORD_MAX_LENGTH} caracteres`);
 
-export const roleKeySchema = z.enum(ROLE_KEYS);
+const roleKeySchema = z.enum(ROLE_KEYS);
 
 export const createUserSchema = z.object({
   name: z.string().trim().min(2, "Escribe el nombre").max(120),

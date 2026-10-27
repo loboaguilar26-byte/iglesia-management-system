@@ -61,7 +61,7 @@ function toastKey(state: object) {
 }
 
 /** Aviso flotante de éxito; desaparece solo a los 4 segundos. */
-export function Toast({ message }: { message: string }) {
+function Toast({ message }: { message: string }) {
   const [visible, setVisible] = useState(true);
   useEffect(() => {
     const t = setTimeout(() => setVisible(false), 4000);
