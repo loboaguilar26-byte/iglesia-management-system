@@ -19,7 +19,20 @@ export function BibleOpeningIntro() {
     <button className="eclaria-intro__skip" type="button" onClick={close}>Saltar intro</button>
     <div className="eclaria-intro__stage">
       <div className="eclaria-intro__glow" aria-hidden="true" />
-      <svg className="eclaria-intro__dove" viewBox="0 0 180 100" aria-label="Paloma blanca" role="img"><path d="M8 55c22-18 44-25 67-20-8-13-2-26 12-29 5 13 14 20 28 22 17 2 29 11 39 22 8-6 17-7 26-3-9 14-24 20-41 18-12 19-29 29-50 28-22-1-39-11-51-25-12-2-21-6-30-13Z" /><path d="M76 35c-16-14-30-20-48-22 7 12 18 22 34 31 8 4 16 5 24 3-3-4-6-8-10-12Z" /><path d="M102 42c15-16 31-22 49-23-6 13-17 24-33 33-8 4-16 5-24 2 3-4 5-8 8-12Z" /><circle cx="109" cy="30" r="2.4" fill="#0b1726" /></svg>
+      <svg className="eclaria-intro__dove" viewBox="0 0 180 100" aria-label="Paloma blanca volando" role="img">
+        <g className="eclaria-intro__dove-wing eclaria-intro__dove-wing--left">
+          <path d="M82 53C61 31 35 19 7 20c14 22 35 42 61 48 10 2 17-4 22-13Z" />
+          <path className="eclaria-intro__dove-feather" d="M15 27c18 14 34 25 51 31M26 24c16 14 29 25 45 32M40 25c12 13 23 23 37 31" />
+        </g>
+        <g className="eclaria-intro__dove-wing eclaria-intro__dove-wing--right">
+          <path d="M101 54c20-22 44-35 72-34-14 22-35 42-61 48-9 2-16-4-21-14Z" />
+          <path className="eclaria-intro__dove-feather" d="M165 27c-18 14-34 25-51 31M154 24c-16 14-29 25-45 32M140 25c-12 13-23 23-37 31" />
+        </g>
+        <path className="eclaria-intro__dove-body" d="M65 57c8-16 22-25 39-25 16 0 29 8 39 24-10 15-25 23-43 23-16 0-29-7-35-22Z" />
+        <circle className="eclaria-intro__dove-head" cx="105" cy="31" r="12" />
+        <path className="eclaria-intro__dove-beak" d="m115 30 12 5-12 5Z" />
+        <circle cx="108" cy="28" r="2.4" fill="#0b1726" />
+      </svg>
       <div className="eclaria-intro__book" aria-hidden="true"><span className="eclaria-intro__cover eclaria-intro__cover--left" /><span className="eclaria-intro__cover eclaria-intro__cover--right" /><span className="eclaria-intro__page eclaria-intro__page--left" /><span className="eclaria-intro__page eclaria-intro__page--right" /><span className="eclaria-intro__spine" /></div>
       <Image className="eclaria-intro__logo" src="/eclaria-logo.jpg" alt="Eclaria, gestión integral de iglesias" width={320} height={320} priority />
     </div>
