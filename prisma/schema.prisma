@@ -28,6 +28,11 @@ model User {
   rolesGiven UserRole[] @relation("RoleAssigner")
   auditLogs  AuditLog[]
 
+  churchMemberships     ChurchMembership[]     @relation("ChurchMembershipUser")
+  churchRoleAssignments ChurchRoleAssignment[] @relation("ChurchRoleAssignmentUser")
+  churchRolesGiven      ChurchRoleAssignment[] @relation("ChurchRoleAssignmentAssigner")
+  churchProfilesUpdated ChurchProfile[]        @relation("ChurchProfileUpdater")
+
   member   Member? @relation(fields: [memberId], references: [id])
   memberId String? @unique
 
@@ -107,14 +112,16 @@ model RateLimit {
 // ───────────────────────── Autorización ─────────────────────────
 
 model Role {
-  id          String           @id @default(cuid())
-  key         String           @unique
-  name        String
-  description String?
-  isSystem    Boolean          @default(false)
-  createdAt   DateTime         @default(now()) @db.Timestamptz(3)
-  permissions RolePermission[]
-  users       UserRole[]
+  id                String                 @id @default(cuid())
+  key               String                 @unique
+  name              String
+  description       String?
+  isSystem          Boolean                @default(false)
+  hierarchyLevel    Int                    @default(50)
+  createdAt         DateTime               @default(now()) @db.Timestamptz(3)
+  permissions       RolePermission[]
+  users             UserRole[]
+  churchAssignments ChurchRoleAssignment[]
 
   @@map("role")
 }
@@ -149,6 +156,97 @@ model UserRole {
 
   @@id([userId, roleId])
   @@map("user_role")
+}
+
+// ─────────────────────── Franquicias e iglesias ───────────────────────
+
+/// Agrupa varias iglesias con una identidad y operación compartidas.
+model Franchise {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+  churches    Church[]
+
+  @@index([isActive])
+  @@map("franchise")
+}
+
+/// Una sede/congregación que puede personalizarse sin duplicar la aplicación.
+model Church {
+  id              String                 @id @default(cuid())
+  franchiseId     String
+  name            String
+  slug            String                 @unique
+  code            String?
+  isActive        Boolean                @default(true)
+  createdAt       DateTime               @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime               @updatedAt @db.Timestamptz(3)
+  franchise       Franchise              @relation(fields: [franchiseId], references: [id], onDelete: Restrict)
+  profile         ChurchProfile?
+  memberships     ChurchMembership[]
+  roleAssignments ChurchRoleAssignment[]
+
+  @@index([franchiseId, isActive])
+  @@map("church")
+}
+
+/// Configuración visual y textos propios de cada iglesia.
+model ChurchProfile {
+  id           String   @id @default(cuid())
+  churchId     String   @unique
+  logoPath     String?
+  primaryColor String   @default("#1e3a5f")
+  accentColor  String   @default("#d97706")
+  fontFamily   String   @default("Geist")
+  address      String?
+  phone        String?
+  email        String?
+  timezone     String   @default("America/Mexico_City")
+  currency     String   @default("MXN") @db.Char(3)
+  aboutText    String?
+  scheduleText String?
+  terminology  Json     @default("{}")
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
+  updatedById  String?
+  church       Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  updatedBy    User?    @relation("ChurchProfileUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@map("church_profile")
+}
+
+/// Permite que un usuario pertenezca a más de una iglesia de la franquicia.
+model ChurchMembership {
+  userId    String
+  churchId  String
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  user      User     @relation("ChurchMembershipUser", fields: [userId], references: [id], onDelete: Cascade)
+  church    Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+
+  @@id([userId, churchId])
+  @@index([churchId])
+  @@map("church_membership")
+}
+
+/// Roles por iglesia; conserva la matriz global actual y prepara el alcance por sede.
+model ChurchRoleAssignment {
+  userId       String
+  churchId     String
+  roleId       String
+  assignedById String?
+  assignedAt   DateTime @default(now()) @db.Timestamptz(3)
+  user         User     @relation("ChurchRoleAssignmentUser", fields: [userId], references: [id], onDelete: Cascade)
+  church       Church   @relation(fields: [churchId], references: [id], onDelete: Cascade)
+  role         Role     @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  assignedBy   User?    @relation("ChurchRoleAssignmentAssigner", fields: [assignedById], references: [id], onDelete: SetNull)
+
+  @@id([userId, churchId, roleId])
+  @@index([churchId, roleId])
+  @@map("church_role_assignment")
 }
 
 // ───────────────────────── Miembros ─────────────────────────

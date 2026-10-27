@@ -85,3 +85,14 @@ erDiagram
 ## Transacciones
 
 Usar `prisma.$transaction` en: captura masiva de asistencia, corrección de aportación (anular + crear), asignación de roles (+ auditoría), cambios de coordinador.
+# Extensión multiiglesia (fase incremental)
+
+La base actual conserva los módulos operativos existentes y añade una capa no destructiva para crecer como franquicia:
+
+- `Franchise` agrupa varias sedes.
+- `Church` representa una iglesia/sede con identificador único.
+- `ChurchProfile` guarda colores, tipografía, textos, contacto, zona horaria y terminología propia de cada sede.
+- `ChurchMembership` permite que un usuario pertenezca a varias iglesias.
+- `ChurchRoleAssignment` prepara la asignación de un rol por iglesia.
+
+Esta primera fase no migra ni reescribe los módulos existentes. La separación de miembros, eventos, asistencia, ministerios, aportaciones y comunicados por `churchId` debe hacerse módulo por módulo, con datos de migración y validación de alcance. Así se mantiene funcional el sistema actual mientras se incorpora la estructura de franquicia.

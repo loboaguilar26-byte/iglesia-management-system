@@ -16,6 +16,20 @@
 | Reportes | `reports:members`, `reports:attendance`, `reports:ministries`, `reports:finance` |
 | Configuración | `settings:read`, `settings:update` |
 | Auditoría | `audit:read`, `audit:read_finance` |
+| Franquicias e iglesias | `churches:read`, `churches:create`, `churches:update`, `churches:manage_members` |
+
+### Jerarquía agregada
+
+La base conserva la unión de permisos actual y agrega un nivel para ordenar la responsabilidad administrativa por sede:
+
+| Nivel | Rol |
+|---:|---|
+| 100 | Administrador |
+| 80 | Pastor |
+| 60 | Secretario / Tesorero |
+| 40 | Coordinador |
+
+El nivel es informativo para la interfaz y no sustituye la autorización por permiso.
 
 ## Asignación inicial
 

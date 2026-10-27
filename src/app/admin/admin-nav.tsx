@@ -17,6 +17,7 @@ import {
   Wallet,
   ReceiptText,
   X,
+  Building2,
   Church,
 } from "lucide-react";
 import Link from "next/link";
@@ -40,6 +41,7 @@ const ICONS: Record<NavIcon, typeof Users> = {
   audit: History,
   followup: HeartHandshake,
   chapels: Church,
+  churches: Building2,
 };
 
 function isActive(pathname: string, href: string) {

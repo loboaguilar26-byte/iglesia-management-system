@@ -1,6 +1,6 @@
 import type { Permission } from "@/lib/permissions";
 
-export type NavIcon = "home" | "members" | "ministries" | "events" | "attendance" | "finance" | "giving" | "expenses" | "announcements" | "reports" | "users" | "settings" | "audit" | "followup" | "chapels";
+export type NavIcon = "home" | "members" | "ministries" | "events" | "attendance" | "finance" | "giving" | "expenses" | "announcements" | "reports" | "users" | "settings" | "audit" | "followup" | "chapels" | "churches";
 export type NavItem = { href: string; label: string; icon: NavIcon; permission?: Permission; anyOf?: Permission[] };
 export type NavGroup = { label: string | null; items: NavItem[] };
 
@@ -35,6 +35,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: "Sistema",
     items: [
+      { href: "/admin/iglesias", label: "Iglesias y franquicias", icon: "churches", permission: "churches:read" },
       { href: "/admin/usuarios", label: "Usuarios y roles", icon: "users", permission: "users:read" },
       { href: "/admin/bitacora", label: "Bitácora", icon: "audit", anyOf: ["audit:read", "audit:read_finance"] },
       { href: "/admin/configuracion", label: "Configuración", icon: "settings", permission: "settings:read" },

@@ -8,6 +8,7 @@ import { can } from "@/lib/authz";
 import { formatDate } from "@/lib/dates";
 import { requirePageActor } from "@/lib/session";
 import { listUsers } from "@/modules/users/service";
+import { RoleHierarchy } from "./role-hierarchy";
 
 export const metadata: Metadata = { title: "Usuarios y roles" };
 
@@ -24,7 +25,7 @@ export default async function UsersPage({ searchParams }: PageProps<"/admin/usua
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">Usuarios y roles</h1>
+        <div><p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">Control de acceso</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">Usuarios y roles</h1></div>
         {can(actor, "users:create") && can(actor, "roles:assign") ? (
           <Link href="/admin/usuarios/nuevo" className={buttonClass()}>
             Nuevo usuario
@@ -32,7 +33,9 @@ export default async function UsersPage({ searchParams }: PageProps<"/admin/usua
         ) : null}
       </div>
 
-      <form role="search" className="flex gap-2">
+      <RoleHierarchy />
+
+      <form role="search" className="flex flex-wrap gap-2">
         <label htmlFor="q" className="sr-only">
           Buscar por nombre o correo
         </label>
