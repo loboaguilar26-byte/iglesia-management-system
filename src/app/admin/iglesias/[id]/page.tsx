@@ -14,7 +14,7 @@ import { requirePageActor } from "@/lib/session";
 import { describeAction } from "@/modules/audit/service";
 import { churchTeamOptions, getChurchDetail } from "@/modules/churches/service";
 import { addChurchTeamAction, removeChurchTeamAction, setChurchStatusAction } from "../actions";
-import { ChurchBanner, ChurchMonogram, ProgressRing } from "../church-visuals";
+import { ChurchBanner, ChurchMonogram, ProgressRing } from "@/components/visuals";
 import { ChurchProfileForm } from "./profile-form";
 
 export const metadata: Metadata = { title: "Iglesia" };

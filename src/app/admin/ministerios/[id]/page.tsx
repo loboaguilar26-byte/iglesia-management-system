@@ -13,8 +13,9 @@ import { AppError } from "@/lib/errors";
 import { requirePageActor } from "@/lib/session";
 import { MINISTRY_ROLE_LABEL } from "@/modules/ministries/schema";
 import { getMinistry } from "@/modules/ministries/service";
+import { pendingJoinRequests } from "@/modules/portal/engagement";
 import { getChurchTimezone } from "@/modules/settings/service";
-import { addMembershipAction, endMembershipAction, setMinistryActiveAction, updateMinistryAction } from "../actions";
+import { addMembershipAction, endMembershipAction, reviewJoinRequestAction, setMinistryActiveAction, updateMinistryAction } from "../actions";
 
 export const metadata: Metadata = { title: "Ministerio" };
 
@@ -33,6 +34,7 @@ export default async function MinistryPage({ params }: PageProps<"/admin/ministe
   const past = m.memberships.filter((x) => x.endDate);
   const canManage = can(actor, "ministries:manage_members");
   const fullManage = canFully(actor, "ministries:manage_members");
+  const requests = canManage && m.isActive ? await pendingJoinRequests(actor, m.id).catch(() => []) : [];
 
   return (
     <div className="flex max-w-5xl flex-col gap-6">
@@ -96,6 +98,33 @@ export default async function MinistryPage({ params }: PageProps<"/admin/ministe
         </Card>
 
         <div className="flex flex-col gap-6">
+          {requests.length ? (
+            <Card title={`Solicitudes para unirse (${requests.length})`} description="Enviadas por miembros desde su portal.">
+              <ul className="flex flex-col gap-4">
+                {requests.map((r) => (
+                  <li key={r.id} className="rounded-xl border border-accent/40 bg-accent-soft/30 p-3">
+                    <p className="font-medium">
+                      <Link href={`/admin/miembros/${r.member.id}`} className="hover:text-primary">{r.member.firstName} {r.member.lastName}</Link>
+                    </p>
+                    <p className="text-xs text-muted">Enviada {formatDate(r.createdAt, tz)}</p>
+                    {r.message ? <p className="mt-2 whitespace-pre-line text-sm">“{r.message}”</p> : null}
+                    <div className="mt-3 flex flex-wrap items-start gap-2">
+                      <ActionForm action={reviewJoinRequestAction.bind(null, m.id, r.id, "APPROVED")} className="flex">
+                        <SubmitButton>Aprobar</SubmitButton>
+                      </ActionForm>
+                      <details className="text-sm">
+                        <summary className="cursor-pointer rounded-xl px-3 py-2 text-muted hover:bg-surface-2">Rechazar…</summary>
+                        <ActionForm action={reviewJoinRequestAction.bind(null, m.id, r.id, "REJECTED")} className="mt-2 flex flex-col gap-2">
+                          <TextArea label="Respuesta para la persona (opcional)" name="note" rows={2} />
+                          <SubmitButton variant="danger">Rechazar solicitud</SubmitButton>
+                        </ActionForm>
+                      </details>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          ) : null}
           {canManage && m.isActive ? (
             <Card title="Agregar integrante">
               <ActionForm action={addMembershipAction.bind(null, m.id)}>

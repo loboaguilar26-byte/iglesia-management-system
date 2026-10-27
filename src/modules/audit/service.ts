@@ -24,6 +24,7 @@ export const ENTITY_LABEL: Record<string, string> = {
   Report: "Reporte",
   Chapel: "Capilla",
   Church: "Iglesia",
+  PrayerRequest: "Petición de oración",
 };
 
 const ACTION_LABEL: Record<string, string> = {
@@ -56,6 +57,11 @@ const ACTION_LABEL: Record<string, string> = {
   submit: "reportó una ofrenda en",
   approve: "validó un reporte de ofrenda en",
   reject: "devolvió un reporte de ofrenda en",
+  join_request: "solicitó unirse a",
+  join_approve: "aprobó una solicitud para unirse a",
+  join_reject: "rechazó una solicitud para unirse a",
+  data_export: "descargó sus datos personales de",
+  statement_export: "descargó su constancia de aportaciones de",
 };
 
 export function describeAction(action: string) {

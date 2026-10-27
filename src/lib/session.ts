@@ -48,8 +48,9 @@ export async function loadActor(userId: string, ipAddress?: string | null): Prom
 
 /** IP del cliente para auditoría; solo se leen los encabezados declarados como confiables. */
 function clientIp(h: Headers) {
-  for (const name of process.env.AUTH_IP_HEADERS?.split(",") ?? []) {
-    const value = h.get(name.trim())?.split(",").pop()?.trim();
+  // Una variable vacía ("") no declara encabezados; se ignoran los nombres en blanco.
+  for (const name of (process.env.AUTH_IP_HEADERS ?? "").split(",").map((n) => n.trim()).filter(Boolean)) {
+    const value = h.get(name)?.split(",").pop()?.trim();
     if (value) return value;
   }
   return null;

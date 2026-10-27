@@ -1,19 +1,14 @@
-import { CalendarDays, ClipboardCheck, HandHeart, HeartHandshake, Mail, MapPin, Phone } from "lucide-react";
+import { CalendarCheck2, CalendarDays, ClipboardCheck, FileDown, HandHeart, HeartHandshake, Sparkles, UserRound } from "lucide-react";
 import Link from "next/link";
-import { ActionForm, SubmitButton } from "@/components/ui/action-form";
 import { Alert } from "@/components/ui/alert";
-import { Field } from "@/components/ui/field";
 import { Badge, Card, EmptyState, StatCard } from "@/components/ui/layout";
 import { can } from "@/lib/authz";
-import { formatDate, formatDateOnly, formatLongDate, formatTime, toDateInput } from "@/lib/dates";
+import { formatDate, formatDateOnly, formatLongDate, formatTime } from "@/lib/dates";
 import { AppError } from "@/lib/errors";
 import { formatMoney } from "@/lib/money";
 import { requirePortalActor } from "@/lib/session";
-import { givingFormOptions, myGivingReports } from "@/modules/finance/service";
 import { getMyPortal } from "@/modules/portal/service";
 import { getChurchTimezone, getSettingsInternal } from "@/modules/settings/service";
-import { GivingReportForm } from "./giving-report-form";
-import { submitGivingReportAction, updateMyContactAction } from "./actions";
 
 export default async function PortalPage() {
   const actor = await requirePortalActor();
@@ -26,11 +21,9 @@ export default async function PortalPage() {
       />
     );
   }
-  const [tz, settings, givingOptions, givingReports] = await Promise.all([
+  const [tz, settings] = await Promise.all([
     getChurchTimezone(),
     getSettingsInternal(),
-    givingFormOptions(actor),
-    myGivingReports(actor),
   ]);
   let data: Awaited<ReturnType<typeof getMyPortal>>;
   try {
@@ -58,6 +51,22 @@ export default async function PortalPage() {
           </div>
         </div>
       </section>
+
+      <nav aria-label="Accesos rápidos" className="stagger grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        {[
+          { href: "/mi-cuenta/agenda", label: "Confirmar asistencia", icon: CalendarCheck2 },
+          { href: "/mi-cuenta/oracion", label: "Pedir oración", icon: Sparkles },
+          { href: "/mi-cuenta/ministerios", label: "Unirme a un ministerio", icon: HandHeart },
+          { href: "/mi-cuenta/aportaciones", label: "Reportar ofrenda", icon: HeartHandshake },
+          { href: "/mi-cuenta/aportaciones", label: "Mi constancia", icon: FileDown },
+          { href: "/mi-cuenta/perfil", label: "Actualizar mis datos", icon: UserRound },
+        ].map((q) => (
+          <Link key={q.label} href={q.href} className="lift group flex flex-col items-start gap-3 rounded-2xl border border-border bg-surface p-4 shadow-sm">
+            <span className="grid size-10 place-items-center rounded-xl bg-accent-soft text-accent transition group-hover:scale-110 group-hover:rotate-6"><q.icon aria-hidden className="size-5" /></span>
+            <span className="text-sm font-medium leading-snug">{q.label}</span>
+          </Link>
+        ))}
+      </nav>
 
       <div className="grid gap-4 grid-cols-2 sm:[grid-template-columns:repeat(auto-fit,minmax(200px,1fr))]">
         <StatCard
@@ -150,38 +159,6 @@ export default async function PortalPage() {
           )}
         </Card>
 
-        <Card title="Reportar una ofrenda" description="Informa a tesorería de una entrega ya realizada.">
-          <GivingReportForm
-            action={submitGivingReportAction}
-            concepts={givingOptions.concepts}
-            methods={givingOptions.methods}
-            today={toDateInput(new Date(), tz)}
-          />
-        </Card>
-
-        <Card title="Mis reportes de ofrenda" description="Los reportes pendientes no se cuentan como ingresos hasta su validación.">
-          {givingReports.length === 0 ? (
-            <EmptyState title="Aún no has reportado ofrendas" />
-          ) : (
-            <ul className="flex flex-col divide-y divide-border">
-              {givingReports.map((report) => (
-                <li key={report.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
-                  <div>
-                    <p className="font-medium">{report.concept.name} · {formatDateOnly(report.receivedAt)}</p>
-                    <p className="text-xs text-muted">{report.isAnonymous ? "Anónima" : "Con nombre"}{report.reviewNote ? ` · ${report.reviewNote}` : ""}</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="font-semibold tabular-nums">{formatMoney(report.amount, report.currency)}</span>
-                    <Badge tone={report.status === "APPROVED" ? "success" : report.status === "REJECTED" ? "danger" : "warning"}>
-                      {report.status === "APPROVED" ? "Validada" : report.status === "REJECTED" ? "Revisar" : "Pendiente"}
-                    </Badge>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-
         <Card title="Comunicados">
           {announcements.length === 0 ? (
             <EmptyState title="No hay comunicados vigentes" />
@@ -197,21 +174,6 @@ export default async function PortalPage() {
           )}
         </Card>
 
-        <Card title="Mis datos de contacto" description="Mantén actualizados tus datos. Para cambiar tu nombre u otra información, contacta a la secretaría.">
-          <ActionForm action={updateMyContactAction}>
-            <Field label="Teléfono" name="phone" type="tel" defaultValue={m.phone ?? ""} />
-            <Field label="Correo electrónico" name="email" type="email" defaultValue={m.email ?? ""} hint="Este correo es de contacto; no cambia el correo con el que inicias sesión." />
-            <SubmitButton>Guardar</SubmitButton>
-          </ActionForm>
-          {settings.phone || settings.email || settings.address ? (
-            <div className="mt-6 border-t border-border pt-4 text-sm text-muted">
-              <p className="mb-2 font-medium text-foreground">Contacto de la iglesia</p>
-              {settings.phone ? <p className="flex items-center gap-2"><Phone aria-hidden className="size-4" />{settings.phone}</p> : null}
-              {settings.email ? <p className="flex items-center gap-2"><Mail aria-hidden className="size-4" />{settings.email}</p> : null}
-              {settings.address ? <p className="flex items-center gap-2"><MapPin aria-hidden className="size-4" />{settings.address}</p> : null}
-            </div>
-          ) : null}
-        </Card>
       </div>
     </div>
   );

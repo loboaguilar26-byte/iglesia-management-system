@@ -465,3 +465,80 @@ describe("iglesias y franquicias (módulo de Victor)", () => {
     expect(await db.auditLog.count({ where: { entityType: "Church", entityId: church.id } })).toBe(4);
   });
 });
+
+describe("portal del miembro: participación", () => {
+  it("agenda con RSVP, solicitudes de ministerio, oración, aportaciones y mis datos", async () => {
+    await resetDatabase();
+    const p = await import("@/modules/portal/engagement");
+    const secretary = await createTestUser(["SECRETARY"]);
+    const admin = await createTestUser(["ADMIN"]);
+    const pastor = await createTestUser(["PASTOR"]);
+    const memberUser = await createTestUser(["MEMBER"], "Ana Portal");
+    const other = await createTestUser(["MEMBER"], "Otra Persona");
+    const ana = await createMember(secretary, { firstName: "Ana", lastName: "Portal" });
+    const beto = await createMember(secretary, { firstName: "Beto", lastName: "Otro" });
+    await db.user.update({ where: { id: memberUser.userId }, data: { memberId: ana.id } });
+    await db.user.update({ where: { id: other.userId }, data: { memberId: beto.id } });
+    const me = { ...memberUser, memberId: ana.id };
+    const them = { ...other, memberId: beto.id };
+    const { typeId, conceptId, methodId } = await catalogIds();
+
+    // Agenda: solo eventos públicos o de mis ministerios; RSVP idempotente.
+    const soon = new Date(Date.now() + 86400_000);
+    const publicEvent = await db.event.create({ data: { title: "Culto", typeId, visibility: "PUBLIC", startsAt: soon, endsAt: new Date(soon.getTime() + 3600_000) } });
+    const privateEvent = await db.event.create({ data: { title: "Junta", typeId, startsAt: soon, endsAt: new Date(soon.getTime() + 3600_000) } });
+    expect((await p.myAgenda(me)).map((e) => e.id)).toEqual([publicEvent.id]);
+    await expectCode(p.setMyRsvp(me, privateEvent.id, { response: "GOING" }), "NOT_FOUND");
+    await p.setMyRsvp(me, publicEvent.id, { response: "MAYBE" });
+    await p.setMyRsvp(me, publicEvent.id, { response: "GOING" });
+    expect((await p.myAgenda(me))[0]).toMatchObject({ myResponse: "GOING", going: 1 });
+    expect(await p.eventRsvpSummary(secretary, publicEvent.id)).toMatchObject({ going: 1, maybe: 0 });
+    expect((await p.myEventIcs(me, publicEvent.id)).body).toContain("BEGIN:VEVENT");
+    await expectCode(p.myEventIcs(me, privateEvent.id), "NOT_FOUND");
+
+    // Ministerios: solicitar, no duplicar, aprobar crea la participación.
+    const ministry = await saveMinistry(admin, null, { name: "Alabanza" });
+    await p.requestToJoinMinistry(me, ministry.id, { message: "Toco guitarra" });
+    await expectCode(p.requestToJoinMinistry(me, ministry.id, {}), "CONFLICT");
+    const [req] = await p.pendingJoinRequests(admin, ministry.id);
+    await expectCode(p.reviewJoinRequest(them, req!.id, { decision: "APPROVED" }), "FORBIDDEN");
+    await p.reviewJoinRequest(admin, req!.id, { decision: "APPROVED" });
+    expect(await db.ministryMembership.count({ where: { ministryId: ministry.id, memberId: ana.id, endDate: null } })).toBe(1);
+    await expectCode(p.reviewJoinRequest(admin, req!.id, { decision: "REJECTED" }), "CONFLICT");
+    expect((await p.myMinistriesOverview(me)).mine).toHaveLength(1);
+
+    // Oración: privada por persona; solo el equipo pastoral la lee y responde.
+    await p.createPrayerRequest(me, { subject: "Salud", body: "Por la salud de mi familia, gracias." });
+    expect(await p.myPrayerRequests(them)).toHaveLength(0);
+    await expectCode(p.listPrayerRequests(admin), "FORBIDDEN");
+    const [prayer] = (await p.listPrayerRequests(pastor)).rows;
+    await p.updatePrayerRequest(pastor, prayer!.id, { status: "PRAYING", pastoralNote: "Estamos orando." });
+    await expectCode(p.closeMyPrayerRequest(them, prayer!.id, true), "NOT_FOUND");
+    await p.closeMyPrayerRequest(me, prayer!.id, true);
+    expect((await p.myPrayerRequests(me))[0]).toMatchObject({ status: "ANSWERED", pastoralNote: "Estamos orando." });
+    const audit = await db.auditLog.findFirst({ where: { action: "prayer.create" } });
+    expect(JSON.stringify(audit?.metadata)).not.toContain("salud");
+
+    // Aportaciones y constancia: solo las propias con nombre.
+    await db.donation.createMany({
+      data: [
+        { amount: "100.00", receivedAt: new Date(), conceptId, methodId, memberId: ana.id, createdById: admin.userId },
+        { amount: "50.00", receivedAt: new Date(), conceptId, methodId, memberId: beto.id, createdById: admin.userId },
+      ],
+    });
+    const giving = await p.myGiving(me);
+    expect(giving).toMatchObject({ total: "100.00", count: 1 });
+    const statement = await p.myGivingStatement(me);
+    expect(statement.rows).toHaveLength(1);
+
+    // Mis datos: incluye lo propio y queda en bitácora.
+    const data = await p.myDataExport(me);
+    expect(data.firstName).toBe("Ana");
+    expect(data.rsvps).toHaveLength(1);
+    expect(data.donations).toHaveLength(1);
+    expect(await db.auditLog.count({ where: { action: { in: ["portal.data_export", "portal.statement_export"] } } })).toBe(2);
+
+    // Sin ficha vinculada no hay portal.
+    await expectCode(p.myAgenda(admin), "FORBIDDEN");
+  });
+});
