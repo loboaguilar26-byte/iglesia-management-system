@@ -1,17 +1,104 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { buttonClass } from "@/components/ui/button";
+import { Badge, EmptyState, PageHeader, ResponsiveTable } from "@/components/ui/layout";
+import { Pagination } from "@/components/ui/pagination";
 import { can } from "@/lib/authz";
-import { formatDate } from "@/lib/dates";
+import { formatDateOnly } from "@/lib/dates";
 import { requirePageActor } from "@/lib/session";
-import { listMembers } from "@/modules/members/service";
+import { MEMBER_STATUSES, MEMBER_STATUS_LABEL } from "@/modules/members/schema";
+import { listMembers, memberStatusCounts } from "@/modules/members/service";
+import { chapelOptions } from "@/modules/chapels/service";
+import { statusTone } from "./status-tone";
 
 export const metadata: Metadata = { title: "Miembros" };
 
-export default async function MembersPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+
+export default async function MembersPage({ searchParams }: PageProps<"/admin/miembros">) {
   const actor = await requirePageActor();
   if (!can(actor, "members:read")) notFound();
-  const params = await searchParams;
-  const result = await listMembers(actor, { page: params.page, q: params.q, status: params.status });
-  return <div className="flex max-w-6xl flex-col gap-6"><div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">Directorio</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">Miembros</h1><p className="mt-2 text-sm text-muted">Personas, visitantes y miembros activos de la iglesia.</p></div>{can(actor, "members:create") ? <Link href="/admin/miembros/nuevo" className="inline-flex min-h-11 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm">Registrar miembro</Link> : null}</div><form className="grid gap-3 rounded-2xl border border-border bg-surface p-4 shadow-sm sm:grid-cols-[1fr_180px_auto]"><input name="q" defaultValue={params.q ?? ""} placeholder="Buscar por nombre" className="min-h-11 rounded-lg border border-border bg-surface px-3 text-base outline-none focus:border-primary focus:ring-2 focus:ring-primary/30" /><select name="status" defaultValue={params.status ?? ""} className="min-h-11 rounded-lg border border-border bg-surface px-3 text-base"><option value="">Todos los estados</option><option value="ACTIVE">Activos</option><option value="VISITOR">Visitantes</option><option value="INACTIVE">Inactivos</option></select><button className="min-h-11 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground" type="submit">Buscar</button></form><div className="overflow-x-auto rounded-2xl border border-border bg-surface shadow-sm"><table className="w-full min-w-[700px] text-left text-sm"><thead className="border-b border-border bg-background/70"><tr><th className="p-4 font-semibold">Nombre</th><th className="p-4 font-semibold">Contacto</th><th className="p-4 font-semibold">Estado</th><th className="p-4 font-semibold">Ingreso</th></tr></thead><tbody>{result.data.map((member) => <tr key={member.id} className="border-b border-border last:border-0 hover:bg-background/60"><td className="p-4"><Link href={`/admin/miembros/${member.id}`} className="font-semibold text-primary hover:underline">{member.firstName} {member.lastName}</Link>{member.position ? <span className="mt-1 block text-xs text-muted">{member.position}</span> : null}</td><td className="p-4 text-muted">{member.email ?? member.phone ?? "Sin contacto"}</td><td className="p-4"><span className={`rounded-full px-2.5 py-1 text-xs font-medium ${member.status === "ACTIVE" ? "bg-success/10 text-success" : member.status === "INACTIVE" ? "bg-danger/10 text-danger" : "bg-accent/10 text-accent"}`}>{member.status === "ACTIVE" ? "Activo" : member.status === "INACTIVE" ? "Inactivo" : "Visitante"}</span></td><td className="p-4 text-muted">{member.joinDate ? formatDate(member.joinDate) : "—"}</td></tr>)}</tbody></table>{!result.data.length ? <p className="p-8 text-center text-sm text-muted">No hay miembros que coincidan con la búsqueda.</p> : null}</div><p className="text-sm text-muted">Mostrando {result.data.length} de {result.meta.total} registros.</p></div>;
+  const sp = await searchParams;
+  const q = typeof sp.q === "string" ? sp.q : "";
+  const status = typeof sp.estado === "string" ? sp.estado : "";
+  const chapel = typeof sp.capilla === "string" ? sp.capilla : "";
+  const [{ data, meta }, counts, chapels] = await Promise.all([listMembers(actor, { q, status, chapelId: chapel || undefined, page: sp.page }), memberStatusCounts(actor), can(actor, "chapels:read") ? chapelOptions() : Promise.resolve([])]);
+  const hrefFor = (p: number) => `/admin/miembros?${new URLSearchParams({ q, estado: status, ...(chapel ? { capilla: chapel } : {}), page: String(p) })}`;
+  const tabs = [
+    { value: "", label: "Todos", count: counts.total },
+    { value: "ACTIVE", label: "Activos", count: counts.ACTIVE },
+    { value: "VISITOR", label: "Visitantes", count: counts.VISITOR },
+    { value: "INACTIVE", label: "Inactivos", count: counts.INACTIVE },
+  ];
+
+  return (
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="Miembros"
+        description="Directorio de la congregación. Solo personal autorizado lo consulta; nunca se publica."
+        actions={can(actor, "members:create") ? <Link href="/admin/miembros/nuevo" className={buttonClass()}>Registrar persona</Link> : null}
+      />
+      <nav aria-label="Filtrar por estado" className="flex flex-wrap gap-2">
+        {tabs.map((t) => (
+          <Link
+            key={t.value}
+            href={`/admin/miembros?${new URLSearchParams({ ...(q ? { q } : {}), ...(t.value ? { estado: t.value } : {}) })}`}
+            aria-current={status === t.value ? "page" : undefined}
+            className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm transition ${status === t.value ? "bg-primary text-primary-foreground shadow-sm" : "border border-border bg-surface hover:bg-surface-2"}`}
+          >
+            {t.label}
+            <span className={`rounded-full px-2 text-xs tabular-nums ${status === t.value ? "bg-white/20" : "bg-surface-2 text-muted"}`}>{t.count}</span>
+          </Link>
+        ))}
+      </nav>
+      <form role="search" className="flex flex-wrap gap-2">
+        <label htmlFor="q" className="sr-only">Buscar por nombre</label>
+        <input id="q" name="q" defaultValue={q} placeholder="Buscar por nombre (sin importar acentos)" className="min-h-10 w-full max-w-sm flex-1 rounded-lg border border-border bg-surface px-3" />
+        <label htmlFor="estado" className="sr-only">Estado</label>
+        <select id="estado" name="estado" defaultValue={status} className="min-h-10 rounded-lg border border-border bg-surface px-3">
+          <option value="">Todos los estados</option>
+          {MEMBER_STATUSES.map((s) => <option key={s} value={s}>{MEMBER_STATUS_LABEL[s]}</option>)}
+        </select>
+        {chapels.length ? (
+          <>
+            <label htmlFor="capilla" className="sr-only">Capilla</label>
+            <select id="capilla" name="capilla" defaultValue={chapel} className="min-h-10 rounded-lg border border-border bg-surface px-3">
+              <option value="">Todas las sedes</option>
+              <option value="principal">Sede principal</option>
+              {chapels.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </>
+        ) : null}
+        <button className={buttonClass("secondary")} type="submit">Filtrar</button>
+      </form>
+      {data.length === 0 ? (
+        <EmptyState title={q || status ? "Sin resultados" : "Aún no hay personas registradas"} description={q || status ? "Prueba con otro nombre o estado." : "Registra a los miembros y visitantes de la congregación."} />
+      ) : (
+        <ResponsiveTable
+          rows={data}
+          rowKey={(m) => m.id}
+          caption="Miembros"
+          columns={[
+            {
+              header: "Nombre",
+              cell: (m) => (
+                <Link href={`/admin/miembros/${m.id}`} className="inline-flex items-center gap-3 font-medium hover:text-primary">
+                  <span aria-hidden className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent-soft text-xs font-semibold text-accent">
+                    {`${m.firstName.charAt(0)}${m.lastName.charAt(0)}`.toUpperCase()}
+                  </span>
+                  {m.lastName}, {m.firstName}
+                  {m.isMinor ? <span className="ml-2 text-xs text-muted">(menor)</span> : null}
+                </Link>
+              ),
+            },
+            { header: "Estado", cell: (m) => <Badge tone={statusTone[m.status]}>{MEMBER_STATUS_LABEL[m.status]}</Badge> },
+            { header: "Contacto", cell: (m) => <span className="text-muted">{[m.phone, m.email].filter(Boolean).join(" · ") || "—"}</span> },
+            { header: "Ministerios", cell: (m) => m.ministryMemberships.map((x) => x.ministry.name).join(", ") || "—" },
+            { header: "Ingreso", cell: (m) => (m.joinDate ? formatDateOnly(m.joinDate) : "—") },
+          ]}
+        />
+      )}
+      <Pagination {...meta} hrefFor={hrefFor} />
+    </div>
+  );
 }

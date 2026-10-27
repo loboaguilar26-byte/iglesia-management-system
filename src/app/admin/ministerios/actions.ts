@@ -2,24 +2,73 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { toActionState, type ActionState } from "@/lib/action-state";
+import { formToObject, toActionState, type ActionState } from "@/lib/action-state";
+import { refreshPublicSite } from "@/lib/public-cache";
 import { getActor } from "@/lib/session";
-import { saveMinistry, setMinistryActive } from "@/modules/ministries/service";
+import { addMembership, endMembership, saveMinistry, setMinistryActive } from "@/modules/ministries/service";
+import { reviewJoinRequest } from "@/modules/portal/engagement";
 
-const value = (form: FormData, name: string) => { const item = form.get(name); return typeof item === "string" ? item : ""; };
+export async function createMinistryAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  let id: string;
+  try {
+    id = (await saveMinistry(await getActor(), null, formToObject(form))).id;
+  } catch (error) {
+    return toActionState(error, form);
+  }
+  refreshPublicSite();
+  revalidatePath("/admin/ministerios");
+  redirect(`/admin/ministerios/${id}`);
+}
 
-export async function saveMinistryAction(id: string | null, _prev: ActionState, form: FormData): Promise<ActionState> {
-  let savedId = id;
-  try { savedId = (await saveMinistry(await getActor(), id, { name: value(form, "name"), description: value(form, "description"), isPublic: form.get("isPublic") === "on" })).id; }
-  catch (error) { return toActionState(error); }
-  revalidatePath("/admin/ministerios"); revalidatePath(`/admin/ministerios/${savedId}`); revalidatePath("/ministerios"); revalidatePath("/");
-  if (!id) redirect(`/admin/ministerios/${savedId}`);
+export async function updateMinistryAction(id: string, _prev: ActionState, form: FormData): Promise<ActionState> {
+  try {
+    await saveMinistry(await getActor(), id, formToObject(form));
+  } catch (error) {
+    return toActionState(error, form);
+  }
+  refreshPublicSite();
+  revalidatePath(`/admin/ministerios/${id}`);
   return { ok: true, message: "Ministerio actualizado." };
 }
 
 export async function setMinistryActiveAction(id: string, isActive: boolean, _prev: ActionState): Promise<ActionState> {
-  try { await setMinistryActive(await getActor(), id, isActive); }
-  catch (error) { return toActionState(error); }
-  revalidatePath("/admin/ministerios"); revalidatePath(`/admin/ministerios/${id}`); revalidatePath("/ministerios"); revalidatePath("/");
-  return { ok: true, message: isActive ? "Ministerio activado." : "Ministerio desactivado." };
+  try {
+    await setMinistryActive(await getActor(), id, isActive);
+  } catch (error) {
+    return toActionState(error);
+  }
+  refreshPublicSite();
+  revalidatePath(`/admin/ministerios/${id}`);
+  return { ok: true };
+}
+
+export async function addMembershipAction(ministryId: string, _prev: ActionState, form: FormData): Promise<ActionState> {
+  try {
+    await addMembership(await getActor(), ministryId, formToObject(form));
+  } catch (error) {
+    return toActionState(error, form);
+  }
+  revalidatePath(`/admin/ministerios/${ministryId}`);
+  return { ok: true, message: "Integrante agregado." };
+}
+
+export async function endMembershipAction(ministryId: string, membershipId: string, _prev: ActionState, form: FormData): Promise<ActionState> {
+  try {
+    await endMembership(await getActor(), membershipId, formToObject(form));
+  } catch (error) {
+    return toActionState(error, form);
+  }
+  revalidatePath(`/admin/ministerios/${ministryId}`);
+  return { ok: true, message: "Participación finalizada." };
+}
+
+export async function reviewJoinRequestAction(ministryId: string, requestId: string, decision: "APPROVED" | "REJECTED", _prev: ActionState, form: FormData): Promise<ActionState> {
+  try {
+    await reviewJoinRequest(await getActor(), requestId, { decision, note: formToObject(form).note });
+  } catch (error) {
+    return toActionState(error, form);
+  }
+  revalidatePath(`/admin/ministerios/${ministryId}`);
+  revalidatePath("/mi-cuenta/ministerios");
+  return { ok: true, message: decision === "APPROVED" ? "Solicitud aprobada: la persona ya es integrante." : "Solicitud rechazada." };
 }

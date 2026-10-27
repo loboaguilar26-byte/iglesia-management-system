@@ -1,26 +1,52 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Fraunces, Inter } from "next/font/google";
+import { NativeBridge } from "@/components/native-bridge";
+import { ServiceWorkerRegister } from "@/components/pwa";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
+const fraunces = Fraunces({ variable: "--font-fraunces", subsets: ["latin"], axes: ["opsz"] });
 
 export const metadata: Metadata = {
   title: { default: "Eclaria", template: "%s · Eclaria" },
   description: "Gestión integral de iglesias.",
+  applicationName: "Eclaria",
+  icons: {
+    icon: [{ url: "/app-icon/192", type: "image/png", sizes: "192x192" }],
+    apple: [{ url: "/app-icon/192", sizes: "192x192" }],
+  },
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Eclaria" },
+  formatDetection: { telephone: false },
+};
+
+// Ajustes para celulares: color de la barra del sistema y uso de toda la pantalla (muescas).
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#0b1726" },
+    { media: "(prefers-color-scheme: dark)", color: "#050b15" },
+  ],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="es-MX" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+    // suppressHydrationWarning: el script de abajo fija `data-theme` antes de que React hidrate.
+    <html lang="es-MX" className={`${inter.variable} ${fraunces.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        {/* Aplica el tema guardado antes del primer pintado (evita el parpadeo claro/oscuro). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}})()`,
+          }}
+        />
+      </head>
+      <body className="flex min-h-full flex-col font-sans">
+        {children}
+        <ServiceWorkerRegister />
+        <NativeBridge />
+      </body>
     </html>
   );
 }

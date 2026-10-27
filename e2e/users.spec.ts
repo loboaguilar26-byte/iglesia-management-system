@@ -69,7 +69,7 @@ test.describe("usuarios y permisos", () => {
 
   test("navegación móvil @movil", async ({ page }) => {
     await login(page, testUsers().admin);
-    await page.locator("summary", { hasText: "Abrir menú" }).click();
+    await page.getByRole("button", { name: "Abrir menú" }).click();
     await page.getByRole("link", { name: "Usuarios y roles", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Usuarios y roles" })).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);

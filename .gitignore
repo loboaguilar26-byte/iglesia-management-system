@@ -52,3 +52,8 @@ src/generated/
 
 # datos efímeros de pruebas E2E
 e2e/.data/
+verify.log
+
+# Firebase
+.firebase/
+firebase-debug.log

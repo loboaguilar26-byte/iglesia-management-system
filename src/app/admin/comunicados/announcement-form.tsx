@@ -1,10 +1,33 @@
-"use client";
-
-import { useActionState } from "react";
-import { Alert } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { Field } from "@/components/ui/field";
+import { ActionForm, SubmitButton } from "@/components/ui/action-form";
+import { CheckboxField, Field, SelectField, TextArea } from "@/components/ui/field";
 import type { ActionState } from "@/lib/action-state";
-import { createAnnouncementAction, updateAnnouncementAction } from "./actions";
 
-export function AnnouncementForm({ id, title = "", body = "", visibility = "PRIVATE", isFeatured = false, expiresAt, status = "DRAFT" }: { id: string | null; title?: string; body?: string; visibility?: string; isFeatured?: boolean; expiresAt?: Date | null; status?: string }) { const actionFn = id ? updateAnnouncementAction.bind(null, id) : createAnnouncementAction; const [state, action, pending] = useActionState<ActionState, FormData>(actionFn, {}); return <form action={action} className="flex flex-col gap-4">{state.message ? <Alert tone={state.ok ? "success" : "error"}>{state.message}</Alert> : null}<Field label="Título" name="title" defaultValue={title} required /><label className="flex flex-col gap-1 text-sm font-medium"><span>Contenido</span><textarea name="body" defaultValue={body} className="min-h-48 rounded-lg border border-border bg-surface p-3 text-base outline-none focus:border-primary focus:ring-2 focus:ring-primary/30" /></label><div className="grid gap-4 sm:grid-cols-2"><label className="flex flex-col gap-1 text-sm font-medium"><span>Visibilidad</span><select name="visibility" defaultValue={visibility} className="min-h-11 rounded-lg border border-border bg-surface px-3"><option value="PRIVATE">Solo administración</option><option value="PUBLIC">Sitio público</option></select></label><Field label="Vigente hasta" name="expiresOn" type="date" defaultValue={expiresAt ? expiresAt.toISOString().slice(0, 10) : ""} /></div><label className="flex items-center gap-2 text-sm"><input type="checkbox" name="isFeatured" defaultChecked={isFeatured} /> Destacar en la portada</label><label className="flex items-center gap-2 text-sm"><input type="checkbox" name="publish" defaultChecked={status === "PUBLISHED"} /> Publicar ahora</label><Button type="submit" disabled={pending}>{pending ? "Guardando…" : id ? "Guardar cambios" : "Crear comunicado"}</Button></form>; }
+export function AnnouncementForm({ action, values, canPublish, alreadyPublished, submitLabel }: {
+  action: (prev: ActionState, form: FormData) => Promise<ActionState>;
+  values?: { title: string; body: string; visibility: string; isFeatured: boolean; expiresOn: string };
+  canPublish: boolean;
+  alreadyPublished?: boolean;
+  submitLabel: string;
+}) {
+  return (
+    <ActionForm action={action}>
+      <Field label="Título" name="title" defaultValue={values?.title} required />
+      <TextArea label="Contenido" name="body" defaultValue={values?.body} rows={8} required hint="Texto plano; los saltos de línea se respetan." />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <SelectField
+          label="Visibilidad"
+          name="visibility"
+          defaultValue={values?.visibility ?? "PRIVATE"}
+          options={[
+            { value: "PRIVATE", label: "Interno (solo panel)" },
+            { value: "PUBLIC", label: "Público (sitio web)" },
+          ]}
+        />
+        <Field label="Vigente hasta (opcional)" name="expiresOn" type="date" defaultValue={values?.expiresOn ?? ""} />
+      </div>
+      <CheckboxField label="Destacar" name="isFeatured" defaultChecked={values?.isFeatured} hint="Aparece primero y resaltado." />
+      {canPublish && !alreadyPublished ? <CheckboxField label="Publicar ahora" name="publish" hint="Si no, se guarda como borrador." /> : null}
+      <SubmitButton>{submitLabel}</SubmitButton>
+    </ActionForm>
+  );
+}

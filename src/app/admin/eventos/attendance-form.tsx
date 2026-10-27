@@ -1,8 +1,0 @@
-"use client";
-import { useActionState } from "react";
-import { Alert } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import type { ActionState } from "@/lib/action-state";
-import { recordAttendanceAction } from "./actions";
-type Row = { id: string; firstName: string; lastName: string; attendance: string | null };
-export function AttendanceForm({ eventId, rows }: { eventId: string; rows: Row[] }) { const [state, action, pending] = useActionState<ActionState, FormData>(recordAttendanceAction.bind(null, eventId), {}); return <form action={action} className="flex flex-col gap-4"><input type="hidden" name="records" value={JSON.stringify(rows.map((row) => ({ memberId: row.id, status: row.attendance ?? "ABSENT" })))} />{state.message ? <Alert tone={state.ok ? "success" : "error"}>{state.message}</Alert> : null}<div className="overflow-x-auto rounded-xl border border-border"><table className="w-full min-w-[520px] text-left text-sm"><thead className="border-b border-border bg-background/70"><tr><th className="p-3">Miembro</th><th className="p-3">Estado</th></tr></thead><tbody>{rows.map((row) => <tr key={row.id} className="border-b border-border last:border-0"><td className="p-3">{row.firstName} {row.lastName}</td><td className="p-3"><select name={`status-${row.id}`} defaultValue={row.attendance ?? "ABSENT"} className="min-h-10 rounded-lg border border-border bg-surface px-3"><option value="PRESENT">Presente</option><option value="ABSENT">Ausente</option></select></td></tr>)}</tbody></table></div><Button type="submit" disabled={pending}>{pending ? "Guardando…" : "Guardar asistencia"}</Button></form>; }

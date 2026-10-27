@@ -23,6 +23,7 @@ const userSelect = {
   isActive: true,
   createdAt: true,
   roles: { select: { role: { select: { key: true, name: true } } } },
+  member: { select: { id: true, firstName: true, lastName: true } },
 } satisfies Prisma.UserSelect;
 
 type UserRow = Prisma.UserGetPayload<{ select: typeof userSelect }>;
@@ -34,6 +35,7 @@ export type UserDto = {
   isActive: boolean;
   createdAt: Date;
   roles: { key: RoleKey; name: string }[];
+  member: { id: string; name: string } | null;
 };
 
 function toDto(u: UserRow): UserDto {
@@ -44,7 +46,44 @@ function toDto(u: UserRow): UserDto {
     isActive: u.isActive,
     createdAt: u.createdAt,
     roles: u.roles.map((r) => ({ key: r.role.key as RoleKey, name: r.role.name })),
+    member: u.member ? { id: u.member.id, name: `${u.member.firstName} ${u.member.lastName}` } : null,
   };
+}
+
+/**
+ * Vincula (o desvincula) la cuenta con una ficha de miembro. Necesario para el portal del
+ * miembro y para el alcance del rol Coordinador.
+ */
+export async function linkUserMember(actor: Actor | null, userId: string, memberId: string | null) {
+  const a = requirePermission(actor, "users:update");
+  await db.$transaction(async (tx) => {
+    if (memberId) {
+      const member = await tx.member.findUnique({ where: { id: memberId }, select: { id: true, user: { select: { id: true } } } });
+      if (!member) throw new AppError("VALIDATION_ERROR", "Persona no encontrada.", { memberId: ["Selecciona una persona"] });
+      if (member.user && member.user.id !== userId) throw new AppError("CONFLICT", "Esa ficha ya está vinculada a otra cuenta.", { memberId: ["Ya vinculada"] });
+    }
+    await tx.user.update({ where: { id: userId }, data: { memberId } });
+    await recordAudit(tx, a, { action: memberId ? "user.member_link" : "user.member_unlink", entityType: "User", entityId: userId, metadata: { memberId } });
+  });
+}
+
+/** Crea una cuenta con rol Miembro (solo portal) vinculada a la ficha indicada. */
+export async function createPortalAccount(actor: Actor | null, memberId: string, input: unknown) {
+  const a = requirePermission(actor, "users:create");
+  requirePermission(a, "roles:assign");
+  const member = await db.member.findUnique({ where: { id: memberId }, select: { firstName: true, lastName: true, status: true, isMinor: true, user: { select: { id: true } } } });
+  if (!member) throw new AppError("NOT_FOUND", "Persona no encontrada.");
+  if (member.user) throw new AppError("CONFLICT", "Esta persona ya tiene acceso al portal.");
+  if (member.status === "INACTIVE") throw new AppError("CONFLICT", "No se crean accesos para personas inactivas.");
+  if (member.isMinor) throw new AppError("CONFLICT", "No se crean cuentas para menores de edad.");
+  const raw = (input ?? {}) as Record<string, unknown>;
+  const data = parseInput(createUserSchema, { name: `${member.firstName} ${member.lastName}`, email: raw.email, password: raw.password, roles: ["MEMBER"] });
+  return db.$transaction(async (tx) => {
+    const userId = await insertUserWithPassword(tx, data, a.userId);
+    await tx.user.update({ where: { id: userId }, data: { memberId } });
+    await recordAudit(tx, a, { action: "user.portal_create", entityType: "User", entityId: userId, metadata: { memberId } });
+    return userId;
+  });
 }
 
 export async function listUsers(actor: Actor | null, input: unknown) {
