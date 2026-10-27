@@ -23,8 +23,11 @@ const PAYMENT_METHODS = ["Efectivo", "Transferencia", "Depósito bancario", "Ter
 
 export async function seedBase({ resetPermissions = false } = {}) {
   // Permisos que no existían antes de esta ejecución: se conceden a los roles que los incluyen por
-  // defecto, sin tocar los ajustes previos de la iglesia.
-  const existingKeys = new Set((await db.permission.findMany({ select: { key: true } })).map((p) => p.key));
+  // defecto, sin tocar los ajustes previos de la iglesia. Un permiso sin ningún rol asignado también
+  // cuenta como nuevo (p. ej., si una ejecución anterior se interrumpió tras crearlo).
+  const existingKeys = new Set(
+    (await db.permission.findMany({ where: { roles: { some: {} } }, select: { key: true } })).map((p) => p.key),
+  );
   const newPermissions = new Set<Permission>();
   for (const [key, description] of Object.entries(PERMISSIONS)) {
     if (!existingKeys.has(key)) newPermissions.add(key as Permission);
@@ -39,8 +42,8 @@ export async function seedBase({ resetPermissions = false } = {}) {
     const existing = await db.role.findUnique({ where: { key } });
     const role = await db.role.upsert({
       where: { key },
-      update: { name: def.name, description: def.description, isSystem: true },
-      create: { key, name: def.name, description: def.description, isSystem: true },
+      update: { name: def.name, description: def.description, hierarchyLevel: def.level, isSystem: true },
+      create: { key, name: def.name, description: def.description, hierarchyLevel: def.level, isSystem: true },
     });
     if (!existing || resetPermissions) {
       await db.rolePermission.deleteMany({ where: { roleId: role.id } });

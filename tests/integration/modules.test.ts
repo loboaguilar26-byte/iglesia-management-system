@@ -411,3 +411,22 @@ async function updateMemberKeep(actor: Actor, id: string, chapelId: string) {
   const { updateMember } = await import("@/modules/members/service");
   return updateMember(actor, id, { firstName: "Ana", lastName: "Capilla", chapelId, confirmDuplicate: "on" });
 }
+
+describe("iglesias y franquicias (módulo de Victor)", () => {
+  it("crea franquicia e iglesia con perfil, respeta permisos y evita duplicados", async () => {
+    await resetDatabase();
+    const { createChurch, listChurches, listFranchises } = await import("@/modules/churches/service");
+    const admin = await createTestUser(["ADMIN"]);
+    const secretary = await createTestUser(["SECRETARY"]);
+
+    await expectCode(createChurch(secretary, { franchiseName: "Red Uno", name: "Iglesia A", slug: "iglesia-a" }), "FORBIDDEN");
+    const church = await createChurch(admin, { franchiseName: "Red Uno", name: "Iglesia A", slug: "iglesia-a" });
+    expect(church.franchise.slug).toBe("red-uno");
+    expect(church.profile?.currency).toBe("MXN");
+    await expectCode(createChurch(admin, { franchiseId: church.franchise.id, name: "Otra", slug: "iglesia-a" }), "CONFLICT");
+    await expectCode(createChurch(admin, { franchiseName: "Red Uno", name: "Iglesia B", slug: "iglesia-b" }), "CONFLICT");
+    expect((await listFranchises(admin))[0]._count.churches).toBe(1);
+    expect(await listChurches(admin)).toHaveLength(1);
+    expect(await db.auditLog.count({ where: { action: "church.create" } })).toBe(1);
+  });
+});
