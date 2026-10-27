@@ -22,7 +22,15 @@ const DONATION_CONCEPTS = ["Diezmo", "Ofrenda", "Misiones", "Construcción", "Ot
 const PAYMENT_METHODS = ["Efectivo", "Transferencia", "Depósito bancario", "Terminal (tarjeta)", "Otro"];
 
 export async function seedBase({ resetPermissions = false } = {}) {
+  // Permisos que no existían antes de esta ejecución: se conceden a los roles que los incluyen por
+  // defecto, sin tocar los ajustes previos de la iglesia. Un permiso sin ningún rol asignado también
+  // cuenta como nuevo (p. ej., si una ejecución anterior se interrumpió tras crearlo).
+  const existingKeys = new Set(
+    (await db.permission.findMany({ where: { roles: { some: {} } }, select: { key: true } })).map((p) => p.key),
+  );
+  const newPermissions = new Set<Permission>();
   for (const [key, description] of Object.entries(PERMISSIONS)) {
+    if (!existingKeys.has(key)) newPermissions.add(key as Permission);
     await db.permission.upsert({ where: { key }, update: { description }, create: { key, description } });
   }
   const permissionIds = new Map(
@@ -42,6 +50,14 @@ export async function seedBase({ resetPermissions = false } = {}) {
       await db.rolePermission.createMany({
         data: [...new Set(def.permissions)].map((p) => ({ roleId: role.id, permissionId: permissionIds.get(p)! })),
       });
+    } else if (existingKeys.size > 0) {
+      const added = [...new Set(def.permissions)].filter((p) => newPermissions.has(p));
+      if (added.length) {
+        await db.rolePermission.createMany({
+          data: added.map((p) => ({ roleId: role.id, permissionId: permissionIds.get(p)! })),
+          skipDuplicates: true,
+        });
+      }
     }
   }
 
@@ -52,6 +68,6 @@ export async function seedBase({ resetPermissions = false } = {}) {
   await db.churchSettings.upsert({
     where: { id: "default" },
     update: {},
-    create: { id: "default", name: "Nombre de la iglesia (configurar)" },
+    create: { id: "default", name: "Eclaria" },
   });
 }

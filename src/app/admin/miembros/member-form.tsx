@@ -1,40 +1,53 @@
-"use client";
-
-import { useActionState } from "react";
-import { Alert } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { Field } from "@/components/ui/field";
+import { ChapelSelect } from "@/components/chapel-select";
+import { ActionForm, SubmitButton } from "@/components/ui/action-form";
+import { CheckboxField, Field, SelectField, TextArea } from "@/components/ui/field";
 import type { ActionState } from "@/lib/action-state";
-import { createMemberAction, updateMemberAction } from "./actions";
+import { MEMBER_STATUSES, MEMBER_STATUS_LABEL } from "@/modules/members/schema";
 
-type Member = { id?: string; firstName?: string; lastName?: string; phone?: string | null; email?: string | null; joinDate?: Date | null; status?: string; position?: string | null; isMinor?: boolean; notes?: string | null };
+type Values = {
+  chapelId?: string | null;
+  firstName?: string;
+  lastName?: string;
+  phone?: string | null;
+  email?: string | null;
+  joinDate?: Date | null;
+  birthDate?: Date | null;
+  status?: string;
+  position?: string | null;
+  isMinor?: boolean;
+  notes?: string | null;
+};
 
-function dateValue(value?: Date | null) { return value ? new Date(value).toISOString().slice(0, 10) : ""; }
-
-export function MemberForm({ member }: { member?: Member }) {
-  const bound = member?.id ? updateMemberAction.bind(null, member.id) : createMemberAction;
-  const [state, action, pending] = useActionState<ActionState, FormData>(bound, {});
-  const errors = state.fieldErrors ?? {};
+export function MemberForm({ action, values = {}, canNotes, canStatus, submitLabel }: {
+  action: (prev: ActionState, form: FormData) => Promise<ActionState>;
+  values?: Values;
+  canNotes: boolean;
+  canStatus: boolean;
+  submitLabel: string;
+}) {
   return (
-    <form action={action} className="flex max-w-3xl flex-col gap-5">
-      {state.message ? <Alert tone={state.ok ? "success" : "error"}>{state.message}</Alert> : null}
-      <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-6">
-        <h2 className="text-lg font-semibold">Datos personales</h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <Field label="Nombre(s)" name="firstName" defaultValue={member?.firstName ?? ""} required errors={errors.firstName} />
-          <Field label="Apellidos" name="lastName" defaultValue={member?.lastName ?? ""} required errors={errors.lastName} />
-          <Field label="Teléfono" name="phone" defaultValue={member?.phone ?? ""} errors={errors.phone} />
-          <Field label="Correo" name="email" type="email" defaultValue={member?.email ?? ""} errors={errors.email} />
-          <Field label="Fecha de ingreso" name="joinDate" type="date" defaultValue={dateValue(member?.joinDate)} errors={errors.joinDate} />
-          <Field label="Cargo organizativo" name="position" defaultValue={member?.position ?? ""} errors={errors.position} />
-        </div>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <label className="flex flex-col gap-1 text-sm font-medium">Estado<select name="status" defaultValue={member?.status ?? "ACTIVE"} className="min-h-11 rounded-lg border border-border bg-surface px-3 text-base outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"><option value="VISITOR">Visitante</option><option value="ACTIVE">Activo</option><option value="INACTIVE">Inactivo</option></select>{errors.status?.length ? <span className="text-sm text-danger">{errors.status.join(" ")}</span> : null}</label>
-          <label className="flex items-center gap-3 self-end pb-2 text-sm font-medium"><input type="checkbox" name="isMinor" defaultChecked={member?.isMinor ?? false} className="size-4 accent-primary" />Es menor de edad</label>
-        </div>
-        <label className="mt-4 flex flex-col gap-1 text-sm font-medium">Notas pastorales<textarea name="notes" defaultValue={member?.notes ?? ""} className="min-h-32 rounded-lg border border-border bg-surface p-3 text-base outline-none focus:border-primary focus:ring-2 focus:ring-primary/30" />{errors.notes?.length ? <span className="text-sm text-danger">{errors.notes.join(" ")}</span> : null}</label>
-      </section>
-      <Button type="submit" disabled={pending} className="self-start">{pending ? "Guardando…" : member ? "Guardar cambios" : "Registrar miembro"}</Button>
-    </form>
+    <ActionForm action={action}>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Nombre(s)" name="firstName" defaultValue={values.firstName} required autoComplete="off" />
+        <Field label="Apellidos" name="lastName" defaultValue={values.lastName} required autoComplete="off" />
+        <Field label="Teléfono" name="phone" type="tel" defaultValue={values.phone ?? ""} hint="Opcional." />
+        <Field label="Correo electrónico" name="email" type="email" defaultValue={values.email ?? ""} hint="Opcional." />
+        <Field label="Fecha de ingreso" name="joinDate" type="date" defaultValue={values.joinDate ? values.joinDate.toISOString().slice(0, 10) : ""} />
+        <Field label="Fecha de nacimiento" name="birthDate" type="date" defaultValue={values.birthDate ? values.birthDate.toISOString().slice(0, 10) : ""} hint="Opcional. Solo para la lista interna de cumpleaños." />
+        <SelectField
+          label="Estado"
+          name="status"
+          defaultValue={values.status ?? "ACTIVE"}
+          options={MEMBER_STATUSES.filter((s) => canStatus || s !== "INACTIVE" || values.status === "INACTIVE").map((s) => ({ value: s, label: MEMBER_STATUS_LABEL[s] }))}
+          disabled={!canStatus && values.status === "INACTIVE"}
+        />
+        <ChapelSelect defaultValue={values.chapelId} hint="Sede a la que asiste la persona." />
+        <Field label="Cargo o responsabilidad" name="position" defaultValue={values.position ?? ""} hint="Texto libre (p. ej. diácono, maestra). No otorga permisos." />
+      </div>
+      <CheckboxField label="Es menor de edad" name="isMinor" defaultChecked={values.isMinor} hint="Sus datos nunca se muestran en el sitio público." />
+      {canNotes ? <TextArea label="Notas pastorales (confidenciales)" name="notes" defaultValue={values.notes ?? ""} rows={3} hint="Solo visibles para roles autorizados." /> : null}
+      <CheckboxField label="Registrar de todos modos si parece duplicado" name="confirmDuplicate" />
+      <SubmitButton>{submitLabel}</SubmitButton>
+    </ActionForm>
   );
 }

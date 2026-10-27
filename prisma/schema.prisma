@@ -36,13 +36,23 @@ model User {
   member   Member? @relation(fields: [memberId], references: [id])
   memberId String? @unique
 
-  membersCreated        Member[]         @relation("MemberCreatedBy")
-  membersUpdated        Member[]         @relation("MemberUpdatedBy")
-  attendanceRecorded    Attendance[]
-  donationsCreated      Donation[]       @relation("DonationCreatedBy")
-  donationsVoided       Donation[]       @relation("DonationVoidedBy")
-  announcements         Announcement[]
-  churchSettingsUpdated ChurchSettings[]
+  membersCreated         Member[]              @relation("MemberCreatedBy")
+  membersUpdated         Member[]              @relation("MemberUpdatedBy")
+  attendanceRecorded     Attendance[]
+  donationsCreated       Donation[]            @relation("DonationCreatedBy")
+  donationsVoided        Donation[]            @relation("DonationVoidedBy")
+  givingReportsSubmitted GivingReport[]        @relation("GivingReportSubmitter")
+  givingReportsReviewed  GivingReport[]        @relation("GivingReportReviewer")
+  expensesCreated        Expense[]             @relation("ExpenseCreatedBy")
+  expensesVoided         Expense[]             @relation("ExpenseVoidedBy")
+  announcements          Announcement[]
+  churchSettingsUpdated  ChurchSettings[]
+  followUps              FollowUp[]
+  chapelsManaged         Chapel[]              @relation("ChapelManagerUser")
+  prayersHandled         PrayerRequest[]       @relation("PrayerHandledBy")
+  joinRequestsReviewed   MinistryJoinRequest[] @relation("JoinRequestReviewer")
+  confessionAppointmentsHandled ConfessionAppointment[] @relation("ConfessionAppointmentHandler")
+  confessionMessagesHandled     ConfessionMessage[]     @relation("ConfessionMessageHandler")
 
   @@map("user")
 }
@@ -264,6 +274,8 @@ model Member {
   /// Cargo organizativo (texto libre, sin efecto en permisos).
   position    String?
   isMinor     Boolean      @default(false)
+  /// Opcional; se usa para la lista interna de cumpleaños.
+  birthDate   DateTime?    @db.Date
   notes       String?
   createdAt   DateTime     @default(now()) @db.Timestamptz(3)
   updatedAt   DateTime     @updatedAt @db.Timestamptz(3)
@@ -277,6 +289,14 @@ model Member {
   ministryMemberships MinistryMembership[]
   eventResponsibles   EventResponsible[]
   donations           Donation[]
+  givingReports       GivingReport[]
+  followUps           FollowUp[]
+  chapelId            String?
+  chapel              Chapel?               @relation(fields: [chapelId], references: [id], onDelete: Restrict)
+  chapelsLed          Chapel[]              @relation("ChapelManagerMember")
+  rsvps               EventRsvp[]
+  prayerRequests      PrayerRequest[]
+  joinRequests        MinistryJoinRequest[]
 
   @@index([searchName])
   @@index([status])
@@ -325,6 +345,9 @@ model Event {
 
   attendances  Attendance[]
   responsibles EventResponsible[]
+  rsvps        EventRsvp[]
+  chapelId     String?
+  chapel       Chapel?            @relation(fields: [chapelId], references: [id], onDelete: Restrict)
 
   @@index([startsAt])
   @@index([visibility, status, startsAt])
@@ -371,15 +394,19 @@ enum MinistryRole {
 }
 
 model Ministry {
-  id          String               @id @default(cuid())
-  name        String               @unique
-  description String?
-  isActive    Boolean              @default(true)
-  isPublic    Boolean              @default(false)
-  createdAt   DateTime             @default(now()) @db.Timestamptz(3)
-  updatedAt   DateTime             @updatedAt @db.Timestamptz(3)
-  memberships MinistryMembership[]
-  events      Event[]
+  id           String                @id @default(cuid())
+  name         String                @unique
+  description  String?
+  isActive     Boolean               @default(true)
+  /// Se muestra (nombre y descripción) en el sitio público.
+  isPublic     Boolean               @default(false)
+  createdAt    DateTime              @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime              @updatedAt @db.Timestamptz(3)
+  memberships  MinistryMembership[]
+  joinRequests MinistryJoinRequest[]
+  events       Event[]
+  chapelId     String?
+  chapel       Chapel?               @relation(fields: [chapelId], references: [id], onDelete: Restrict)
 
   @@map("ministry")
 }
@@ -403,19 +430,21 @@ model MinistryMembership {
 // ───────────────────────── Finanzas ─────────────────────────
 
 model DonationConcept {
-  id        String     @id @default(cuid())
-  name      String     @unique
-  isActive  Boolean    @default(true)
+  id        String         @id @default(cuid())
+  name      String         @unique
+  isActive  Boolean        @default(true)
   donations Donation[]
+  reports   GivingReport[]
 
   @@map("donation_concept")
 }
 
 model PaymentMethod {
-  id        String     @id @default(cuid())
-  name      String     @unique
-  isActive  Boolean    @default(true)
+  id        String         @id @default(cuid())
+  name      String         @unique
+  isActive  Boolean        @default(true)
   donations Donation[]
+  reports   GivingReport[]
 
   @@map("payment_method")
 }
@@ -425,38 +454,108 @@ enum DonationStatus {
   VOIDED
 }
 
+enum GivingReportStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model Donation {
-  id          String          @id @default(cuid())
-  receivedAt  DateTime        @db.Date
+  id           String          @id @default(cuid())
+  receivedAt   DateTime        @db.Date
   /// CHECK (amount > 0) en SQL.
-  amount      Decimal         @db.Decimal(12, 2)
-  currency    String          @default("MXN") @db.Char(3)
-  conceptId   String
-  methodId    String
+  amount       Decimal         @db.Decimal(12, 2)
+  currency     String          @default("MXN") @db.Char(3)
+  conceptId    String
+  methodId     String
   /// null = aportación anónima.
-  memberId    String?
-  reference   String?
-  notes       String?
-  status      DonationStatus  @default(VALID)
-  voidedAt    DateTime?       @db.Timestamptz(3)
-  voidedById  String?
-  voidReason  String?
+  memberId     String?
+  reference    String?
+  notes        String?
+  status       DonationStatus  @default(VALID)
+  voidedAt     DateTime?       @db.Timestamptz(3)
+  voidedById   String?
+  voidReason   String?
   /// Registro anulado al que esta aportación corrige.
-  correctsId  String?         @unique
-  createdById String
-  createdAt   DateTime        @default(now()) @db.Timestamptz(3)
-  concept     DonationConcept @relation(fields: [conceptId], references: [id], onDelete: Restrict)
-  method      PaymentMethod   @relation(fields: [methodId], references: [id], onDelete: Restrict)
-  member      Member?         @relation(fields: [memberId], references: [id], onDelete: Restrict)
-  voidedBy    User?           @relation("DonationVoidedBy", fields: [voidedById], references: [id], onDelete: Restrict)
-  createdBy   User            @relation("DonationCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
-  corrects    Donation?       @relation("DonationCorrection", fields: [correctsId], references: [id], onDelete: Restrict)
-  correctedBy Donation?       @relation("DonationCorrection")
+  correctsId   String?         @unique
+  createdById  String
+  createdAt    DateTime        @default(now()) @db.Timestamptz(3)
+  concept      DonationConcept @relation(fields: [conceptId], references: [id], onDelete: Restrict)
+  method       PaymentMethod   @relation(fields: [methodId], references: [id], onDelete: Restrict)
+  member       Member?         @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  voidedBy     User?           @relation("DonationVoidedBy", fields: [voidedById], references: [id], onDelete: Restrict)
+  createdBy    User            @relation("DonationCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  corrects     Donation?       @relation("DonationCorrection", fields: [correctsId], references: [id], onDelete: Restrict)
+  correctedBy  Donation?       @relation("DonationCorrection")
+  /// Capilla que recibió la aportación (null = sede principal).
+  chapelId     String?
+  chapel       Chapel?         @relation(fields: [chapelId], references: [id], onDelete: Restrict)
+  givingReport GivingReport?
 
   @@index([receivedAt])
   @@index([status, receivedAt])
   @@index([memberId])
   @@map("donation")
+}
+
+/// Ofrenda reportada por un miembro; solo se convierte en ingreso al ser aprobada por tesorería.
+model GivingReport {
+  id            String             @id @default(cuid())
+  receivedAt    DateTime           @db.Date
+  amount        Decimal            @db.Decimal(12, 2)
+  currency      String             @default("MXN") @db.Char(3)
+  conceptId     String
+  methodId      String
+  memberId      String
+  submittedById String
+  isAnonymous   Boolean            @default(false)
+  status        GivingReportStatus @default(PENDING)
+  reviewedAt    DateTime?          @db.Timestamptz(3)
+  reviewedById  String?
+  reviewNote    String?
+  donationId    String?            @unique
+  createdAt     DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime           @updatedAt @db.Timestamptz(3)
+  concept       DonationConcept    @relation(fields: [conceptId], references: [id], onDelete: Restrict)
+  method        PaymentMethod      @relation(fields: [methodId], references: [id], onDelete: Restrict)
+  member        Member             @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  submittedBy   User               @relation("GivingReportSubmitter", fields: [submittedById], references: [id], onDelete: Restrict)
+  reviewedBy    User?              @relation("GivingReportReviewer", fields: [reviewedById], references: [id], onDelete: Restrict)
+  donation      Donation?          @relation(fields: [donationId], references: [id], onDelete: Restrict)
+
+  @@index([status, receivedAt])
+  @@index([submittedById, createdAt])
+  @@map("giving_report")
+}
+
+enum ExpenseStatus {
+  VALID
+  VOIDED
+}
+
+/// Egreso capturado por tesorería. No se permite borrado físico.
+model Expense {
+  id          String        @id @default(cuid())
+  spentAt     DateTime      @db.Date
+  amount      Decimal       @db.Decimal(12, 2)
+  currency    String        @default("MXN") @db.Char(3)
+  category    String
+  description String
+  method      String
+  reference   String?
+  notes       String?
+  status      ExpenseStatus @default(VALID)
+  voidedAt    DateTime?     @db.Timestamptz(3)
+  voidedById  String?
+  voidReason  String?
+  createdById String
+  createdAt   DateTime      @default(now()) @db.Timestamptz(3)
+  createdBy   User          @relation("ExpenseCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  voidedBy    User?         @relation("ExpenseVoidedBy", fields: [voidedById], references: [id], onDelete: Restrict)
+
+  @@index([spentAt])
+  @@index([status, spentAt])
+  @@map("expense")
 }
 
 // ───────────────────────── Comunicados ─────────────────────────
@@ -491,25 +590,27 @@ model ChurchSettings {
   id             String   @id @default("default")
   name           String
   logoPath       String?
-  tagline        String?
-  welcomeText    String?
-  firstVisitText String?
   address        String?
   phone          String?
   email          String?
-  whatsapp       String?
+  timezone       String   @default("America/Mexico_City")
+  currency       String   @default("MXN") @db.Char(3)
+  tagline        String?
+  welcomeText    String?
+  /// Sección "Tu primera visita" del sitio público.
+  firstVisitText String?
+  aboutText      String?
+  mission        String?
+  vision         String?
+  /// Un valor por línea.
+  valuesText     String?
+  privacyNotice  String?
   mapUrl         String?
   facebookUrl    String?
   instagramUrl   String?
   youtubeUrl     String?
-  timezone       String   @default("America/Mexico_City")
-  currency       String   @default("MXN") @db.Char(3)
-  aboutText      String?
-  mission        String?
-  vision         String?
-  valuesText     String?
+  whatsapp       String?
   scheduleText   String?
-  privacyNotice  String?
   /// Terminología configurable, p. ej. { "event": "Culto", "ministry": "Ministerio" }.
   terminology    Json     @default("{}")
   updatedAt      DateTime @updatedAt @db.Timestamptz(3)
@@ -517,21 +618,6 @@ model ChurchSettings {
   updatedBy      User?    @relation(fields: [updatedById], references: [id], onDelete: SetNull)
 
   @@map("church_settings")
-}
-
-model ServiceSchedule {
-  id          String  @id @default(cuid())
-  name        String
-  dayOfWeek   Int     @db.SmallInt
-  startTime   String  @db.VarChar(5)
-  endTime     String? @db.VarChar(5)
-  location    String?
-  description String?
-  isPublic    Boolean @default(true)
-  sortOrder   Int     @default(0)
-
-  @@index([dayOfWeek, startTime])
-  @@map("service_schedule")
 }
 
 model AuditLog {
@@ -550,4 +636,233 @@ model AuditLog {
   @@index([createdAt])
   @@index([actorId])
   @@map("audit_log")
+}
+
+// ───────────────────────── Seguimiento pastoral ─────────────────────────
+
+enum FollowUpKind {
+  CALL
+  VISIT
+  MESSAGE
+  MEETING
+  OTHER
+}
+
+/// Contacto de seguimiento (visitantes y miembros): quién, cuándo, cómo y próxima acción.
+model FollowUp {
+  id           String       @id @default(cuid())
+  memberId     String
+  kind         FollowUpKind
+  contactedOn  DateTime     @db.Date
+  notes        String?
+  nextActionOn DateTime?    @db.Date
+  nextAction   String?
+  createdById  String?
+  createdAt    DateTime     @default(now()) @db.Timestamptz(3)
+  member       Member       @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  createdBy    User?        @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([memberId, contactedOn])
+  @@index([nextActionOn])
+  @@map("follow_up")
+}
+
+/// Archivos subidos pequeños (logotipo). Se guardan en la BD para funcionar en servidores sin disco persistente.
+model StoredFile {
+  name      String   @id
+  mime      String
+  data      Bytes
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@map("stored_file")
+}
+
+/// Horarios habituales de reuniones (RF-10).
+model ServiceSchedule {
+  id          String  @id @default(cuid())
+  name        String
+  /// 0 = domingo … 6 = sábado
+  dayOfWeek   Int     @db.SmallInt
+  /// "HH:MM" en la zona horaria de la iglesia
+  startTime   String  @db.VarChar(5)
+  endTime     String? @db.VarChar(5)
+  location    String?
+  description String?
+  isPublic    Boolean @default(true)
+  sortOrder   Int     @default(0)
+
+  @@index([dayOfWeek, startTime])
+  @@map("service_schedule")
+}
+
+// ───────────────────────── Capillas (sedes) ─────────────────────────
+
+enum ChapelStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+/// Capilla o sede filial. Personas, eventos, ministerios y aportaciones pueden pertenecer a una capilla;
+/// sin capilla = sede principal. Nunca se borra: se desactiva o se archiva con motivo.
+model Chapel {
+  id              String       @id @default(cuid())
+  name            String       @unique
+  code            String       @unique @db.VarChar(12)
+  status          ChapelStatus @default(ACTIVE)
+  address         String?
+  phone           String?
+  email           String?
+  description     String?
+  openedOn        DateTime?    @db.Date
+  managerMemberId String?
+  managerUserId   String?
+  archivedAt      DateTime?    @db.Timestamptz(3)
+  statusReason    String?
+  createdAt       DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime     @updatedAt @db.Timestamptz(3)
+  managerMember   Member?      @relation("ChapelManagerMember", fields: [managerMemberId], references: [id], onDelete: SetNull)
+  managerUser     User?        @relation("ChapelManagerUser", fields: [managerUserId], references: [id], onDelete: SetNull)
+
+  members    Member[]
+  events     Event[]
+  ministries Ministry[]
+  donations  Donation[]
+  confessionAppointments ConfessionAppointment[]
+
+  @@index([status])
+  @@map("chapel")
+}
+
+// ───── Participación desde el portal del miembro ─────
+
+enum RsvpResponse {
+  GOING
+  MAYBE
+  NOT_GOING
+}
+
+/// Confirmación de asistencia de un miembro a un evento (no sustituye el registro de asistencia).
+model EventRsvp {
+  eventId   String
+  memberId  String
+  response  RsvpResponse
+  updatedAt DateTime     @updatedAt @db.Timestamptz(3)
+  event     Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  member    Member       @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, memberId])
+  @@index([memberId])
+  @@map("event_rsvp")
+}
+
+enum PrayerStatus {
+  OPEN
+  PRAYING
+  ANSWERED
+  CLOSED
+}
+
+/// Petición de oración. Solo la ven el propio miembro y quienes tienen prayer:read (pastoral).
+model PrayerRequest {
+  id             String       @id @default(cuid())
+  memberId       String
+  subject        String       @db.VarChar(120)
+  body           String       @db.VarChar(2000)
+  /// true = solo el equipo pastoral; false = puede compartirse con el equipo de oración (sin datos de contacto).
+  isConfidential Boolean      @default(true)
+  status         PrayerStatus @default(OPEN)
+  pastoralNote   String?      @db.VarChar(1000)
+  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime     @updatedAt @db.Timestamptz(3)
+  closedAt       DateTime?    @db.Timestamptz(3)
+  handledById    String?
+  member         Member       @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  handledBy      User?        @relation("PrayerHandledBy", fields: [handledById], references: [id], onDelete: SetNull)
+
+  @@index([memberId, createdAt])
+  @@index([status, createdAt])
+  @@map("prayer_request")
+}
+
+enum ConfessionAppointmentStatus {
+  REQUESTED
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+/// Solicitud de cita; la información de contacto se cifra en la aplicación.
+model ConfessionAppointment {
+  id              String                       @id
+  locationKey     String                       @db.VarChar(160)
+  locationName    String                       @db.VarChar(160)
+  chapelId        String?
+  scheduledAt     DateTime                     @db.Timestamptz(3)
+  contactCiphertext String?
+  contactIv       String?                      @db.VarChar(24)
+  contactAuthTag  String?                      @db.VarChar(24)
+  status          ConfessionAppointmentStatus  @default(REQUESTED)
+  createdAt       DateTime                     @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime                     @updatedAt @db.Timestamptz(3)
+  handledById     String?
+  chapel          Chapel?                      @relation(fields: [chapelId], references: [id], onDelete: Restrict)
+  handledBy       User?                        @relation("ConfessionAppointmentHandler", fields: [handledById], references: [id], onDelete: SetNull)
+
+  @@index([status, scheduledAt])
+  @@index([createdAt])
+  @@map("confession_appointment")
+}
+
+enum ConfessionMessageStatus {
+  NEW
+  READ
+  RESPONDED
+  CLOSED
+}
+
+/// Mensaje sin autor, sesión, contacto, IP ni ubicación para conservar el anonimato.
+model ConfessionMessage {
+  id                     String                  @id
+  bodyCiphertext         String
+  bodyIv                 String                  @db.VarChar(24)
+  bodyAuthTag            String                  @db.VarChar(24)
+  priestResponseCiphertext String?
+  responseIv             String?                 @db.VarChar(24)
+  responseAuthTag        String?                 @db.VarChar(24)
+  status                 ConfessionMessageStatus @default(NEW)
+  createdAt              DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt              DateTime                @updatedAt @db.Timestamptz(3)
+  handledById            String?
+  handledBy              User?                   @relation("ConfessionMessageHandler", fields: [handledById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@map("confession_message")
+}
+
+enum JoinRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+/// Solicitud de un miembro para unirse a un ministerio; la resuelve quien gestiona sus integrantes.
+model MinistryJoinRequest {
+  id           String            @id @default(cuid())
+  ministryId   String
+  memberId     String
+  message      String?           @db.VarChar(500)
+  status       JoinRequestStatus @default(PENDING)
+  responseNote String?           @db.VarChar(500)
+  createdAt    DateTime          @default(now()) @db.Timestamptz(3)
+  reviewedAt   DateTime?         @db.Timestamptz(3)
+  reviewedById String?
+  ministry     Ministry          @relation(fields: [ministryId], references: [id], onDelete: Cascade)
+  member       Member            @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  reviewedBy   User?             @relation("JoinRequestReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([ministryId, status])
+  @@index([memberId])
+  @@map("ministry_join_request")
 }

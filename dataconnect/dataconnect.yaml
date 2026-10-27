@@ -1,0 +1,15 @@
+# Firebase Data Connect: solo se usa para crear y administrar la instancia de PostgreSQL (Cloud SQL).
+# El esquema real de la app lo administra Prisma (prisma/migrations); por eso la validación es
+# COMPATIBLE: Data Connect no elimina ni modifica tablas que no conoce.
+specVersion: "v1"
+serviceId: "iglesia"
+location: "us-central1"
+schema:
+  source: "./schema"
+  datasource:
+    postgresql:
+      database: "iglesia"
+      cloudSql:
+        instanceId: "iglesia-pg"
+      schemaValidation: "COMPATIBLE"
+connectorDirs: []

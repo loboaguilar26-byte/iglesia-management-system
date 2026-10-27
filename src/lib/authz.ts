@@ -8,11 +8,23 @@ export type Actor = {
   email: string;
   roles: RoleKey[];
   permissions: ReadonlySet<Permission>;
+  /**
+   * Permisos que el usuario tiene SOLO por roles acotados (Coordinador): el servicio debe
+   * limitarlos a los ministerios/eventos asignados.
+   */
+  scopedPermissions?: ReadonlySet<Permission>;
+  /** Ficha de miembro vinculada (necesaria para el alcance del Coordinador). */
+  memberId?: string | null;
   ipAddress?: string | null;
 };
 
 export function can(actor: Actor | null | undefined, permission: Permission): boolean {
   return !!actor && actor.permissions.has(permission);
+}
+
+/** true si el actor tiene el permiso sin restricción de alcance. */
+export function canFully(actor: Actor | null | undefined, permission: Permission): boolean {
+  return can(actor, permission) && !actor!.scopedPermissions?.has(permission);
 }
 
 export function requireActor(actor: Actor | null | undefined): Actor {

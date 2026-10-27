@@ -1,0 +1,5 @@
+# Esquema mínimo de Data Connect. Las tablas de la aplicación las crea Prisma (prisma/migrations).
+# Esta tabla solo registra la versión del servicio y evita un esquema vacío.
+type DataConnectInfo @table(name: "dataconnect_info") {
+  note: String
+}

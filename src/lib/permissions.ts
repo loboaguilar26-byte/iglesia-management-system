@@ -35,7 +35,9 @@ export const PERMISSIONS = {
   "ministries:manage_members": "Gestionar integrantes de ministerios",
 
   "finance:read": "Consultar aportaciones",
+  "finance:dashboard": "Consultar totales financieros del panel",
   "finance:create": "Registrar aportaciones",
+  "finance:review_giving": "Validar ofrendas reportadas por miembros",
   "finance:update": "Corregir aportaciones",
   "finance:void": "Anular aportaciones",
   "finance:export": "Exportar información financiera",
@@ -57,11 +59,25 @@ export const PERMISSIONS = {
 
   "audit:read": "Consultar bitácora de auditoría (no financiera)",
   "audit:read_finance": "Consultar bitácora de auditoría financiera",
+
+  "chapels:read": "Consultar capillas (sedes) y sus indicadores",
+  "chapels:manage": "Dar de alta, editar, desactivar y archivar capillas",
+
+  "followup:read": "Consultar el seguimiento pastoral de visitantes y miembros",
+  "followup:write": "Registrar contactos de seguimiento",
+
+  "prayer:read": "Consultar peticiones de oración (equipo pastoral)",
+  "prayer:manage": "Atender peticiones de oración y dejar nota pastoral",
+
+  "confessions:read": "Leer solicitudes y mensajes confidenciales de confesión",
+  "confessions:manage": "Confirmar citas y responder mensajes de confesión",
+
+  "portal:access": "Acceder al portal personal del miembro (solo sus propios datos)",
 } as const;
 
 export type Permission = keyof typeof PERMISSIONS;
 
-export const ROLE_KEYS = ["ADMIN", "PASTOR", "SECRETARY", "TREASURER", "COORDINATOR"] as const;
+export const ROLE_KEYS = ["ADMIN", "PASTOR", "SECRETARY", "TREASURER", "COORDINATOR", "MEMBER", "PRIEST"] as const;
 export type RoleKey = (typeof ROLE_KEYS)[number];
 
 const all = (prefix: string) =>
@@ -76,6 +92,8 @@ export const ROLES: Record<
     description: "Administra usuarios, roles y configuración. Sin acceso financiero por defecto.",
     level: 100,
     permissions: [
+      "chapels:read",
+      "chapels:manage",
       ...all("users:"),
       "roles:assign",
       ...all("churches:"),
@@ -83,6 +101,7 @@ export const ROLES: Record<
       ...all("attendance:"),
       ...all("events:"),
       ...all("ministries:"),
+      "finance:dashboard",
       ...all("announcements:"),
       "reports:members",
       "reports:attendance",
@@ -96,6 +115,7 @@ export const ROLES: Record<
     description: "Supervisa la congregación, eventos y ministerios.",
     level: 80,
     permissions: [
+      "chapels:read",
       "users:read",
       "churches:read",
       "members:read",
@@ -108,6 +128,8 @@ export const ROLES: Record<
       "reports:attendance",
       "reports:ministries",
       "settings:read",
+      ...all("followup:"),
+      ...all("prayer:"),
     ],
   },
   SECRETARY: {
@@ -115,6 +137,7 @@ export const ROLES: Record<
     description: "Gestiona el directorio, la asistencia, los eventos y los comunicados.",
     level: 60,
     permissions: [
+      "chapels:read",
       ...all("members:").filter((p) => p !== "members:read_notes"),
       ...all("attendance:"),
       ...all("events:"),
@@ -124,6 +147,7 @@ export const ROLES: Record<
       "reports:attendance",
       "reports:ministries",
       "settings:read",
+      ...all("followup:"),
     ],
   },
   TREASURER: {
@@ -131,6 +155,7 @@ export const ROLES: Record<
     description: "Registra y reporta las aportaciones económicas.",
     level: 60,
     permissions: [
+      "chapels:read",
       ...all("finance:"),
       "reports:finance",
       "audit:read_finance",
@@ -163,6 +188,18 @@ export const ROLES: Record<
       "settings:read",
     ],
   },
+  MEMBER: {
+    name: "Miembro",
+    description: "Acceso al portal personal: sus datos, ministerios, asistencia, eventos y aportaciones propias. Sin acceso al panel.",
+    level: 10,
+    permissions: ["portal:access"],
+  },
+  PRIEST: {
+    name: "Sacerdote",
+    description: "Acceso exclusivo a las citas y mensajes confidenciales de confesión.",
+    level: 55,
+    permissions: ["confessions:read", "confessions:manage"],
+  },
 };
 
 /** Orden visual y de precedencia para explicar la jerarquía sin cambiar los permisos efectivos. */
@@ -172,3 +209,11 @@ export const ROLE_HIERARCHY = ROLE_KEYS.map((key) => ({ key, ...ROLES[key] })).s
 
 /** Roles cuyos permisos se limitan a ministerios/eventos asignados (ver docs/permisos.md, regla 5). */
 export const SCOPED_ROLES: RoleKey[] = ["COORDINATOR"];
+
+/** Permisos que no dan acceso al panel administrativo. */
+const PORTAL_ONLY: Permission[] = ["portal:access"];
+
+/** true si el conjunto de permisos habilita al menos una función del panel `/admin`. */
+export function hasPanelAccess(permissions: ReadonlySet<Permission>): boolean {
+  return [...permissions].some((p) => !PORTAL_ONLY.includes(p));
+}

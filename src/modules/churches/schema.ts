@@ -44,6 +44,18 @@ export const updateChurchSchema = z.object({
   scheduleText: z.string().trim().max(2000).optional(),
 });
 
+export const churchStatusSchema = z.object({
+  isActive: z.boolean(),
+  reason: z.string().trim().max(300, "Máximo 300 caracteres").optional(),
+});
+
+export const churchTeamSchema = z.object({
+  userId: z.string().trim().min(1, "Elige un usuario"),
+  roleId: z.string().trim().min(1).optional(),
+  isPrimary: z.boolean().default(false),
+});
+
 export type UpdateChurchInput = z.infer<typeof updateChurchSchema>;
 
 export type CreateChurchInput = z.infer<typeof createChurchSchema>;
+

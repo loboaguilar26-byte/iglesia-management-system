@@ -18,7 +18,7 @@ test.describe("acceso al panel", () => {
   test("inicio y cierre de sesión", async ({ page }) => {
     const { admin } = testUsers();
     await login(page, admin);
-    await expect(page.getByRole("heading", { name: `Bienvenido, ${admin.name}` })).toBeVisible();
+    await expect(page.getByRole("heading", { name: new RegExp(`(Buenos días|Buenas tardes|Buenas noches), ${admin.name.split(" ")[0]}`) })).toBeVisible();
     await page.getByRole("button", { name: "Cerrar sesión" }).click();
     await expect(page).toHaveURL(/\/login/);
     await page.goto("/admin");

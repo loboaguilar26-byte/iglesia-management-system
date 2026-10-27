@@ -1,20 +1,53 @@
-# Despliegue
+# Despliegue en Firebase App Hosting
 
-> **No se ha desplegado nada.** Cualquier despliegue requiere autorización expresa.
+Proyecto Firebase: **iglesia-gestion-mx** · Backend: **iglesia** · Región: `us-central1`
+URL prevista: `https://iglesia--iglesia-gestion-mx.us-central1.hosted.app`
 
-## Propuesta (pendiente de aprobación)
-Ver `analisis-alojamiento.md`. Principal: Railway; alternativa: Vercel Pro + Neon.
+Base de datos: **PostgreSQL en Neon** (plan gratuito para iniciar).
+
+## Pasos que hace la persona responsable (datos de pago y cuentas)
+1. **Plan Blaze:** https://console.firebase.google.com/project/iglesia-gestion-mx/usage/details → “Modificar plan” → Blaze. Recomendado: crear una **alerta de presupuesto** (p. ej. US$10/mes) en Google Cloud Billing.
+2. **Neon:** crear cuenta en https://neon.com, proyecto “iglesia” (región AWS us-east-1 o us-east-2, cercana a us-central1) y copiar la cadena de conexión *pooled* con `sslmode=require`.
+3. **Guardar secretos** (los valores se escriben en la terminal, nunca en git ni en el chat):
+   ```bash
+   firebase apphosting:secrets:set DATABASE_URL
+   firebase apphosting:secrets:set BETTER_AUTH_SECRET
+   firebase apphosting:secrets:set CONFESSIONS_ENCRYPTION_KEY
+   ```
+   Para `BETTER_AUTH_SECRET` usar un valor aleatorio: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`.
+   Para `CONFESSIONS_ENCRYPTION_KEY`: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. Respáldala cifrada fuera de la base de datos; perderla impide recuperar mensajes/contactos.
+4. Para migrar desde tu equipo, crea `.env.production.local` (ignorado por git) con `DATABASE_URL=...` de Neon.
+
+## Pasos técnicos
+```bash
+# 1. Migraciones y datos base en Neon (sin datos de demostración)
+pnpm dlx dotenv-cli -e .env.production.local -- pnpm db:deploy
+pnpm dlx dotenv-cli -e .env.production.local -- pnpm db:seed
+pnpm dlx dotenv-cli -e .env.production.local -- pnpm setup:admin
+
+# 2. Crear el backend (una sola vez) y desplegar desde el código local
+firebase apphosting:backends:create --backend iglesia --primary-region us-central1
+firebase deploy --only apphosting
+```
+
+## Configuración (`apphosting.yaml`)
+- 0–2 instancias (sin tráfico no hay costo de cómputo), 1 CPU, 512 MiB.
+- Secretos: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `CONFESSIONS_ENCRYPTION_KEY` (Secret Manager).
+- `BETTER_AUTH_URL` = URL pública; actualizar si se usa dominio propio.
+- `AUTH_IP_HEADERS` / `AUTH_TRUSTED_PROXIES`: IP real del cliente detrás del balanceador de Google, para que el límite de intentos sea por persona. **Verificar tras el primer despliegue** (bitácora → IP registrada) y ajustar si aparece la IP del balanceador.
+- El logotipo se guarda en la BD (tabla `stored_file`), porque el disco de Cloud Run no es persistente.
 
 ## Lista de verificación previa a producción
-- [ ] `AUTH_IP_HEADERS` (y `AUTH_TRUSTED_PROXIES` si aplica) según el proxy del proveedor.
-- [ ] `BETTER_AUTH_SECRET` aleatorio (≥ 32 bytes) en variables del proveedor, no en git.
-- [ ] `DATABASE_URL` con TLS (`sslmode=require`).
-- [ ] Migraciones con `prisma migrate deploy` (nunca `migrate dev` en producción).
-- [ ] **No** ejecutar seed de demostración en producción (el script lo bloquea si `NODE_ENV=production`).
-- [ ] Crear primer admin con `setup:admin`.
-- [ ] Respaldos diarios + prueba de restauración.
-- [ ] Dominio y HTTPS.
-- [ ] Aviso de privacidad publicado.
+- [ ] Plan Blaze y alerta de presupuesto.
+- [ ] Secretos configurados (no en git).
+- [ ] `prisma migrate deploy` aplicado (nunca `migrate dev` en producción).
+- [ ] **No** ejecutar `db:seed:demo` en producción (bloqueado si `NODE_ENV=production`).
+- [ ] Primer administrador con `setup:admin`.
+- [ ] Respaldos: Neon conserva historial (point-in-time) según plan; además exportar `pg_dump` periódico cifrado.
+- [ ] Aviso de privacidad publicado y datos institucionales reales configurados.
+- [ ] Dominio propio (opcional) y actualizar `BETTER_AUTH_URL`.
 
-## Respaldos
-`pg_dump --format=custom` diario, cifrado (age/gpg), retención 30 días, copia fuera del proveedor principal. Restauración: `pg_restore --clean --if-exists`. Probar trimestralmente.
+## Costos estimados (verificar en la consola)
+- App Hosting / Cloud Run: con 0 instancias mínimas y tráfico bajo, normalmente dentro de la capa gratuita o pocos dólares al mes.
+- Neon Free: US$0 (≈0.5 GB). Plan de pago por uso si se excede.
+- Fuente de precios: https://firebase.google.com/pricing · https://neon.com/pricing

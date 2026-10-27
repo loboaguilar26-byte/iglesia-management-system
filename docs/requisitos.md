@@ -43,6 +43,9 @@
 - Campos: fecha, monto (Decimal 12,2), moneda (MXN por defecto), concepto (configurable: diezmo, ofrenda, misiones…), método (configurable: efectivo, transferencia…), referencia/folio opcional, donante opcional (anónimo = null), notas.
 - Consulta por periodo, resumen mensual por concepto y método.
 - Corrección = anulación con motivo + nuevo registro. Sin borrado físico.
+- Los egresos se registran por fecha, monto, categoría, descripción y método de pago; anular requiere motivo y no hay borrado físico.
+- Un miembro puede reportar una ofrenda ya entregada (no se procesa pago en línea). Tesorería la valida antes de crear el ingreso oficial. El miembro puede marcarla anónima; en ese caso su identidad se oculta también a tesorería.
+- Tesorería presenta cortes semanales de ingresos confirmados, egresos vigentes y balance neto.
 - Permisos separados: `finance:read`, `finance:create`, `finance:update`, `finance:void`, `finance:export`.
 - Sin pagos en línea. **[C]**
 

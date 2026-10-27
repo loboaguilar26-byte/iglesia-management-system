@@ -2,49 +2,49 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { toActionState, type ActionState } from "@/lib/action-state";
+import { formToObject, toActionState, type ActionState } from "@/lib/action-state";
 import { getActor } from "@/lib/session";
-import { createMember, setMemberActive, updateMember } from "@/modules/members/service";
+import type { MemberStatus } from "@/generated/prisma/client";
+import { createMember, setMemberStatus, updateMember } from "@/modules/members/service";
+import { createPortalAccount } from "@/modules/users/service";
 
-function value(form: FormData, name: string) {
-  const item = form.get(name);
-  return typeof item === "string" ? item : undefined;
-}
-
-function input(form: FormData) {
-  return {
-    firstName: value(form, "firstName"),
-    lastName: value(form, "lastName"),
-    phone: value(form, "phone"),
-    email: value(form, "email"),
-    joinDate: value(form, "joinDate"),
-    status: value(form, "status"),
-    position: value(form, "position"),
-    isMinor: form.get("isMinor") === "on",
-    notes: value(form, "notes"),
-  };
+export async function createPortalAccountAction(memberId: string, _prev: ActionState, form: FormData): Promise<ActionState> {
+  try {
+    await createPortalAccount(await getActor(), memberId, formToObject(form));
+  } catch (error) {
+    return toActionState(error, form);
+  }
+  revalidatePath(`/admin/miembros/${memberId}`);
+  return { ok: true, message: "Acceso al portal creado. Comparte la contraseña inicial por un medio seguro." };
 }
 
 export async function createMemberAction(_prev: ActionState, form: FormData): Promise<ActionState> {
   let id: string;
-  try { id = (await createMember(await getActor(), input(form))).id; }
-  catch (error) { return toActionState(error); }
+  try {
+    id = (await createMember(await getActor(), formToObject(form))).id;
+  } catch (error) {
+    return toActionState(error, form);
+  }
   revalidatePath("/admin/miembros");
-  redirect(`/admin/miembros/${id}?creado=1`);
+  redirect(`/admin/miembros/${id}?guardado=1`);
 }
 
 export async function updateMemberAction(id: string, _prev: ActionState, form: FormData): Promise<ActionState> {
-  try { await updateMember(await getActor(), id, input(form)); }
-  catch (error) { return toActionState(error); }
-  revalidatePath("/admin/miembros");
+  try {
+    await updateMember(await getActor(), id, formToObject(form));
+  } catch (error) {
+    return toActionState(error, form);
+  }
   revalidatePath(`/admin/miembros/${id}`);
-  return { ok: true, message: "Miembro actualizado." };
+  return { ok: true, message: "Cambios guardados." };
 }
 
-export async function setMemberActiveAction(id: string, isActive: boolean, _prev: ActionState): Promise<ActionState> {
-  try { await setMemberActive(await getActor(), id, { isActive }); }
-  catch (error) { return toActionState(error); }
-  revalidatePath("/admin/miembros");
+export async function setMemberStatusAction(id: string, status: MemberStatus, _prev: ActionState): Promise<ActionState> {
+  try {
+    await setMemberStatus(await getActor(), id, status);
+  } catch (error) {
+    return toActionState(error);
+  }
   revalidatePath(`/admin/miembros/${id}`);
-  return { ok: true, message: isActive ? "Miembro activado." : "Miembro desactivado." };
+  return { ok: true };
 }
