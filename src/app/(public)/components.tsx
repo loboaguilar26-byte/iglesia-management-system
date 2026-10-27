@@ -13,7 +13,7 @@ export function Section({ id, eyebrow, title, intro, children, tone = "plain" }:
 }) {
   return (
     <section id={id} className={tone === "tinted" ? "bg-surface" : ""}>
-      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+      <div className="reveal mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
         <div className="mb-10 max-w-2xl">
           {eyebrow ? <p className="text-sm font-semibold uppercase tracking-[0.18em] text-accent">{eyebrow}</p> : null}
           <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h2>
@@ -41,9 +41,9 @@ export type PublicSchedule = { id: string; name: string; dayOfWeek: number; star
 
 export function ScheduleCards({ schedules }: { schedules: PublicSchedule[] }) {
   return (
-    <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <ul className="stagger grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {schedules.map((s) => (
-        <li key={s.id} className="group rounded-2xl border border-border bg-surface p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+        <li key={s.id} className="group rounded-2xl border border-border bg-surface p-6 shadow-sm lift">
           <p className="text-sm font-semibold uppercase tracking-wider text-accent">{WEEKDAYS[s.dayOfWeek]}</p>
           <p className="mt-1 font-display text-2xl font-semibold">{s.name}</p>
           <p className="mt-3 flex items-center gap-2 text-muted"><Clock aria-hidden className="size-4" />{s.startTime}{s.endTime ? ` – ${s.endTime}` : ""} h</p>
@@ -62,7 +62,7 @@ export function EventCard({ e, tz }: { e: PublicEvent; tz: string }) {
   const month = new Intl.DateTimeFormat("es-MX", { timeZone: tz, month: "short" }).format(e.startsAt);
   const day = new Intl.DateTimeFormat("es-MX", { timeZone: tz, day: "numeric" }).format(e.startsAt);
   return (
-    <Link href={`/eventos/${e.id}`} className="group flex gap-5 rounded-2xl border border-border bg-surface p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+    <Link href={`/eventos/${e.id}`} className="group flex gap-5 rounded-2xl border border-border bg-surface p-5 shadow-sm lift">
       <div className={`flex w-16 shrink-0 flex-col items-center justify-center rounded-xl py-2 ${cancelled ? "bg-danger/10 text-danger" : "bg-brand text-white"}`}>
         <span className="text-xs font-semibold uppercase">{month}</span>
         <span className="font-display text-3xl font-semibold leading-none">{day}</span>

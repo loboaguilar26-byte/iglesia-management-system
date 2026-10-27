@@ -66,6 +66,7 @@ export default async function EventPage({ params, searchParams }: PageProps<"/ad
                 description: e.description,
                 visibility: e.visibility,
                 ministryId: e.ministryId,
+                chapelId: e.chapelId,
                 responsibles: e.responsibles.map((r) => ({ id: r.member.id, name: `${r.member.firstName} ${r.member.lastName}` })),
               }}
               types={types}

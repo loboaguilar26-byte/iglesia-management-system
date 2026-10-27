@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { AppError } from "@/lib/errors";
 import { parseInput } from "@/lib/validation";
 import { coordinatedMinistryIds, requireMinistryScope } from "../scope";
+import { assertChapelAssignable } from "../chapels/service";
 import { addMembershipSchema, endMembershipSchema, ministrySchema } from "./schema";
 
 export async function listMinistries(actor: Actor | null, { includeInactive = true } = {}) {
@@ -51,6 +52,8 @@ export async function getMinistry(actor: Actor | null, id: string) {
 export async function saveMinistry(actor: Actor | null, id: string | null, input: unknown) {
   const a = requirePermission(actor, id ? "ministries:update" : "ministries:create");
   const data = parseInput(ministrySchema, input);
+  const current = id ? await db.ministry.findUnique({ where: { id }, select: { chapelId: true } }) : null;
+  await assertChapelAssignable(db, data.chapelId, current?.chapelId);
   const clash = await db.ministry.findFirst({ where: { name: { equals: data.name, mode: "insensitive" }, id: id ? { not: id } : undefined } });
   if (clash) throw new AppError("CONFLICT", "Ya existe un ministerio con ese nombre.", { name: ["Nombre en uso"] });
   return db.$transaction(async (tx) => {

@@ -16,7 +16,7 @@ export default async function PublicAnnouncementsPage() {
           <ul className="flex flex-col gap-4">
             {items.map((a) => (
               <li key={a.id}>
-                <Link href={`/comunicados/${a.id}`} className={`block rounded-2xl border bg-surface p-6 shadow-sm transition hover:shadow-md ${a.isFeatured ? "border-accent" : "border-border"}`}>
+                <Link href={`/comunicados/${a.id}`} className={`block rounded-2xl border bg-surface p-6 shadow-sm lift ${a.isFeatured ? "border-accent" : "border-border"}`}>
                   {a.isFeatured ? <span className="mb-2 inline-block rounded-full bg-accent px-2.5 py-0.5 text-xs font-semibold text-white">Destacado</span> : null}
                   <h2 className="font-display text-2xl font-semibold">{a.title}</h2>
                   {a.publishedAt ? <p className="mt-1 text-sm text-muted">{formatLongDate(a.publishedAt, settings.timezone)}</p> : null}

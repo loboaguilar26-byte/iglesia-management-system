@@ -7,14 +7,14 @@ const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 const fraunces = Fraunces({ variable: "--font-fraunces", subsets: ["latin"], axes: ["opsz"] });
 
 export const metadata: Metadata = {
-  title: { default: "Iglesia", template: "%s · Iglesia" },
-  description: "Sitio y sistema de gestión de la iglesia.",
-  applicationName: "Iglesia",
+  title: { default: "IgleTech", template: "%s · IgleTech" },
+  description: "Plataforma de gestión para comunidades de fe.",
+  applicationName: "IgleTech",
   icons: {
     icon: [{ url: "/app-icon/192", type: "image/png", sizes: "192x192" }],
     apple: [{ url: "/app-icon/192", sizes: "192x192" }],
   },
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Iglesia" },
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "IgleTech" },
   formatDetection: { telephone: false },
 };
 
@@ -24,14 +24,23 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#13233d" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a101b" },
+    { media: "(prefers-color-scheme: light)", color: "#2a1a10" },
+    { media: "(prefers-color-scheme: dark)", color: "#120b07" },
   ],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="es-MX" className={`${inter.variable} ${fraunces.variable} h-full antialiased`}>
+    // suppressHydrationWarning: el script de abajo fija `data-theme` antes de que React hidrate.
+    <html lang="es-MX" className={`${inter.variable} ${fraunces.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        {/* Aplica el tema guardado antes del primer pintado (evita el parpadeo claro/oscuro). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}})()`,
+          }}
+        />
+      </head>
       <body className="flex min-h-full flex-col font-sans">
         {children}
         <ServiceWorkerRegister />

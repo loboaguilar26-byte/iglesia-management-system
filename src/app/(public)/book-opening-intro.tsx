@@ -5,10 +5,11 @@ import { useEffect, useRef, useSyncExternalStore } from "react";
 const STORAGE_KEY = "iglesia-intro-seen";
 const CHANGE_EVENT = "iglesia-intro-change";
 const INTRO_DURATION = 3000;
+let replayRequested = false;
 
 function getSnapshot() {
   return !window.matchMedia("(prefers-reduced-motion: reduce)").matches &&
-    sessionStorage.getItem(STORAGE_KEY) !== "true";
+    (replayRequested || sessionStorage.getItem(STORAGE_KEY) !== "true");
 }
 
 function subscribe(onChange: () => void) {
@@ -17,18 +18,31 @@ function subscribe(onChange: () => void) {
 }
 
 function markIntroSeen() {
+  replayRequested = false;
   sessionStorage.setItem(STORAGE_KEY, "true");
   window.dispatchEvent(new Event(CHANGE_EVENT));
 }
 
-export function BookOpeningIntro({ churchName }: { churchName: string }) {
+function requestIntro() {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  replayRequested = true;
+  window.dispatchEvent(new Event(CHANGE_EVENT));
+}
+
+export function BookOpeningIntro({ churchName, playOnMount = false }: { churchName: string; playOnMount?: boolean }) {
   const visible = useSyncExternalStore(subscribe, getSnapshot, () => false);
   const skipButton = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
+    if (playOnMount) requestIntro();
+  }, [playOnMount]);
+
+  useEffect(() => {
     if (!visible) return;
     skipButton.current?.focus();
-    const timeout = window.setTimeout(markIntroSeen, INTRO_DURATION);
+    const timeout = window.setTimeout(() => {
+      markIntroSeen();
+    }, INTRO_DURATION);
     return () => window.clearTimeout(timeout);
   }, [visible]);
 

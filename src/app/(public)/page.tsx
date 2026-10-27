@@ -27,8 +27,7 @@ export default async function HomePage() {
   return (
     <>
       {/* Portada */}
-      <section className="relative overflow-hidden bg-brand-deep text-white">
-        <div aria-hidden className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_85%_10%,rgba(226,182,94,0.40),transparent_60%),radial-gradient(ellipse_60%_55%_at_0%_100%,rgba(143,179,224,0.22),transparent_60%)]" />
+      <section className="aurora relative overflow-hidden text-white">
         <svg aria-hidden className="absolute -right-24 top-1/2 h-[140%] -translate-y-1/2 opacity-[0.10]" viewBox="0 0 400 400" fill="none">
           {[60, 100, 140, 180].map((r) => <circle key={r} cx="200" cy="200" r={r} stroke="white" strokeWidth="1" />)}
           <path d="M200 20v360M20 200h360" stroke="white" strokeWidth="0.6" strokeDasharray="2 6" />
@@ -145,7 +144,7 @@ export default async function HomePage() {
         <Section eyebrow="Comunidad" title="Ministerios" intro="Espacios para servir, crecer y convivir. Hay un lugar para ti.">
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {ministries.slice(0, 6).map((m) => (
-              <li key={m.id} className="rounded-2xl border border-border bg-surface p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+              <li key={m.id} className="rounded-2xl border border-border bg-surface p-6 shadow-sm lift">
                 <span className="inline-flex rounded-xl bg-accent-soft p-3 text-accent"><Users aria-hidden className="size-5" /></span>
                 <h3 className="mt-4 font-display text-xl font-semibold">{m.name}</h3>
                 {m.description ? <p className="mt-2 line-clamp-3 text-muted">{m.description}</p> : null}
@@ -180,7 +179,7 @@ export default async function HomePage() {
           <ul className="grid gap-4 md:grid-cols-3">
             {announcements.map((a) => (
               <li key={a.id}>
-                <Link href={`/comunicados/${a.id}`} className={`flex h-full flex-col rounded-2xl border bg-surface p-6 shadow-sm transition hover:shadow-md ${a.isFeatured ? "border-accent" : "border-border"}`}>
+                <Link href={`/comunicados/${a.id}`} className={`flex h-full flex-col rounded-2xl border bg-surface p-6 shadow-sm lift ${a.isFeatured ? "border-accent" : "border-border"}`}>
                   {a.publishedAt ? <p className="text-xs text-muted">{formatLongDate(a.publishedAt, tz)}</p> : null}
                   <h3 className="mt-2 font-display text-xl font-semibold">{a.title}</h3>
                   <p className="mt-2 line-clamp-3 text-muted">{a.body}</p>

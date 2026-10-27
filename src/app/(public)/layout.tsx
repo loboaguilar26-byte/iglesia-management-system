@@ -9,7 +9,7 @@ import { SiteHeader } from "./site-header";
 export async function generateMetadata(): Promise<Metadata> {
   const { settings } = await getPublicSite();
   return {
-    title: { default: settings.name, template: `%s · ${settings.name}` },
+    title: { absolute: settings.name },
     description: settings.tagline ?? settings.welcomeText?.slice(0, 160) ?? `Sitio oficial de ${settings.name}.`,
     openGraph: { title: settings.name, description: settings.tagline ?? undefined, type: "website", locale: "es_MX" },
   };

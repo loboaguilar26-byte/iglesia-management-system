@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 144" fill="none">
+  <defs>
+    <linearGradient id="mark" x1="20" y1="18" x2="128" y2="126" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6B3F24"/>
+      <stop offset="1" stop-color="#2A170C"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="49" y1="34" x2="112" y2="106" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F0CD7B"/>
+      <stop offset="1" stop-color="#B7832A"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="128" height="128" rx="34" fill="url(#mark)"/>
+  <path d="M72 30v42" stroke="url(#gold)" stroke-width="8" stroke-linecap="round"/>
+  <path d="M57 45h30" stroke="url(#gold)" stroke-width="8" stroke-linecap="round"/>
+  <path d="M31 71c15-5 29-2 41 9v31c-12-9-26-12-41-7V71Z" fill="#FFF9EC" stroke="#E2B65E" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M113 71c-15-5-29-2-41 9v31c12-9 26-12 41-7V71Z" fill="#FFF9EC" stroke="#E2B65E" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M42 81c9-2 17 0 24 4M42 91c9-2 17 0 24 4M102 81c-9-2-17 0-24 4M102 91c-9-2-17 0-24 4" stroke="#8B7045" stroke-width="2.5" stroke-linecap="round"/>
+  <text x="158" y="78" fill="#4A2B18" font-family="Inter, Arial, sans-serif" font-size="53" font-weight="750" letter-spacing="-2.5">Igle<tspan fill="#B7832A">Tech</tspan></text>
+  <text x="162" y="108" fill="#7A6656" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="600" letter-spacing="3.2">GESTIÓN · FE · COMUNIDAD</text>
+</svg>

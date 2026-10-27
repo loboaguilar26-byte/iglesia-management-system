@@ -1,9 +1,11 @@
+import { ChapelSelect } from "@/components/chapel-select";
 import { ActionForm, SubmitButton } from "@/components/ui/action-form";
 import { CheckboxField, Field, SelectField, TextArea } from "@/components/ui/field";
 import type { ActionState } from "@/lib/action-state";
 import { MEMBER_STATUSES, MEMBER_STATUS_LABEL } from "@/modules/members/schema";
 
 type Values = {
+  chapelId?: string | null;
   firstName?: string;
   lastName?: string;
   phone?: string | null;
@@ -39,6 +41,7 @@ export function MemberForm({ action, values = {}, canNotes, canStatus, submitLab
           options={MEMBER_STATUSES.filter((s) => canStatus || s !== "INACTIVE" || values.status === "INACTIVE").map((s) => ({ value: s, label: MEMBER_STATUS_LABEL[s] }))}
           disabled={!canStatus && values.status === "INACTIVE"}
         />
+        <ChapelSelect defaultValue={values.chapelId} hint="Sede a la que asiste la persona." />
         <Field label="Cargo o responsabilidad" name="position" defaultValue={values.position ?? ""} hint="Texto libre (p. ej. diácono, maestra). No otorga permisos." />
       </div>
       <CheckboxField label="Es menor de edad" name="isMinor" defaultChecked={values.isMinor} hint="Sus datos nunca se muestran en el sitio público." />

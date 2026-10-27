@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MemberPicker } from "@/components/member-picker";
 import { ActionButton } from "@/components/ui/action-button";
+import { ChapelSelect } from "@/components/chapel-select";
 import { ActionForm, SubmitButton } from "@/components/ui/action-form";
 import { CheckboxField, Field, SelectField, TextArea } from "@/components/ui/field";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/layout";
@@ -98,7 +99,7 @@ export default async function MinistryPage({ params }: PageProps<"/admin/ministe
           {canManage && m.isActive ? (
             <Card title="Agregar integrante">
               <ActionForm action={addMembershipAction.bind(null, m.id)}>
-                <MemberPicker name="memberId" label="Persona" />
+                <MemberPicker name="memberId" label="Persona" ministryId={m.id} />
                 <SelectField
                   label="Función"
                   name="role"
@@ -131,6 +132,7 @@ export default async function MinistryPage({ params }: PageProps<"/admin/ministe
               <ActionForm action={updateMinistryAction.bind(null, m.id)}>
                 <Field label="Nombre" name="name" defaultValue={m.name} required />
                 <TextArea label="Descripción" name="description" defaultValue={m.description ?? ""} rows={3} />
+                <ChapelSelect defaultValue={m.chapelId} />
                 <CheckboxField label="Mostrar en el sitio público" name="isPublic" defaultChecked={m.isPublic} hint="Solo nombre y descripción." />
                 <SubmitButton>Guardar</SubmitButton>
               </ActionForm>

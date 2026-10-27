@@ -35,7 +35,7 @@ export default async function AnnouncementsPage({ searchParams }: PageProps<"/ad
         <ul className="flex flex-col gap-3">
           {items.map((a) => (
             <li key={a.id}>
-              <Link href={`/admin/comunicados/${a.id}`} className={`block rounded-2xl border bg-surface p-5 shadow-sm transition hover:shadow-md ${a.isFeatured ? "border-accent" : "border-border"}`}>
+              <Link href={`/admin/comunicados/${a.id}`} className={`block rounded-2xl border bg-surface p-5 shadow-sm lift ${a.isFeatured ? "border-accent" : "border-border"}`}>
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="font-semibold">{a.title}</h2>
                   <Badge tone={a.status === "PUBLISHED" ? "success" : a.status === "DRAFT" ? "warning" : "neutral"}>{ANNOUNCEMENT_STATUS_LABEL[a.status]}</Badge>

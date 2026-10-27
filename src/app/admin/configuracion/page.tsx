@@ -92,7 +92,8 @@ export default async function SettingsPage() {
             // eslint-disable-next-line @next/next/no-img-element
             <img src={`/media/logo?v=${encodeURIComponent(s.logoPath)}`} alt="Logotipo actual" className="size-24 rounded-xl border border-border bg-white object-contain p-2" />
           ) : (
-            <div className="flex size-24 items-center justify-center rounded-xl border border-dashed border-border text-xs text-muted">Sin logotipo</div>
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src="/igletech-logo.svg" alt="Logotipo predeterminado de IgleTech" className="h-24 max-w-full rounded-xl border border-border bg-white object-contain p-2" />
           )}
           {editable ? (
             <div className="flex flex-col gap-3">

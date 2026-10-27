@@ -1,18 +1,19 @@
 import { recordAudit } from "@/lib/audit";
-import { can, requireActor, requirePermission, type Actor } from "@/lib/authz";
+import { can, canFully, requireActor, requirePermission, type Actor } from "@/lib/authz";
 import { db } from "@/lib/db";
 import { AppError } from "@/lib/errors";
 import { normalizeSearch } from "@/lib/text";
 import { parseInput } from "@/lib/validation";
 import type { MemberStatus, Prisma } from "@/generated/prisma/client";
-import { eventScopeWhere, memberScopeWhere } from "../scope";
+import { eventScopeWhere, memberScopeWhere, requireMinistryScope } from "../scope";
+import { assertChapelAssignable } from "../chapels/service";
 import { listMembersSchema, memberSchema } from "./schema";
 
 const fullName = (m: { firstName: string; lastName: string }) => `${m.firstName} ${m.lastName}`;
 
 export async function listMembers(actor: Actor | null, input: unknown) {
   const a = requirePermission(actor, "members:read");
-  const { q, status, ministryId, page, pageSize } = parseInput(listMembersSchema, input ?? {});
+  const { q, status, ministryId, chapelId, page, pageSize } = parseInput(listMembersSchema, input ?? {});
   const scope = await memberScopeWhere(a, "members:read");
   const where: Prisma.MemberWhereInput = {
     AND: [
@@ -20,6 +21,7 @@ export async function listMembers(actor: Actor | null, input: unknown) {
       q ? { searchName: { contains: normalizeSearch(q) } } : {},
       status ? { status } : {},
       ministryId ? { ministryMemberships: { some: { ministryId, endDate: null } } } : {},
+      chapelId ? { chapelId: chapelId === "principal" ? null : chapelId } : {},
     ],
   };
   const [rows, total] = await Promise.all([
@@ -110,6 +112,7 @@ export async function createMember(actor: Actor | null, input: unknown) {
   const { confirmDuplicate, notes, ...data } = parseInput(memberSchema, input);
   return db.$transaction(async (tx) => {
     await assertEmailFree(tx, data.email);
+    await assertChapelAssignable(tx, data.chapelId);
     const dup = await findDuplicate(tx, data);
     if (dup && !confirmDuplicate) {
       throw new AppError("CONFLICT", `Posible duplicado: ya existe "${fullName(dup)}". Revisa o marca “Registrar de todos modos”.`, {
@@ -136,6 +139,7 @@ export async function updateMember(actor: Actor | null, id: string, input: unkno
   return db.$transaction(async (tx) => {
     const before = await tx.member.findUnique({ where: { id } });
     if (!before) throw new AppError("NOT_FOUND", "Miembro no encontrado.");
+    await assertChapelAssignable(tx, data.chapelId, before.chapelId);
     if (data.status !== before.status && !can(a, "members:deactivate") && (data.status === "INACTIVE" || before.status === "INACTIVE")) {
       throw new AppError("FORBIDDEN", "No tienes permiso para activar o desactivar miembros.");
     }
@@ -173,15 +177,22 @@ export async function setMemberStatus(actor: Actor | null, id: string, status: M
  * Búsqueda mínima (id y nombre) para selectores: asistencia, ministerios, responsables y donantes.
  * No expone teléfonos ni correos.
  */
-export async function lookupMembers(actor: Actor | null, q: string, { includeInactive = false } = {}) {
+export async function lookupMembers(actor: Actor | null, q: string, { includeInactive = false, ministryId }: { includeInactive?: boolean; ministryId?: string } = {}) {
   const a = requireActor(actor);
-  const allowed = (["members:read", "finance:create", "attendance:record", "ministries:manage_members", "events:update", "followup:write"] as const).some((p) => can(a, p));
+  const lookupPermissions = ["members:read", "finance:create", "attendance:record", "ministries:manage_members", "events:update", "followup:write"] as const;
+  const allowed = lookupPermissions.some((p) => can(a, p));
   if (!allowed) throw new AppError("FORBIDDEN");
+  const restricted = !lookupPermissions.some((p) => canFully(a, p));
+  if (ministryId && restricted) await requireMinistryScope(a, "ministries:manage_members", ministryId);
+  const scope = restricted && !ministryId ? await memberScopeWhere(a, "members:read") : undefined;
   const term = normalizeSearch(q);
   const rows = await db.member.findMany({
     where: {
-      ...(term ? { searchName: { contains: term } } : {}),
-      ...(includeInactive ? {} : { status: { not: "INACTIVE" } }),
+      AND: [
+        scope ?? {},
+        term ? { searchName: { contains: term } } : {},
+        includeInactive ? {} : { status: { not: "INACTIVE" } },
+      ],
     },
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
     take: 20,

@@ -1,3 +1,4 @@
+import { ChapelSelect } from "@/components/chapel-select";
 import { MemberPicker } from "@/components/member-picker";
 import { ActionForm, SubmitButton } from "@/components/ui/action-form";
 import { Field, SelectField, TextArea } from "@/components/ui/field";
@@ -12,6 +13,7 @@ export type EventFormValues = {
   description?: string | null;
   visibility?: string;
   ministryId?: string | null;
+  chapelId?: string | null;
   responsibles?: { id: string; name: string }[];
 };
 
@@ -37,6 +39,7 @@ export function EventForm({ action, values = {}, types, ministries, requireMinis
         />
         <Field label="Inicio" name="startsAt" type="datetime-local" defaultValue={values.startsAt} required hint="Hora de la iglesia." />
         <Field label="Fin" name="endsAt" type="datetime-local" defaultValue={values.endsAt} required />
+        <ChapelSelect defaultValue={values.chapelId} />
         <Field label="Lugar" name="location" defaultValue={values.location ?? ""} placeholder="Templo principal" />
         <SelectField
           label="Visibilidad"

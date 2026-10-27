@@ -31,6 +31,7 @@ export default async function NewEventPage({ searchParams }: PageProps<"/admin/e
       description: source.description,
       visibility: source.visibility,
       ministryId: source.ministryId,
+      chapelId: source.chapelId,
       responsibles: source.responsibles.map((r) => ({ id: r.member.id, name: `${r.member.firstName} ${r.member.lastName}` })),
     };
   } else {

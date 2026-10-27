@@ -36,9 +36,8 @@ async function AdminShell({ children }: { children: ReactNode }) {
         // eslint-disable-next-line @next/next/no-img-element
         <img src={`/media/logo?v=${encodeURIComponent(settings.logoPath)}`} alt="" className="size-10 rounded-xl bg-white object-contain p-1" />
       ) : (
-        <span aria-hidden className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-accent to-[#8f6420] font-display text-lg font-semibold text-white shadow">
-          {settings.name.trim().charAt(0).toUpperCase()}
-        </span>
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src="/igletech-mark.svg" alt="" className="size-10 rounded-xl object-contain shadow" />
       )}
       <div className="min-w-0">
         <p className="truncate font-display text-base font-semibold leading-tight text-white">{settings.name}</p>

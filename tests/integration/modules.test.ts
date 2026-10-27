@@ -81,7 +81,7 @@ describe("miembros", () => {
     const admin = await createTestUser(["ADMIN"]);
     const coordPerson = await createMember(secretary, { firstName: "Coord", lastName: "Uno" });
     const inside = await createMember(secretary, { firstName: "Dentro", lastName: "Del Grupo" });
-    await createMember(secretary, { firstName: "Fuera", lastName: "Del Grupo" });
+    const outside = await createMember(secretary, { firstName: "Fuera", lastName: "Del Grupo" });
     const youth = await saveMinistry(admin, null, { name: "Jóvenes" });
     const other = await saveMinistry(admin, null, { name: "Niños" });
     await addMembership(admin, youth.id, { memberId: coordPerson.id, role: "COORDINATOR", startDate: today });
@@ -93,6 +93,9 @@ describe("miembros", () => {
 
     const names = (await listMembers(actor, {})).data.map((m) => m.firstName).sort();
     expect(names).toEqual(["Coord", "Dentro"]);
+    expect(await lookupMembers(actor, "Fuera")).toEqual([]);
+    expect(await lookupMembers(actor, "Fuera", { ministryId: youth.id })).toEqual([{ id: outside.id, name: "Fuera Del Grupo" }]);
+    await expectCode(lookupMembers(actor, "Fuera", { ministryId: other.id }), "FORBIDDEN");
     await expect(getMinistry(actor, youth.id)).resolves.toBeTruthy();
     await expectCode(getMinistry(actor, other.id), "FORBIDDEN");
     // Puede agregar integrantes a su ministerio, pero no designar coordinadores.
@@ -145,6 +148,35 @@ describe("asistencia", () => {
 
     const future = await db.event.create({ data: { title: "Futuro", typeId, startsAt: new Date(Date.now() + 5 * 86400_000), endsAt: new Date(Date.now() + 5 * 86400_000 + 3600_000) } });
     await expectCode(saveAttendance(secretary, future.id, { visitorCount: 0, entries: [{ memberId: a.id, status: "PRESENT" }] }), "CONFLICT");
+  });
+
+  it("impide que un coordinador registre miembros fuera del alcance del evento", async () => {
+    await resetDatabase();
+    const secretary = await createTestUser(["SECRETARY"]);
+    const admin = await createTestUser(["ADMIN"]);
+    const coordinatorUser = await createTestUser(["COORDINATOR"], "Coordinador");
+    const coordinatorMember = await createMember(secretary, { firstName: "Coord", lastName: "Uno" });
+    const inScope = await createMember(secretary, { firstName: "Dentro", lastName: "Grupo" });
+    const outside = await createMember(secretary, { firstName: "Fuera", lastName: "Grupo" });
+    const ministry = await saveMinistry(admin, null, { name: "Ministerio asignado" });
+    await addMembership(admin, ministry.id, { memberId: coordinatorMember.id, role: "COORDINATOR", startDate: today });
+    await addMembership(admin, ministry.id, { memberId: inScope.id, role: "MEMBER", startDate: today });
+    await db.user.update({ where: { id: coordinatorUser.userId }, data: { memberId: coordinatorMember.id } });
+    const coordinator = { ...coordinatorUser, memberId: coordinatorMember.id };
+    const { typeId } = await catalogIds();
+    const event = await db.event.create({
+      data: {
+        title: "Reunión del ministerio",
+        typeId,
+        ministryId: ministry.id,
+        startsAt: new Date(Date.now() - 3600_000),
+        endsAt: new Date(),
+      },
+    });
+
+    await expectCode(saveAttendance(coordinator, event.id, { entries: [{ memberId: outside.id, status: "PRESENT" }] }), "FORBIDDEN");
+    expect(await db.attendance.count({ where: { eventId: event.id } })).toBe(0);
+    await expect(saveAttendance(coordinator, event.id, { entries: [{ memberId: inScope.id, status: "PRESENT" }] })).resolves.toMatchObject({ created: 1 });
   });
 });
 
@@ -337,3 +369,45 @@ describe("seguimiento y reportes nuevos", () => {
     expect(await db.event.findUnique({ where: { id: ev.id } })).toMatchObject({ visitorCount: 0 });
   });
 });
+
+describe("capillas", () => {
+  it("alta, baja, archivo con motivo, permisos y aislamiento de finanzas", async () => {
+    await resetDatabase();
+    const { saveChapel, setChapelStatus, getChapelOverview } = await import("@/modules/chapels/service");
+    const admin = await createTestUser(["ADMIN"]);
+    const secretary = await createTestUser(["SECRETARY"]);
+    const treasurer = await createTestUser(["TREASURER"]);
+
+    await expectCode(saveChapel(secretary, null, { name: "Capilla X", code: "CAP-X" }), "FORBIDDEN");
+    await expectCode(saveChapel(admin, null, { name: "Capilla X", code: "cap x!" }), "VALIDATION_ERROR");
+    const chapel = await saveChapel(admin, null, { name: "Capilla Norte", code: "cap-norte" });
+    expect(chapel.code).toBe("CAP-NORTE");
+    await expectCode(saveChapel(admin, null, { name: "Otra", code: "CAP-NORTE" }), "CONFLICT");
+
+    const m = await createMember(secretary, { firstName: "Ana", lastName: "Capilla", chapelId: chapel.id });
+    const ids = await catalogIds();
+    await createDonation(treasurer, { receivedAt: today, amount: "250", ...ids, anonymous: "on", chapelId: chapel.id });
+
+    // El secretario ve el resumen pero no las finanzas; el tesorero sí.
+    const forSecretary = await getChapelOverview(secretary, chapel.id);
+    expect(forSecretary.members.ACTIVE).toBe(1);
+    expect(forSecretary.finance).toBeUndefined();
+    const forTreasurer = await getChapelOverview(treasurer, chapel.id);
+    expect(forTreasurer.finance?.monthTotal).toBe("250.00");
+
+    // Archivar requiere motivo; ya no recibe registros nuevos pero conserva los existentes.
+    await expectCode(setChapelStatus(admin, chapel.id, { status: "ARCHIVED" }), "VALIDATION_ERROR");
+    await setChapelStatus(admin, chapel.id, { status: "ARCHIVED", reason: "Se fusionó con otra sede" });
+    await expectCode(createMember(secretary, { firstName: "Nuevo", lastName: "Registro", chapelId: chapel.id }), "VALIDATION_ERROR");
+    await expect(updateMemberKeep(secretary, m.id, chapel.id)).resolves.toBeTruthy();
+    expect(await db.auditLog.count({ where: { entityType: "Chapel", entityId: chapel.id, action: "chapel.archive" } })).toBe(1);
+    await setChapelStatus(admin, chapel.id, { status: "ACTIVE" });
+    expect(await db.chapel.findUnique({ where: { id: chapel.id } })).toMatchObject({ status: "ACTIVE", archivedAt: null });
+  });
+});
+
+/** Editar a una persona conservando su capilla actual (aunque esté archivada). */
+async function updateMemberKeep(actor: Actor, id: string, chapelId: string) {
+  const { updateMember } = await import("@/modules/members/service");
+  return updateMember(actor, id, { firstName: "Ana", lastName: "Capilla", chapelId, confirmDuplicate: "on" });
+}

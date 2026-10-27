@@ -14,6 +14,7 @@ export function MemberPicker({
   name,
   label,
   multiple = false,
+  ministryId,
   initial = [],
   hint,
   placeholder = "Escribe un nombre…",
@@ -21,6 +22,7 @@ export function MemberPicker({
   name: string;
   label: string;
   multiple?: boolean;
+  ministryId?: string;
   initial?: Option[];
   hint?: string;
   placeholder?: string;
@@ -37,7 +39,9 @@ export function MemberPicker({
     const ctrl = new AbortController();
     const t = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/v1/members/lookup?q=${encodeURIComponent(query)}`, { signal: ctrl.signal });
+        const params = new URLSearchParams({ q: query });
+        if (ministryId) params.set("ministryId", ministryId);
+        const res = await fetch(`/api/v1/members/lookup?${params}`, { signal: ctrl.signal });
         if (res.ok) setResults((await res.json()).data);
       } catch {
         /* búsqueda cancelada */
@@ -47,7 +51,7 @@ export function MemberPicker({
       clearTimeout(t);
       ctrl.abort();
     };
-  }, [query, open]);
+  }, [query, open, ministryId]);
 
   function pick(option: Option) {
     setSelected((prev) => (multiple ? (prev.some((p) => p.id === option.id) ? prev : [...prev, option]) : [option]));

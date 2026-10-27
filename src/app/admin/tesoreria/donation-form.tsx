@@ -8,12 +8,13 @@ import type { ActionState } from "@/lib/action-state";
 
 type Option = { id: string; name: string };
 
-export function DonationForm({ action, concepts, methods, today, values, withReason, submitLabel }: {
+export function DonationForm({ action, concepts, methods, chapels = [], today, values, withReason, submitLabel }: {
   action: (prev: ActionState, form: FormData) => Promise<ActionState>;
   concepts: Option[];
   methods: Option[];
   today: string;
-  values?: { receivedAt: string; amount: string; conceptId: string; methodId: string; member: Option | null; reference: string | null; notes: string | null };
+  chapels?: Option[];
+  values?: { receivedAt: string; amount: string; conceptId: string; methodId: string; member: Option | null; reference: string | null; notes: string | null; chapelId?: string | null };
   withReason?: boolean;
   submitLabel: string;
 }) {
@@ -25,6 +26,9 @@ export function DonationForm({ action, concepts, methods, today, values, withRea
         <Field label="Monto" name="amount" inputMode="decimal" placeholder="0.00" defaultValue={values?.amount} required hint="Hasta 2 decimales." />
         <SelectField label="Concepto" name="conceptId" defaultValue={values?.conceptId} placeholder="Selecciona…" options={concepts.map((c) => ({ value: c.id, label: c.name }))} required />
         <SelectField label="Método de recepción" name="methodId" defaultValue={values?.methodId} placeholder="Selecciona…" options={methods.map((c) => ({ value: c.id, label: c.name }))} required />
+        {chapels.length ? (
+          <SelectField label="Capilla que recibió" name="chapelId" defaultValue={values?.chapelId ?? ""} placeholder="Sede principal" options={chapels.map((c) => ({ value: c.id, label: c.name }))} />
+        ) : null}
         <Field label="Referencia o folio" name="reference" defaultValue={values?.reference ?? ""} hint="Opcional (número de transferencia, recibo…)." />
       </div>
       <label className="flex items-center gap-3 text-sm">

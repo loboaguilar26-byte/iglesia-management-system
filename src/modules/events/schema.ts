@@ -14,6 +14,7 @@ export const eventSchema = z
     visibility: z.enum(["PUBLIC", "PRIVATE"]).default("PRIVATE"),
     ministryId: z.string().optional().transform((v) => (v ? v : null)),
     responsibles: ids,
+    chapelId: z.string().optional().transform((v) => (v ? v : null)),
   })
   .refine((e) => e.endsAt > e.startsAt, { message: "Debe terminar después de iniciar", path: ["endsAt"] });
 

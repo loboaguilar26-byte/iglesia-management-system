@@ -74,10 +74,24 @@ const entrySchema = z.object({
 export async function saveAttendance(actor: Actor | null, eventId: string, input: unknown) {
   const a = await requireEventScope(actor, "attendance:record", eventId);
   const { visitorCount, entries } = parseInput(entrySchema, input);
-  const event = await db.event.findUnique({ where: { id: eventId }, select: { status: true, startsAt: true, visitorCount: true } });
+  const event = await db.event.findUnique({ where: { id: eventId }, select: { status: true, startsAt: true, visitorCount: true, ministryId: true } });
   if (!event) throw new AppError("NOT_FOUND", "Evento no encontrado.");
   if (event.status === "CANCELLED") throw new AppError("CONFLICT", "No se registra asistencia de eventos cancelados.");
   if (event.startsAt.getTime() - Date.now() > FUTURE_LIMIT_MS) throw new AppError("CONFLICT", "Aún no se puede registrar la asistencia de este evento.");
+
+  const memberIds = [...new Set(entries.map((entry) => entry.memberId))];
+  if (memberIds.length) {
+    const eligibleMembers: Prisma.MemberWhereInput = event.ministryId
+      ? { ministryMemberships: { some: { ministryId: event.ministryId, endDate: null } } }
+      : { status: { in: ["ACTIVE", "VISITOR"] } };
+    const authorizedCount = await db.member.count({
+      where: {
+        id: { in: memberIds },
+        OR: [eligibleMembers, { attendances: { some: { eventId } } }],
+      },
+    });
+    if (authorizedCount !== memberIds.length) throw new AppError("FORBIDDEN");
+  }
 
   const existing = new Map((await db.attendance.findMany({ where: { eventId }, select: { memberId: true, status: true } })).map((r) => [r.memberId, r.status]));
   const creates: { memberId: string; status: AttendanceStatus }[] = [];

@@ -12,6 +12,7 @@ import { donationSummary, financeCatalogs, listDonations, weeklyFinanceSummary }
 import { getChurchTimezone, getSettingsInternal } from "@/modules/settings/service";
 import { createDonationAction } from "./actions";
 import { DonationForm } from "./donation-form";
+import { chapelOptions } from "@/modules/chapels/service";
 
 export const metadata: Metadata = { title: "Tesorería" };
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -31,17 +32,19 @@ export default async function TreasuryPage({ searchParams }: PageProps<"/admin/t
     to,
     conceptId: typeof sp.concepto === "string" ? sp.concepto : undefined,
     methodId: typeof sp.metodo === "string" ? sp.metodo : undefined,
+    chapelId: typeof sp.capilla === "string" && sp.capilla ? sp.capilla : undefined,
     includeVoided: sp.anuladas === "1",
     page: sp.page,
   };
-  const [{ data, meta }, summary, catalogs, weekly] = await Promise.all([
+  const [{ data, meta }, summary, catalogs, weekly, chapels] = await Promise.all([
     listDonations(actor, filter),
     donationSummary(actor, filter),
     financeCatalogs(actor),
     weeklyFinanceSummary(actor, filter),
+    chapelOptions(),
   ]);
   const cur = settings.currency;
-  const params = new URLSearchParams({ desde: from, hasta: to, ...(filter.conceptId ? { concepto: filter.conceptId } : {}), ...(filter.methodId ? { metodo: filter.methodId } : {}), ...(filter.includeVoided ? { anuladas: "1" } : {}) });
+  const params = new URLSearchParams({ desde: from, hasta: to, ...(filter.conceptId ? { concepto: filter.conceptId } : {}), ...(filter.methodId ? { metodo: filter.methodId } : {}), ...(filter.chapelId ? { capilla: filter.chapelId } : {}), ...(filter.includeVoided ? { anuladas: "1" } : {}) });
 
   return (
     <div className="flex flex-col gap-6">
@@ -73,6 +76,15 @@ export default async function TreasuryPage({ searchParams }: PageProps<"/admin/t
             {catalogs.methods.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </label>
+        {chapels.length ? (
+          <label className="flex flex-col gap-1 text-sm">Capilla
+            <select name="capilla" defaultValue={filter.chapelId ?? ""} className="min-h-10 rounded-lg border border-border bg-surface px-3">
+              <option value="">Todas</option>
+              <option value="principal">Sede principal</option>
+              {chapels.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </label>
+        ) : null}
         <label className="flex items-center gap-2 pb-2 text-sm"><input type="checkbox" name="anuladas" value="1" defaultChecked={filter.includeVoided} className="size-4" /> Ver anuladas</label>
         <button className={buttonClass("secondary")} type="submit">Aplicar</button>
       </form>
@@ -112,6 +124,7 @@ export default async function TreasuryPage({ searchParams }: PageProps<"/admin/t
           <Card title="Registrar aportación" className="2xl:order-2">
             <DonationForm
               action={createDonationAction}
+              chapels={chapels}
               concepts={catalogs.concepts.filter((c) => c.isActive)}
               methods={catalogs.methods.filter((c) => c.isActive)}
               today={today}

@@ -28,7 +28,8 @@ export function SiteHeader({ name, logo }: { name: string; logo: string | null }
             // eslint-disable-next-line @next/next/no-img-element
             <img src={`/media/logo?v=${encodeURIComponent(logo)}`} alt="" className="size-9 rounded-lg object-contain" />
           ) : (
-            <span aria-hidden className="flex size-9 items-center justify-center rounded-lg bg-primary font-display text-lg font-semibold text-primary-foreground">{name.trim().charAt(0)}</span>
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src="/igletech-mark.svg" alt="" className="size-9 rounded-lg object-contain" />
           )}
           <span className="truncate font-display text-lg font-semibold">{name}</span>
         </Link>

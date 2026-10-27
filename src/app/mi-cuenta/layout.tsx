@@ -5,6 +5,7 @@ import { hasPanelAccess } from "@/lib/permissions";
 import { requirePortalActor } from "@/lib/session";
 import { getSettingsInternal } from "@/modules/settings/service";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { BookOpeningIntro } from "../(public)/book-opening-intro";
 import { SignOutButton } from "../admin/sign-out-button";
 
 export const metadata: Metadata = { title: "Mi cuenta", robots: { index: false } };
@@ -23,6 +24,7 @@ async function PortalShell({ children }: { children: ReactNode }) {
   const settings = await getSettingsInternal();
   return (
     <div className="flex min-h-screen flex-col">
+      <BookOpeningIntro churchName={settings.name} playOnMount />
       <header className="sticky top-0 z-30 border-b border-border bg-surface/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
           <Link href="/" className="flex min-w-0 items-center gap-3">
@@ -30,7 +32,8 @@ async function PortalShell({ children }: { children: ReactNode }) {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={`/media/logo?v=${encodeURIComponent(settings.logoPath)}`} alt="" className="size-9 rounded-lg object-contain" />
             ) : (
-              <span aria-hidden className="flex size-9 items-center justify-center rounded-lg bg-brand font-display text-lg font-semibold text-white">{settings.name.trim().charAt(0)}</span>
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src="/igletech-mark.svg" alt="" className="size-9 rounded-lg object-contain" />
             )}
             <span className="min-w-0">
               <span className="block truncate font-display font-semibold leading-tight">{settings.name}</span>
