@@ -357,6 +357,25 @@ h3 {
   to { --ax: 35%; }
 }
 
+/* Anillo de progreso que se llena al aparecer (usa --ring-to como desplazamiento final). */
+.ring-fill {
+  animation: ring-fill 1.1s cubic-bezier(.2,.8,.2,1) both;
+}
+@keyframes ring-fill {
+  from { stroke-dashoffset: var(--ring-from); }
+  to { stroke-dashoffset: var(--ring-to); }
+}
+
+/* Barras horizontales que crecen desde la izquierda. */
+.bar-grow {
+  transform-origin: left center;
+  animation: bar-grow 900ms cubic-bezier(.2,.8,.2,1) both;
+}
+@keyframes bar-grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
 /* Indicador pulsante para "en vivo / hoy". */
 .pulse-dot {
   position: relative;

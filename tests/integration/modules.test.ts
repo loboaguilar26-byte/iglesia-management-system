@@ -429,4 +429,39 @@ describe("iglesias y franquicias (módulo de Victor)", () => {
     expect(await listChurches(admin)).toHaveLength(1);
     expect(await db.auditLog.count({ where: { action: "church.create" } })).toBe(1);
   });
+
+  it("panorama, equipo por sede con jerarquía y desactivación con motivo", async () => {
+    await resetDatabase();
+    const svc = await import("@/modules/churches/service");
+    const admin = await createTestUser(["ADMIN"]);
+    const pastor = await createTestUser(["PASTOR"]);
+    const secretary = await createTestUser(["SECRETARY"]);
+    const church = await svc.createChurch(admin, { franchiseName: "Red Dos", name: "Iglesia Norte", slug: "iglesia-norte" });
+
+    let o = await svc.getNetworkOverview(pastor);
+    expect(o.totals).toMatchObject({ franchises: 1, active: 1, team: 0 });
+    expect(o.insights[0]).toMatchObject({ tone: "danger", churchId: church.id });
+
+    const roles = Object.fromEntries((await db.role.findMany()).map((r) => [r.key, r.id]));
+    await expectCode(svc.addChurchTeamMember(pastor, church.id, { userId: secretary.userId }), "FORBIDDEN");
+    await expectCode(svc.addChurchTeamMember(admin, church.id, { userId: admin.userId, roleId: roles.ADMIN }), "FORBIDDEN");
+    await svc.addChurchTeamMember(admin, church.id, { userId: pastor.userId, roleId: roles.PASTOR, isPrimary: true });
+
+    const d = await svc.getChurchDetail(admin, church.id);
+    expect(d.team).toHaveLength(1);
+    expect(d.team[0]).toMatchObject({ id: pastor.userId, isPrimary: true });
+    expect(d.team[0]!.roles.map((r) => r.key)).toEqual(["PASTOR"]);
+    expect(d.readiness.checks.find((k) => k.key === "team")?.done).toBe(true);
+    o = await svc.getNetworkOverview(admin);
+    expect(o.insights.some((i) => i.tone === "danger")).toBe(false);
+
+    await expectCode(svc.setChurchStatus(admin, church.id, { isActive: false }), "VALIDATION_ERROR");
+    await svc.setChurchStatus(admin, church.id, { isActive: false, reason: "Fusión con otra sede" });
+    await expectCode(svc.addChurchTeamMember(admin, church.id, { userId: secretary.userId }), "CONFLICT");
+    expect((await svc.getNetworkOverview(admin)).totals).toMatchObject({ active: 0, inactive: 1 });
+
+    await svc.removeChurchTeamMember(admin, church.id, pastor.userId);
+    expect(await db.churchRoleAssignment.count({ where: { churchId: church.id } })).toBe(0);
+    expect(await db.auditLog.count({ where: { entityType: "Church", entityId: church.id } })).toBe(4);
+  });
 });
