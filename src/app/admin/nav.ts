@@ -1,6 +1,6 @@
 import type { Permission } from "@/lib/permissions";
 
-export type NavIcon = "home" | "members" | "ministries" | "events" | "attendance" | "finance" | "giving" | "expenses" | "announcements" | "reports" | "users" | "settings" | "audit" | "followup" | "chapels" | "churches" | "prayer";
+export type NavIcon = "home" | "members" | "ministries" | "events" | "attendance" | "finance" | "giving" | "expenses" | "announcements" | "reports" | "users" | "settings" | "audit" | "followup" | "chapels" | "churches" | "prayer" | "confessions";
 export type NavItem = { href: string; label: string; icon: NavIcon; permission?: Permission; anyOf?: Permission[] };
 export type NavGroup = { label: string | null; items: NavItem[] };
 
@@ -13,6 +13,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/admin/miembros", label: "Miembros", icon: "members", permission: "members:read" },
       { href: "/admin/seguimiento", label: "Seguimiento", icon: "followup", permission: "followup:read" },
       { href: "/admin/oracion", label: "Peticiones de oración", icon: "prayer", permission: "prayer:read" },
+      { href: "/admin/confesiones", label: "Confesiones", icon: "confessions", permission: "confessions:read" },
       { href: "/admin/ministerios", label: "Ministerios", icon: "ministries", permission: "ministries:read" },
     ],
   },
@@ -46,8 +47,12 @@ export const NAV_GROUPS: NavGroup[] = [
 
 /** Grupos con solo los elementos permitidos (los grupos vacíos se omiten). */
 export function navFor(can: (p: Permission) => boolean): NavGroup[] {
-  return NAV_GROUPS.map((g) => ({
+  const groups = NAV_GROUPS.map((g) => ({
     ...g,
     items: g.items.filter((i) => (!i.permission || can(i.permission)) && (!i.anyOf || i.anyOf.some(can))),
   })).filter((g) => g.items.length > 0);
+  const hasOtherPanelArea = groups.some((group) => group.items.some((item) => item.href !== "/admin" && item.href !== "/admin/confesiones"));
+  return groups
+    .map((group) => ({ ...group, items: hasOtherPanelArea ? group.items : group.items.filter((item) => item.href !== "/admin") }))
+    .filter((group) => group.items.length > 0);
 }

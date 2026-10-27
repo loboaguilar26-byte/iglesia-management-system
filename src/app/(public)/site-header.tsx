@@ -13,6 +13,7 @@ const LINKS = [
   { href: "/ministerios", label: "Ministerios" },
   { href: "/eventos", label: "Eventos" },
   { href: "/comunicados", label: "Comunicados" },
+  { href: "/confesiones", label: "Confesiones" },
   { href: "/contacto", label: "Contacto" },
 ];
 
@@ -29,7 +30,7 @@ export function SiteHeader({ name, logo }: { name: string; logo: string | null }
             <img src={`/media/logo?v=${encodeURIComponent(logo)}`} alt="" className="size-9 rounded-lg object-contain" />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src="/igletech-mark.svg" alt="" className="size-9 rounded-lg object-contain" />
+            <img src="/eclaria-mark.svg" alt="" className="size-9 rounded-lg object-contain" />
           )}
           <span className="truncate font-display text-lg font-semibold">{name}</span>
         </Link>

@@ -14,7 +14,7 @@ async function ensureSettings() {
   return db.churchSettings.upsert({
     where: { id: DEFAULT_ID },
     update: {},
-    create: { id: DEFAULT_ID, name: "IgleTech" },
+    create: { id: DEFAULT_ID, name: "Eclaria" },
   });
 }
 

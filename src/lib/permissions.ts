@@ -69,12 +69,15 @@ export const PERMISSIONS = {
   "prayer:read": "Consultar peticiones de oración (equipo pastoral)",
   "prayer:manage": "Atender peticiones de oración y dejar nota pastoral",
 
+  "confessions:read": "Leer solicitudes y mensajes confidenciales de confesión",
+  "confessions:manage": "Confirmar citas y responder mensajes de confesión",
+
   "portal:access": "Acceder al portal personal del miembro (solo sus propios datos)",
 } as const;
 
 export type Permission = keyof typeof PERMISSIONS;
 
-export const ROLE_KEYS = ["ADMIN", "PASTOR", "SECRETARY", "TREASURER", "COORDINATOR", "MEMBER"] as const;
+export const ROLE_KEYS = ["ADMIN", "PASTOR", "SECRETARY", "TREASURER", "COORDINATOR", "MEMBER", "PRIEST"] as const;
 export type RoleKey = (typeof ROLE_KEYS)[number];
 
 const all = (prefix: string) =>
@@ -190,6 +193,12 @@ export const ROLES: Record<
     description: "Acceso al portal personal: sus datos, ministerios, asistencia, eventos y aportaciones propias. Sin acceso al panel.",
     level: 10,
     permissions: ["portal:access"],
+  },
+  PRIEST: {
+    name: "Sacerdote",
+    description: "Acceso exclusivo a las citas y mensajes confidenciales de confesión.",
+    level: 55,
+    permissions: ["confessions:read", "confessions:manage"],
   },
 };
 

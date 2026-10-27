@@ -7,6 +7,7 @@ import type { Prisma } from "@/generated/prisma/client";
 
 /** Entidades cuya bitácora es financiera (solo con audit:read_finance). */
 const FINANCE_ENTITIES = ["Donation", "GivingReport", "Expense", "DonationConcept", "PaymentMethod"];
+const CONFESSION_ENTITIES = ["ConfessionAppointment", "ConfessionMessage"];
 
 export const ENTITY_LABEL: Record<string, string> = {
   User: "Usuario",
@@ -25,6 +26,8 @@ export const ENTITY_LABEL: Record<string, string> = {
   Chapel: "Capilla",
   Church: "Iglesia",
   PrayerRequest: "Petición de oración",
+  ConfessionAppointment: "Cita de confesión",
+  ConfessionMessage: "Mensaje de confesión",
 };
 
 const ACTION_LABEL: Record<string, string> = {
@@ -78,15 +81,17 @@ export async function listAudit(actor: Actor | null, input: unknown) {
   const a = requireActor(actor);
   const general = can(a, "audit:read");
   const finance = can(a, "audit:read_finance");
+  const confessions = a.roles.includes("PRIEST") && can(a, "confessions:read");
   if (!general && !finance) throw new AppError("FORBIDDEN");
   const { page, entidad } = parseInput(schema, input ?? {});
   const allowed: Prisma.AuditLogWhereInput = general && finance ? {} : general ? { entityType: { notIn: FINANCE_ENTITIES }, NOT: { action: "report.export", entityId: "ingresos" } } : { OR: [{ entityType: { in: FINANCE_ENTITIES } }, { action: "report.export", entityId: "ingresos" }] };
-  const where: Prisma.AuditLogWhereInput = { AND: [allowed, entidad ? { entityType: entidad } : {}] };
+  const confessionVisibility: Prisma.AuditLogWhereInput = confessions ? {} : { entityType: { notIn: CONFESSION_ENTITIES } };
+  const where: Prisma.AuditLogWhereInput = { AND: [allowed, confessionVisibility, entidad ? { entityType: entidad } : {}] };
   const pageSize = 30;
   const [rows, total] = await Promise.all([
     db.auditLog.findMany({ where, orderBy: { createdAt: "desc" }, skip: (page - 1) * pageSize, take: pageSize, include: { actor: { select: { name: true } } } }),
     db.auditLog.count({ where }),
   ]);
-  const entities = Object.keys(ENTITY_LABEL).filter((e) => (FINANCE_ENTITIES.includes(e) ? finance : general));
+  const entities = Object.keys(ENTITY_LABEL).filter((e) => (FINANCE_ENTITIES.includes(e) ? finance : general) && (confessions || !CONFESSION_ENTITIES.includes(e)));
   return { data: rows, meta: { page, pageSize, total }, entities };
 }

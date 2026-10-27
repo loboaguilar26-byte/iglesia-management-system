@@ -1,4 +1,4 @@
-import { ArrowRight, CalendarDays, Clock, HandHeart, Mail, MapPin, Phone, Sparkles, Users } from "lucide-react";
+import { ArrowRight, CalendarDays, Clock, HandHeart, Heart, Mail, MapPin, Phone, Sparkles, Users } from "lucide-react";
 import Link from "next/link";
 import { buttonClass } from "@/components/ui/button";
 import { formatLongDate, formatTime } from "@/lib/dates";
@@ -139,6 +139,19 @@ export default async function HomePage() {
         )}
         <Link href="/eventos" className="mt-8 inline-flex items-center gap-2 font-medium text-primary hover:underline">Ver calendario completo <ArrowRight aria-hidden className="size-4" /></Link>
       </Section>
+
+      <section className="bg-surface">
+        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-14 sm:px-6 sm:py-16 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-start gap-4">
+            <span className="rounded-2xl bg-accent-soft p-3 text-accent"><Heart aria-hidden className="size-6" /></span>
+            <div>
+              <h2 className="font-display text-2xl font-semibold">Un espacio de escucha y confianza</h2>
+              <p className="mt-2 max-w-2xl text-muted">Solicita una cita privada o comparte un mensaje anónimo, reservado al equipo sacerdotal.</p>
+            </div>
+          </div>
+          <Link href="/confesiones" className={buttonClass("primary", "shrink-0", "lg")}>Confesiones y citas</Link>
+        </div>
+      </section>
 
       {ministries.length ? (
         <Section eyebrow="Comunidad" title="Ministerios" intro="Espacios para servir, crecer y convivir. Hay un lugar para ti.">

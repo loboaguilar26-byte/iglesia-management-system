@@ -93,7 +93,7 @@ export default async function SettingsPage() {
             <img src={`/media/logo?v=${encodeURIComponent(s.logoPath)}`} alt="Logotipo actual" className="size-24 rounded-xl border border-border bg-white object-contain p-2" />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src="/igletech-logo.svg" alt="Logotipo predeterminado de IgleTech" className="h-24 max-w-full rounded-xl border border-border bg-white object-contain p-2" />
+            <img src="/eclaria-logo.svg" alt="Logotipo predeterminado de Eclaria" className="h-24 max-w-full rounded-xl border border-border bg-white object-contain p-2" />
           )}
           {editable ? (
             <div className="flex flex-col gap-3">

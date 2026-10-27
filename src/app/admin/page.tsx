@@ -10,9 +10,11 @@ import { requirePageActor } from "@/lib/session";
 import { currentAnnouncements } from "@/modules/announcements/service";
 import { getDashboard } from "@/modules/dashboard/service";
 import { getChurchTimezone, getSettingsInternal } from "@/modules/settings/service";
+import { redirect } from "next/navigation";
 
 export default async function AdminHomePage() {
   const actor = await requirePageActor();
+  if (actor.roles.includes("PRIEST") && actor.roles.every((role) => role === "PRIEST" || role === "MEMBER")) redirect("/admin/confesiones");
   const [tz, settings] = await Promise.all([getChurchTimezone(), getSettingsInternal()]);
   const [d, announcements] = await Promise.all([
     getDashboard(actor, tz),
