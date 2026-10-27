@@ -375,6 +375,7 @@ model Ministry {
   name        String               @unique
   description String?
   isActive    Boolean              @default(true)
+  isPublic    Boolean              @default(false)
   createdAt   DateTime             @default(now()) @db.Timestamptz(3)
   updatedAt   DateTime             @updatedAt @db.Timestamptz(3)
   memberships MinistryMembership[]
@@ -487,23 +488,50 @@ model Announcement {
 // ───────────────────────── Configuración y auditoría ─────────────────────────
 
 model ChurchSettings {
-  id           String   @id @default("default")
-  name         String
-  logoPath     String?
-  address      String?
-  phone        String?
-  email        String?
-  timezone     String   @default("America/Mexico_City")
-  currency     String   @default("MXN") @db.Char(3)
-  aboutText    String?
-  scheduleText String?
+  id             String   @id @default("default")
+  name           String
+  logoPath       String?
+  tagline        String?
+  welcomeText    String?
+  firstVisitText String?
+  address        String?
+  phone          String?
+  email          String?
+  whatsapp       String?
+  mapUrl         String?
+  facebookUrl    String?
+  instagramUrl   String?
+  youtubeUrl     String?
+  timezone       String   @default("America/Mexico_City")
+  currency       String   @default("MXN") @db.Char(3)
+  aboutText      String?
+  mission        String?
+  vision         String?
+  valuesText     String?
+  scheduleText   String?
+  privacyNotice  String?
   /// Terminología configurable, p. ej. { "event": "Culto", "ministry": "Ministerio" }.
-  terminology  Json     @default("{}")
-  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
-  updatedById  String?
-  updatedBy    User?    @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+  terminology    Json     @default("{}")
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+  updatedById    String?
+  updatedBy      User?    @relation(fields: [updatedById], references: [id], onDelete: SetNull)
 
   @@map("church_settings")
+}
+
+model ServiceSchedule {
+  id          String  @id @default(cuid())
+  name        String
+  dayOfWeek   Int     @db.SmallInt
+  startTime   String  @db.VarChar(5)
+  endTime     String? @db.VarChar(5)
+  location    String?
+  description String?
+  isPublic    Boolean @default(true)
+  sortOrder   Int     @default(0)
+
+  @@index([dayOfWeek, startTime])
+  @@map("service_schedule")
 }
 
 model AuditLog {
