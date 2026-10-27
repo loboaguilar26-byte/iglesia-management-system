@@ -23,7 +23,7 @@ export function Field({ label, name, errors, hint, id, className = "", ...props 
         name={name}
         aria-invalid={errors?.length ? true : undefined}
         aria-describedby={describedBy || undefined}
-        className={`min-h-10 rounded-md border border-border bg-surface px-3 text-base outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 aria-invalid:border-danger ${className}`}
+        className={`min-h-11 rounded-lg border border-border bg-surface px-3 text-base outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30 aria-invalid:border-danger ${className}`}
         {...props}
       />
       {hint ? (

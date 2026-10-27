@@ -8,6 +8,11 @@ export const PERMISSIONS = {
   "users:deactivate": "Activar o desactivar usuarios",
   "roles:assign": "Asignar roles a otros usuarios",
 
+  "churches:read": "Consultar franquicias e iglesias",
+  "churches:create": "Crear iglesias dentro de una franquicia",
+  "churches:update": "Editar la configuración de una iglesia",
+  "churches:manage_members": "Asignar usuarios y roles por iglesia",
+
   "members:read": "Consultar miembros",
   "members:create": "Registrar miembros",
   "members:update": "Editar miembros",
@@ -62,13 +67,18 @@ export type RoleKey = (typeof ROLE_KEYS)[number];
 const all = (prefix: string) =>
   (Object.keys(PERMISSIONS) as Permission[]).filter((p) => p.startsWith(prefix));
 
-export const ROLES: Record<RoleKey, { name: string; description: string; permissions: Permission[] }> = {
+export const ROLES: Record<
+  RoleKey,
+  { name: string; description: string; level: number; permissions: Permission[] }
+> = {
   ADMIN: {
     name: "Administrador",
     description: "Administra usuarios, roles y configuración. Sin acceso financiero por defecto.",
+    level: 100,
     permissions: [
       ...all("users:"),
       "roles:assign",
+      ...all("churches:"),
       ...all("members:").filter((p) => p !== "members:read_notes"),
       ...all("attendance:"),
       ...all("events:"),
@@ -84,8 +94,10 @@ export const ROLES: Record<RoleKey, { name: string; description: string; permiss
   PASTOR: {
     name: "Pastor",
     description: "Supervisa la congregación, eventos y ministerios.",
+    level: 80,
     permissions: [
       "users:read",
+      "churches:read",
       "members:read",
       "members:read_notes",
       "attendance:read",
@@ -101,6 +113,7 @@ export const ROLES: Record<RoleKey, { name: string; description: string; permiss
   SECRETARY: {
     name: "Secretario",
     description: "Gestiona el directorio, la asistencia, los eventos y los comunicados.",
+    level: 60,
     permissions: [
       ...all("members:").filter((p) => p !== "members:read_notes"),
       ...all("attendance:"),
@@ -116,6 +129,7 @@ export const ROLES: Record<RoleKey, { name: string; description: string; permiss
   TREASURER: {
     name: "Tesorero",
     description: "Registra y reporta las aportaciones económicas.",
+    level: 60,
     permissions: [
       ...all("finance:"),
       "reports:finance",
@@ -129,6 +143,7 @@ export const ROLES: Record<RoleKey, { name: string; description: string; permiss
     name: "Coordinador",
     description:
       "Gestiona sus ministerios y eventos asignados. Los permisos se acotan a lo asignado en cada servicio.",
+    level: 40,
     permissions: [
       "members:read",
       "attendance:read",
@@ -149,6 +164,11 @@ export const ROLES: Record<RoleKey, { name: string; description: string; permiss
     ],
   },
 };
+
+/** Orden visual y de precedencia para explicar la jerarquía sin cambiar los permisos efectivos. */
+export const ROLE_HIERARCHY = ROLE_KEYS.map((key) => ({ key, ...ROLES[key] })).sort(
+  (a, b) => b.level - a.level,
+);
 
 /** Roles cuyos permisos se limitan a ministerios/eventos asignados (ver docs/permisos.md, regla 5). */
 export const SCOPED_ROLES: RoleKey[] = ["COORDINATOR"];

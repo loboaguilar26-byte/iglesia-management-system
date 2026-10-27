@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense, type ReactNode } from "react";
 import { can } from "@/lib/authz";
+import { ROLES } from "@/lib/permissions";
 import { requirePageActor } from "@/lib/session";
 import { MobileNav, SidebarNav } from "./admin-nav";
 import { NAV_ITEMS } from "./nav";
@@ -22,15 +23,19 @@ async function AdminShell({ children }: { children: ReactNode }) {
   const items = NAV_ITEMS.filter((item) => !item.permission || can(actor, item.permission));
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="flex h-14 items-center justify-between gap-2 border-b border-border bg-surface px-4">
+      <header className="flex min-h-16 items-center justify-between gap-3 border-b border-border bg-surface/95 px-4 shadow-sm backdrop-blur sm:px-6">
         <div className="flex items-center gap-2">
           <MobileNav items={items} />
-          <span className="font-semibold">Panel de la iglesia</span>
+          <div>
+            <span className="block text-sm font-semibold tracking-tight sm:text-base">Panel de la iglesia</span>
+            <span className="hidden text-xs text-muted sm:block">Operación y administración</span>
+          </div>
         </div>
         <div className="flex items-center gap-2">
-          <span className="hidden text-sm text-muted sm:inline" title={actor.email}>
-            {actor.name}
-          </span>
+          <div className="hidden text-right sm:block" title={actor.email}>
+            <span className="block text-sm font-medium">{actor.name}</span>
+            <span className="text-xs text-muted">{actor.roles.map((role) => ROLES[role].name).join(" · ") || "Sin roles"}</span>
+          </div>
           <SignOutButton />
         </div>
       </header>

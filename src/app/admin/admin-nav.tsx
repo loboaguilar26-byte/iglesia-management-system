@@ -1,11 +1,11 @@
 "use client";
 
-import { Home, Menu, Users } from "lucide-react";
+import { Building2, CalendarDays, Home, Menu, Users, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { NavItem } from "./nav";
 
-const ICONS = { home: Home, users: Users };
+const ICONS = { home: Home, users: Users, churches: Building2, members: UsersRound, events: CalendarDays };
 
 function isActive(pathname: string, href: string) {
   return href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
