@@ -16,6 +16,7 @@
 | Datos en sitio público | Consultas públicas con `select` explícito; pruebas que verifican que no salen teléfonos/correos. |
 | Archivos maliciosos | Validación por firma, tamaño ≤ 1 MB, nombre generado, sin SVG (puede contener scripts). |
 | Secretos | `.env` ignorado por git; `.env.example` sin valores reales; revisión antes de cada commit. |
+| Confesiones | Contenido cifrado AES-256-GCM; lectura protegida por `PRIEST` y permisos; clave independiente respaldada fuera de la BD. |
 | Dependencias | `pnpm audit` en CI; Dependabot. |
 | Pérdida de datos | Respaldos diarios cifrados y prueba de restauración trimestral (ver `despliegue.md`). |
 | CORS (móvil) | La app móvil nativa no usa CORS; solo se permiten orígenes explícitos si hay otro cliente web. |
@@ -33,6 +34,12 @@
 1. Revocar sesiones y rotar secretos (`BETTER_AUTH_SECRET`, credenciales BD).
 2. Revisar `AuditLog`.
 3. Evaluar notificación a titulares conforme a la ley.
+
+## Clave del módulo de confesiones
+
+Genera `CONFESSIONS_ENCRYPTION_KEY` con `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"` y guárdala en el gestor de secretos del entorno. Mantén una copia de recuperación cifrada, con acceso restringido y separada de los respaldos de PostgreSQL. **No pierdas ni reemplaces la clave:** los mensajes y contactos existentes no se pueden descifrar con una clave nueva. Una rotación requiere un procedimiento de re-cifrado que conserve temporalmente ambas claves; no basta con cambiar la variable.
+
+**Límite actual:** el esquema de confesiones aún no incluye un `churchId`, y el contexto sacerdotal es global. Mantén el módulo en una sola iglesia hasta que cada registro y autorización se vincule y filtre por iglesia; no está completo el aislamiento multi-tenant.
 
 ## Implementado en la Fase 1 (22/10/2026)
 - Better Auth 1.7.12 (≥ versión que corrige CVE-2026-45364); registro público deshabilitado; contraseñas 10–128 caracteres; sesiones de 7 días revocables; token de recuperación de 30 min y un solo uso; al restablecer se cierran todas las sesiones.

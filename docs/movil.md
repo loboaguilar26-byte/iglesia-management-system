@@ -1,6 +1,6 @@
 # App móvil (Android e iOS)
 
-IgleTech se distribuye también como app nativa con [Capacitor](https://capacitorjs.com/) 8. La app es un
+Eclaria se distribuye también como app nativa con [Capacitor](https://capacitorjs.com/) 8. La app es un
 contenedor nativo que abre el sistema web publicado: el sitio público, el panel y el portal del miembro
 son los mismos, así que toda mejora del sistema llega a la app sin publicar otra versión.
 
@@ -60,10 +60,8 @@ Ninguna cuenta de pago, llave de firma ni publicación se crea sin autorización
 
 ## Actualizar íconos
 
-Con `pnpm dev` corriendo, descarga las imágenes base y regenera:
+Los recursos se generan desde `public/eclaria-mark.svg` y `public/eclaria-logo.svg`:
 
 ```bash
-curl -o assets/icon-only.png "http://localhost:3000/app-icon/1024?maskable=1"
-curl -o assets/logo.png "http://localhost:3000/app-icon/1024"
 pnpm mobile:assets
 ```

@@ -1,16 +1,17 @@
-# IgleTech · Iglesia Management System
+# Eclaria · Iglesia Management System
 
 Sistema integral de gestión multidenominacional de iglesias: sitio público institucional y panel administrativo privado (miembros, asistencia, eventos, ministerios, aportaciones, comunicados, reportes y configuración). Preparado para una futura app móvil (React Native + Expo).
 
 > **Estado:** sitio público y los 10 módulos administrativos (RF-01 a RF-10) implementados y probados localmente. Pendiente: estabilización, despliegue (requiere autorización) y preparación móvil.
 
 ## Qué incluye
-- **Sitio público:** inicio, nosotros, horarios, eventos, comunicados, contacto y aviso de privacidad, editables desde el panel.
-- **Panel `/admin`:** inicio con indicadores, miembros, ministerios, eventos y calendario, asistencia, tesorería, comunicados, reportes (PDF/Excel), usuarios y roles, configuración.
+- **Sitio público:** inicio, nosotros, horarios, eventos, comunicados, contacto, confesiones confidenciales y aviso de privacidad, editables desde el panel.
+- **Panel `/admin`:** inicio con indicadores, miembros, ministerios, eventos y calendario, asistencia, tesorería, comunicados, confesiones, reportes (PDF/Excel), usuarios y roles, configuración.
 - **Ofrendas y gastos:** los miembros pueden reportar una entrega ya realizada; tesorería la valida antes de sumarla a ingresos. Los egresos se registran y anulan con trazabilidad; la tesorería muestra cortes semanales.
 - **Tema claro/oscuro:** selector manual disponible en el sitio público, el portal y el panel; la preferencia queda guardada en el navegador.
-- **Bienvenida animada:** una Biblia se abre al entrar por primera vez a la portada en cada pestaña; puede omitirse y respeta la preferencia de movimiento reducido del dispositivo.
-- **Marca IgleTech:** identidad vectorial propia para el sitio, los paneles y el ícono de la app instalable; el nombre de la congregación se puede personalizar desde Configuración.
+- **Bienvenida animada:** una paloma vuela sobre un libro que se abre; puede omitirse y respeta la preferencia de movimiento reducido del dispositivo.
+- **Marca Eclaria:** identidad vectorial para el sitio, los paneles y el ícono de la app instalable; el nombre de la congregación se puede personalizar desde Configuración.
+- **Confesiones:** solicitud pendiente de cita en la iglesia principal o una capilla, mensajes anónimos cifrados y acceso sacerdotal.
 - Permisos por rol aplicados en el servidor (ver [docs/permisos.md](docs/permisos.md)).
 
 ## Multiplataforma (PC, Android, iPhone)

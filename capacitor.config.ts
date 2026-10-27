@@ -13,7 +13,7 @@ const cleartext = serverUrl.startsWith("http://");
 
 const config: CapacitorConfig = {
   appId: "mx.igletech.app",
-  appName: "IgleTech",
+  appName: "Eclaria",
   webDir: "mobile/www",
   server: {
     url: serverUrl,

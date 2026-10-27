@@ -12,8 +12,10 @@ Base de datos: **PostgreSQL en Neon** (plan gratuito para iniciar).
    ```bash
    firebase apphosting:secrets:set DATABASE_URL
    firebase apphosting:secrets:set BETTER_AUTH_SECRET
+   firebase apphosting:secrets:set CONFESSIONS_ENCRYPTION_KEY
    ```
    Para `BETTER_AUTH_SECRET` usar un valor aleatorio: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`.
+   Para `CONFESSIONS_ENCRYPTION_KEY`: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. Respáldala cifrada fuera de la base de datos; perderla impide recuperar mensajes/contactos.
 4. Para migrar desde tu equipo, crea `.env.production.local` (ignorado por git) con `DATABASE_URL=...` de Neon.
 
 ## Pasos técnicos
@@ -30,7 +32,7 @@ firebase deploy --only apphosting
 
 ## Configuración (`apphosting.yaml`)
 - 0–2 instancias (sin tráfico no hay costo de cómputo), 1 CPU, 512 MiB.
-- Secretos: `DATABASE_URL`, `BETTER_AUTH_SECRET` (Secret Manager).
+- Secretos: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `CONFESSIONS_ENCRYPTION_KEY` (Secret Manager).
 - `BETTER_AUTH_URL` = URL pública; actualizar si se usa dominio propio.
 - `AUTH_IP_HEADERS` / `AUTH_TRUSTED_PROXIES`: IP real del cliente detrás del balanceador de Google, para que el límite de intentos sea por persona. **Verificar tras el primer despliegue** (bitácora → IP registrada) y ajustar si aparece la IP del balanceador.
 - El logotipo se guarda en la BD (tabla `stored_file`), porque el disco de Cloud Run no es persistente.

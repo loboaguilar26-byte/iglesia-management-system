@@ -542,3 +542,43 @@ describe("portal del miembro: participación", () => {
     await expectCode(p.myAgenda(admin), "FORBIDDEN");
   });
 });
+
+describe("confesiones", () => {
+  it("reserva sin choques, mensaje anónimo cifrado y solo el sacerdote lo lee", async () => {
+    await resetDatabase();
+    vi.stubEnv("CONFESSIONS_ENCRYPTION_KEY", Buffer.alloc(32, 9).toString("base64"));
+    const c = await import("@/modules/confessions/service");
+    const priest = await createTestUser(["PRIEST"], "Padre Prueba");
+    const admin = await createTestUser(["ADMIN"]);
+    const pastor = await createTestUser(["PASTOR"]);
+
+    // Cita en la iglesia principal, a una hora redonda de pasado mañana (hora de la iglesia).
+    const day = toDateInput(new Date(Date.now() + 2 * 86400_000), TZ);
+    const slot = { chapelId: "main", scheduledAt: `${day}T10:00`, contactName: "Ana", contactPhone: "5512345678" };
+    await c.requestConfessionAppointment(slot);
+    await expectCode(c.requestConfessionAppointment(slot), "CONFLICT");
+    await expectCode(c.requestConfessionAppointment({ ...slot, scheduledAt: `${day}T10:15` }), "VALIDATION_ERROR");
+    await c.requestConfessionAppointment({ ...slot, website: "bot" }); // trampa: se ignora en silencio
+    expect(await db.confessionAppointment.count()).toBe(1);
+    const stored = await db.confessionAppointment.findFirstOrThrow();
+    expect(stored.contactCiphertext).not.toContain("Ana");
+
+    await c.submitAnonymousConfessionMessage({ body: "Necesito hablar con alguien, gracias." });
+    const raw = await db.confessionMessage.findFirstOrThrow();
+    expect(raw.bodyCiphertext).not.toContain("Necesito");
+    expect(Object.keys(raw)).not.toContain("memberId");
+
+    await expectCode(c.listConfessions(admin), "FORBIDDEN");
+    await expectCode(c.listConfessions(pastor), "FORBIDDEN");
+    const list = await c.listConfessions(priest);
+    expect(list.appointments[0]?.contact).toMatchObject({ name: "Ana", phone: "5512345678" });
+    expect(list.messages[0]?.body).toBe("Necesito hablar con alguien, gracias.");
+
+    await c.updateConfessionAppointment(priest, stored.id, { status: "CANCELLED" });
+    await c.requestConfessionAppointment(slot); // el horario cancelado queda libre
+    await expectCode(c.updateAnonymousConfessionMessage(priest, raw.id, { status: "RESPONDED" }), "VALIDATION_ERROR");
+    await c.updateAnonymousConfessionMessage(priest, raw.id, { status: "RESPONDED", response: "Te esperamos." });
+    expect((await c.listConfessions(priest)).messages[0]?.priestResponse).toBe("Te esperamos.");
+    vi.unstubAllEnvs();
+  });
+});

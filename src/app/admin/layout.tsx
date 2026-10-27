@@ -37,7 +37,7 @@ async function AdminShell({ children }: { children: ReactNode }) {
         <img src={`/media/logo?v=${encodeURIComponent(settings.logoPath)}`} alt="" className="size-10 rounded-xl bg-white object-contain p-1" />
       ) : (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src="/igletech-mark.svg" alt="" className="size-10 rounded-xl object-contain shadow" />
+        <img src="/eclaria-mark.svg" alt="" className="size-10 rounded-xl object-contain shadow" />
       )}
       <div className="min-w-0">
         <p className="truncate font-display text-base font-semibold leading-tight text-white">{settings.name}</p>

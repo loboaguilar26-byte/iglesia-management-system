@@ -117,7 +117,7 @@ export async function myEventIcs(actor: Actor | null, eventId: string) {
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//IgleTech//Portal del miembro//ES",
+    "PRODID:-//Eclaria//Portal del miembro//ES",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     "BEGIN:VEVENT",

@@ -2,6 +2,7 @@
 # Los secretos se guardan en Cloud Secret Manager; nunca en este archivo ni en git:
 #   firebase apphosting:secrets:set DATABASE_URL
 #   firebase apphosting:secrets:set BETTER_AUTH_SECRET
+#   firebase apphosting:secrets:set CONFESSIONS_ENCRYPTION_KEY
 
 runConfig:
   minInstances: 0 # sin tráfico no hay instancias encendidas (menor costo)
@@ -15,6 +16,8 @@ env:
     secret: DATABASE_URL
   - variable: BETTER_AUTH_SECRET
     secret: BETTER_AUTH_SECRET
+  - variable: CONFESSIONS_ENCRYPTION_KEY
+    secret: CONFESSIONS_ENCRYPTION_KEY
   - variable: BETTER_AUTH_URL
     value: https://iglesia--iglesia-gestion-mx.us-central1.hosted.app
   - variable: DEFAULT_TIMEZONE

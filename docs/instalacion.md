@@ -30,6 +30,7 @@ cp .env.example .env
 Edita `.env`:
 - `DATABASE_URL` y `TEST_DATABASE_URL` con la contraseña elegida.
 - `BETTER_AUTH_SECRET`: valor aleatorio, p. ej. `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`.
+- `CONFESSIONS_ENCRYPTION_KEY`: clave independiente de 32 bytes en base64, generada con `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. Respáldala de forma segura: sin ella los datos cifrados de confesiones son irrecuperables.
 
 ```bash
 pnpm install          # también genera el cliente Prisma

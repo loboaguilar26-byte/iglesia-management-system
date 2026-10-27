@@ -51,6 +51,8 @@ model User {
   chapelsManaged         Chapel[]              @relation("ChapelManagerUser")
   prayersHandled         PrayerRequest[]       @relation("PrayerHandledBy")
   joinRequestsReviewed   MinistryJoinRequest[] @relation("JoinRequestReviewer")
+  confessionAppointmentsHandled ConfessionAppointment[] @relation("ConfessionAppointmentHandler")
+  confessionMessagesHandled     ConfessionMessage[]     @relation("ConfessionMessageHandler")
 
   @@map("user")
 }
@@ -726,6 +728,7 @@ model Chapel {
   events     Event[]
   ministries Ministry[]
   donations  Donation[]
+  confessionAppointments ConfessionAppointment[]
 
   @@index([status])
   @@map("chapel")
@@ -780,6 +783,61 @@ model PrayerRequest {
   @@index([memberId, createdAt])
   @@index([status, createdAt])
   @@map("prayer_request")
+}
+
+enum ConfessionAppointmentStatus {
+  REQUESTED
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+/// Solicitud de cita; la información de contacto se cifra en la aplicación.
+model ConfessionAppointment {
+  id              String                       @id
+  locationKey     String                       @db.VarChar(160)
+  locationName    String                       @db.VarChar(160)
+  chapelId        String?
+  scheduledAt     DateTime                     @db.Timestamptz(3)
+  contactCiphertext String?
+  contactIv       String?                      @db.VarChar(24)
+  contactAuthTag  String?                      @db.VarChar(24)
+  status          ConfessionAppointmentStatus  @default(REQUESTED)
+  createdAt       DateTime                     @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime                     @updatedAt @db.Timestamptz(3)
+  handledById     String?
+  chapel          Chapel?                      @relation(fields: [chapelId], references: [id], onDelete: Restrict)
+  handledBy       User?                        @relation("ConfessionAppointmentHandler", fields: [handledById], references: [id], onDelete: SetNull)
+
+  @@index([status, scheduledAt])
+  @@index([createdAt])
+  @@map("confession_appointment")
+}
+
+enum ConfessionMessageStatus {
+  NEW
+  READ
+  RESPONDED
+  CLOSED
+}
+
+/// Mensaje sin autor, sesión, contacto, IP ni ubicación para conservar el anonimato.
+model ConfessionMessage {
+  id                     String                  @id
+  bodyCiphertext         String
+  bodyIv                 String                  @db.VarChar(24)
+  bodyAuthTag            String                  @db.VarChar(24)
+  priestResponseCiphertext String?
+  responseIv             String?                 @db.VarChar(24)
+  responseAuthTag        String?                 @db.VarChar(24)
+  status                 ConfessionMessageStatus @default(NEW)
+  createdAt              DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt              DateTime                @updatedAt @db.Timestamptz(3)
+  handledById            String?
+  handledBy              User?                   @relation("ConfessionMessageHandler", fields: [handledById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@map("confession_message")
 }
 
 enum JoinRequestStatus {

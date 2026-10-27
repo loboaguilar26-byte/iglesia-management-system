@@ -17,6 +17,7 @@
 | Configuración | `settings:read`, `settings:update` |
 | Auditoría | `audit:read`, `audit:read_finance` |
 | Franquicias e iglesias | `churches:read`, `churches:create`, `churches:update`, `churches:manage_members` |
+| Confesiones | `confessions:read`, `confessions:manage` (solo rol Sacerdote) |
 
 ### Jerarquía agregada
 
@@ -27,6 +28,7 @@ La base conserva la unión de permisos actual y agrega un nivel para ordenar la 
 | 100 | Administrador |
 | 80 | Pastor |
 | 60 | Secretario / Tesorero |
+| 55 | Sacerdote |
 | 40 | Coordinador |
 
 El nivel es informativo para la interfaz y no sustituye la autorización por permiso.
@@ -96,3 +98,10 @@ Leyenda: ✅ total · 🔸 acotado a lo asignado (scope) · — sin acceso
 - Las **solicitudes para unirse a un ministerio** las resuelve quien tiene `ministries:manage_members` (el Coordinador solo en sus ministerios). Al aprobar se crea la participación con función Integrante.
 - Las **confirmaciones de asistencia** (RSVP) se muestran como totales a quien tiene `events:read`; los nombres solo con acceso completo al directorio.
 - Con `portal:access` el miembro descarga su **constancia anual** (solo sus aportaciones con nombre) y una **copia de sus datos** (derecho de acceso, LFPDPPP), sin notas pastorales internas. Ambas descargas quedan en la bitácora.
+
+## Confesiones confidenciales
+
+- Solo una cuenta con el rol **Sacerdote** y el permiso `confessions:read` puede leer citas, contactos y mensajes anónimos. `confessions:manage` permite cambiar estados y guardar respuestas privadas.
+- El contenido y los datos de contacto de las citas se cifran con `CONFESSIONS_ENCRYPTION_KEY`; la clave es externa a la base de datos. Una pérdida de la clave impide descifrar los registros.
+- Los mensajes anónimos no guardan una cuenta, contacto o actor asociado. Las respuestas sacerdotales quedan en el expediente y no pueden enviarse al remitente anónimo.
+- Este módulo sigue limitado a la configuración de una sola iglesia; no exponerlo a varias iglesias hasta implementar el ámbito por `churchId` en los datos y las autorizaciones.

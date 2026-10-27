@@ -33,11 +33,11 @@ async function main() {
   const tz = DEFAULT_TIMEZONE;
 
   const settings = await db.churchSettings.findUnique({ where: { id: "default" } });
-  if (!settings || settings.name.includes("(configurar)") || settings.name === "IgleTech") {
+  if (!settings || settings.name.includes("(configurar)") || settings.name === "IgleTech" || settings.name === "Eclaria") {
     await db.churchSettings.update({
       where: { id: "default" },
       data: {
-        name: "IgleTech",
+        name: "Eclaria",
         tagline: "Plataforma de gestión para comunidades de fe.",
         welcomeText: "Sin importar de dónde vengas, aquí hay un lugar para ti. Te invitamos a conocernos y a ser parte de esta familia.",
         aboutText: "Somos una comunidad de demostración creada para probar el sistema. Este texto es ficticio: reemplázalo desde Configuración con la historia y la identidad de tu iglesia.\n\nNos reunimos cada semana para adorar, aprender y servir a nuestra ciudad.",

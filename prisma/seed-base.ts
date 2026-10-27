@@ -68,6 +68,6 @@ export async function seedBase({ resetPermissions = false } = {}) {
   await db.churchSettings.upsert({
     where: { id: "default" },
     update: {},
-    create: { id: "default", name: "IgleTech" },
+    create: { id: "default", name: "Eclaria" },
   });
 }

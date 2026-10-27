@@ -8,14 +8,14 @@ const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 const fraunces = Fraunces({ variable: "--font-fraunces", subsets: ["latin"], axes: ["opsz"] });
 
 export const metadata: Metadata = {
-  title: { default: "IgleTech", template: "%s · IgleTech" },
+  title: { default: "Eclaria", template: "%s · Eclaria" },
   description: "Plataforma de gestión para comunidades de fe.",
-  applicationName: "IgleTech",
+  applicationName: "Eclaria",
   icons: {
     icon: [{ url: "/app-icon/192", type: "image/png", sizes: "192x192" }],
     apple: [{ url: "/app-icon/192", sizes: "192x192" }],
   },
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "IgleTech" },
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Eclaria" },
   formatDetection: { telephone: false },
 };
 

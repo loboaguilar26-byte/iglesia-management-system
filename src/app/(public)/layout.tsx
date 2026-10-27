@@ -47,6 +47,7 @@ export default async function PublicLayout({ children }: LayoutProps<"/">) {
             <ul className="flex flex-col gap-1 opacity-85">
               {social.map((l) => <li key={l.label}><a href={l.href} target="_blank" rel="noopener noreferrer" className="hover:text-white hover:underline">{l.label}</a></li>)}
               <li><Link href="/privacidad" className="hover:text-white hover:underline">Aviso de privacidad</Link></li>
+              <li><Link href="/confesiones" className="hover:text-white hover:underline">Confesiones confidenciales</Link></li>
               <li><Link href="/login?next=/mi-cuenta" className="hover:text-white hover:underline">Portal del miembro</Link></li>
               <li><Link href="/login" className="hover:text-white hover:underline">Acceso administrativo</Link></li>
             </ul>

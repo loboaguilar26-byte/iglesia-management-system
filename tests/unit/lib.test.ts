@@ -6,6 +6,7 @@ import { formatMoney, parseAmount, sumAmounts } from "@/lib/money";
 import { PERMISSIONS, ROLES, ROLE_KEYS, type Permission } from "@/lib/permissions";
 import { safeAdminPath } from "@/lib/redirects";
 import { normalizeSearch } from "@/lib/text";
+import { navFor } from "@/app/admin/nav";
 
 describe("dinero", () => {
   it("convierte texto a Decimal sin errores de punto flotante", () => {
@@ -99,5 +100,13 @@ describe("permisos de seguimiento y portal", () => {
       expect(ROLES[key].permissions.includes("followup:write")).toBe(key === "PASTOR" || key === "SECRETARY");
     }
     expect(ROLES.MEMBER.permissions).toEqual(["portal:access"]);
+  });
+});
+
+describe("navegación sacerdotal", () => {
+  it("limita el panel del rol Sacerdote a confesiones", () => {
+    const permissions = new Set(ROLES.PRIEST.permissions);
+    const links = navFor((permission) => permissions.has(permission)).flatMap((group) => group.items.map((item) => item.href));
+    expect(links).toEqual(["/admin/confesiones"]);
   });
 });
