@@ -1,0 +1,22 @@
+name: Proponer una función
+description: Una mejora o algo nuevo para el sistema.
+labels: ["mejora"]
+body:
+  - type: textarea
+    id: necesidad
+    attributes:
+      label: ¿Qué necesidad resuelve?
+      description: Quién la tiene (rol) y en qué situación.
+    validations:
+      required: true
+  - type: textarea
+    id: propuesta
+    attributes:
+      label: ¿Cómo te imaginas que funcione?
+  - type: dropdown
+    id: apartado
+    attributes:
+      label: Apartado
+      options: [Sitio público, Panel administrativo, Portal del miembro, App móvil, Otro]
+    validations:
+      required: true
