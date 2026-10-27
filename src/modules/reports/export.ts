@@ -44,7 +44,7 @@ export function toPdf(report: Report): Promise<Uint8Array> {
 
     const left = doc.page.margins.left;
     const width = doc.page.width - left - doc.page.margins.right;
-    doc.fillColor("#4a2b18").font("Helvetica-Bold").fontSize(16).text(report.church);
+    doc.fillColor("#10253d").font("Helvetica-Bold").fontSize(16).text(report.church);
     doc.fillColor("#000").fontSize(13).text(report.title);
     doc.font("Helvetica").fontSize(9).fillColor("#555");
     if (report.period) doc.text(`Periodo: ${report.period}`);
@@ -67,7 +67,7 @@ export function toPdf(report: Report): Promise<Uint8Array> {
       doc.x = left;
       doc.y = y + h;
     };
-    drawRow(report.columns.map((c) => c.label), { bold: true, fill: "#4a2b18", color: "#ffffff" });
+    drawRow(report.columns.map((c) => c.label), { bold: true, fill: "#10253d", color: "#ffffff" });
     report.rows.forEach((r, i) => drawRow(report.columns.map((c) => String(r[c.key] ?? "")), { fill: i % 2 ? "#f8f3ec" : undefined }));
     if (report.totals) drawRow(report.columns.map((c) => String(report.totals![c.key] ?? "")), { bold: true, fill: "#f4e5cc" });
     if (!report.rows.length) doc.moveDown().font("Helvetica-Oblique").text("Sin registros en el periodo.");

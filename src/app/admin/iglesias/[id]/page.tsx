@@ -31,8 +31,8 @@ export default async function ChurchDetailPage({ params, searchParams }: PagePro
     throw e;
   });
   const c = d.church;
-  const primary = c.profile?.primaryColor ?? "#6b3f24";
-  const accent = c.profile?.accentColor ?? "#b9802f";
+  const primary = c.profile?.primaryColor ?? "#10253d";
+  const accent = c.profile?.accentColor ?? "#c8832a";
 
   const tabs = [
     { key: "resumen", label: "Resumen", icon: CalendarClock, show: true },

@@ -9,7 +9,7 @@ const fraunces = Fraunces({ variable: "--font-fraunces", subsets: ["latin"], axe
 
 export const metadata: Metadata = {
   title: { default: "Eclaria", template: "%s · Eclaria" },
-  description: "Plataforma de gestión para comunidades de fe.",
+  description: "Gestión integral de iglesias.",
   applicationName: "Eclaria",
   icons: {
     icon: [{ url: "/app-icon/192", type: "image/png", sizes: "192x192" }],
@@ -25,8 +25,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#2a1a10" },
-    { media: "(prefers-color-scheme: dark)", color: "#120b07" },
+    { media: "(prefers-color-scheme: light)", color: "#0b1726" },
+    { media: "(prefers-color-scheme: dark)", color: "#050b15" },
   ],
 };
 
