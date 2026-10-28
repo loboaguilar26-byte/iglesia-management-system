@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Fraunces, Inter } from "next/font/google";
 import { NativeBridge } from "@/components/native-bridge";
 import { ServiceWorkerRegister } from "@/components/pwa";
+import { ThemeScript } from "@/components/theme-script";
 import "./globals.css";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
@@ -35,12 +36,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     // suppressHydrationWarning: el script de abajo fija `data-theme` antes de que React hidrate.
     <html lang="es-MX" className={`${inter.variable} ${fraunces.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
-        {/* Aplica el tema guardado antes del primer pintado (evita el parpadeo claro/oscuro). */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}})()`,
-          }}
-        />
+        <ThemeScript />
       </head>
       <body className="flex min-h-full flex-col font-sans">
         {children}

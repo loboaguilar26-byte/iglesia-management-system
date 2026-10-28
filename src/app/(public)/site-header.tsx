@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { authClient } from "@/lib/auth-client";
 
 const LINKS = [
   { href: "/", label: "Inicio" },
@@ -21,6 +22,9 @@ const LINKS = [
 export function SiteHeader({ name, logo }: { name: string; logo: string | null }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  // Con sesión abierta, "Mi cuenta" entra directo (/admin manda al portal si el rol no tiene panel).
+  const { data: session } = authClient.useSession();
+  const account = session ? { href: "/admin", label: "Mi cuenta" } : { href: "/login?next=/mi-cuenta", label: "Acceder" };
   const active = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur">
@@ -42,7 +46,7 @@ export function SiteHeader({ name, logo }: { name: string; logo: string | null }
             </Link>
           ))}
           <ThemeToggle className="ml-1 size-9 border-0 bg-transparent shadow-none" />
-          <Link href="/login?next=/mi-cuenta" className="ml-2 rounded-full bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:opacity-90">Acceder</Link>
+          <Link href={account.href} className="ml-2 rounded-full bg-accent px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:opacity-90">{account.label}</Link>
         </nav>
         <div className="flex items-center gap-2">
           <ThemeToggle className="lg:hidden" />
@@ -63,7 +67,7 @@ export function SiteHeader({ name, logo }: { name: string; logo: string | null }
               </li>
             ))}
           </ul>
-          <Link href="/login?next=/mi-cuenta" onClick={() => setOpen(false)} className="block rounded-lg bg-accent px-3 py-3 text-center font-medium text-white">Acceder</Link>
+          <Link href={account.href} onClick={() => setOpen(false)} className="block rounded-lg bg-accent px-3 py-3 text-center font-medium text-white">{account.label}</Link>
         </nav>
       ) : null}
     </header>
