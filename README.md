@@ -82,6 +82,8 @@ Antes de compilar (`pnpm build`) detén `pnpm dev`: ambos usan la carpeta `.next
 
 Todo cambio entra a `main` por pull request y con el CI en verde. El flujo completo está en [CONTRIBUTING.md](CONTRIBUTING.md); el historial de cambios, en [CHANGELOG.md](CHANGELOG.md).
 
+Las mejoras de documentacion y mantenimiento tambien se revisan mediante pull request.
+
 ## Stack
 
 Next.js 16 (App Router, Cache Components) · React 19 · TypeScript · Tailwind CSS 4 · PostgreSQL 17 · Prisma 7 · Better Auth · Zod · Capacitor 8 · Vitest · Playwright · GitHub Actions.
