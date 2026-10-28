@@ -2,6 +2,7 @@
 
 | Agente | Modo | Responsabilidad |
 | --- | --- | --- |
+| `chetoomg` | Coordinación | Ciclo completo, delegación, integración y validación |
 | `architect` | Solo lectura | Arquitectura, límites, acoplamiento y alternativas |
 | `code-auditor` | Solo lectura | Lógica, mantenibilidad, duplicación y deuda |
 | `security-specialist` | Solo lectura | Auth, roles, sesiones, secretos y aislamiento |
