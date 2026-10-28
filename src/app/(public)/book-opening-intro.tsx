@@ -2,20 +2,24 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useSyncExternalStore } from "react";
+import { preload } from "react-dom";
 
 /*
- * Intro de Eclaria: la paloma vuela sobre la Biblia que se abre y aparece el logotipo (diseño de
- * main). Se muestra una vez por sesión, se puede omitir (botón o Escape) y no aparece con
- * "reducir movimiento".
+ * Intro de Eclaria: la Biblia se abre, la paloma real del logotipo sale volando hacia la luz y
+ * aparece el logotipo centrado (coreografía en globals.css). Se muestra una vez por sesión y se
+ * puede omitir (botón o Escape). Con "reducir movimiento" se muestra una versión quieta y breve
+ * (solo el logotipo con su halo), en lugar de ocultarse.
  */
 const STORAGE_KEY = "eclaria-intro-seen";
 const CHANGE_EVENT = "iglesia-intro-change";
-const INTRO_DURATION = 4200;
+const INTRO_DURATION = 5000;
+const CALM_DURATION = 2200;
 let replayRequested = false;
 
+const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 function getSnapshot() {
-  return !window.matchMedia("(prefers-reduced-motion: reduce)").matches &&
-    (replayRequested || sessionStorage.getItem(STORAGE_KEY) !== "true");
+  return replayRequested || sessionStorage.getItem(STORAGE_KEY) !== "true";
 }
 
 function subscribe(onChange: () => void) {
@@ -30,12 +34,14 @@ function markIntroSeen() {
 }
 
 function requestIntro() {
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   replayRequested = true;
   window.dispatchEvent(new Event(CHANGE_EVENT));
 }
 
 export function BookOpeningIntro({ churchName, playOnMount = false }: { churchName: string; playOnMount?: boolean }) {
+  // Se piden desde el inicio para que la paloma y el logotipo estén listos al aparecer.
+  preload("/intro/paloma.webp", { as: "image", fetchPriority: "high" });
+  preload("/eclaria-logo.jpg", { as: "image", fetchPriority: "high" });
   const visible = useSyncExternalStore(subscribe, getSnapshot, () => false);
   const skipButton = useRef<HTMLButtonElement>(null);
 
@@ -46,7 +52,7 @@ export function BookOpeningIntro({ churchName, playOnMount = false }: { churchNa
   useEffect(() => {
     if (!visible) return;
     skipButton.current?.focus();
-    const timeout = window.setTimeout(markIntroSeen, INTRO_DURATION);
+    const timeout = window.setTimeout(markIntroSeen, reducedMotion() ? CALM_DURATION : INTRO_DURATION);
     return () => window.clearTimeout(timeout);
   }, [visible]);
 
@@ -69,22 +75,10 @@ export function BookOpeningIntro({ churchName, playOnMount = false }: { churchNa
       <button ref={skipButton} className="eclaria-intro__skip" type="button" onClick={markIntroSeen}>
         Omitir introducción
       </button>
+      <div className="eclaria-intro__stars" aria-hidden="true" />
       <div className="eclaria-intro__stage">
+        <div className="eclaria-intro__rays" aria-hidden="true" />
         <div className="eclaria-intro__glow" aria-hidden="true" />
-        <svg className="eclaria-intro__dove" viewBox="0 0 180 100" aria-hidden="true">
-          <g className="eclaria-intro__dove-wing eclaria-intro__dove-wing--left">
-            <path d="M82 53C61 31 35 19 7 20c14 22 35 42 61 48 10 2 17-4 22-13Z" />
-            <path className="eclaria-intro__dove-feather" d="M15 27c18 14 34 25 51 31M26 24c16 14 29 25 45 32M40 25c12 13 23 23 37 31" />
-          </g>
-          <g className="eclaria-intro__dove-wing eclaria-intro__dove-wing--right">
-            <path d="M101 54c20-22 44-35 72-34-14 22-35 42-61 48-9 2-16-4-21-14Z" />
-            <path className="eclaria-intro__dove-feather" d="M165 27c-18 14-34 25-51 31M154 24c-16 14-29 25-45 32M140 25c-12 13-23 23-37 31" />
-          </g>
-          <path className="eclaria-intro__dove-body" d="M65 57c8-16 22-25 39-25 16 0 29 8 39 24-10 15-25 23-43 23-16 0-29-7-35-22Z" />
-          <circle className="eclaria-intro__dove-head" cx="105" cy="31" r="12" />
-          <path className="eclaria-intro__dove-beak" d="m115 30 12 5-12 5Z" />
-          <circle cx="108" cy="28" r="2.4" fill="#0b1726" />
-        </svg>
         <div className="eclaria-intro__book" aria-hidden="true">
           <span className="eclaria-intro__cover eclaria-intro__cover--left" />
           <span className="eclaria-intro__cover eclaria-intro__cover--right" />
@@ -92,6 +86,13 @@ export function BookOpeningIntro({ churchName, playOnMount = false }: { churchNa
           <span className="eclaria-intro__page eclaria-intro__page--right" />
           <span className="eclaria-intro__spine" />
         </div>
+        {/* Paloma real del logotipo (public/intro/paloma.webp) en tres capas: cada ala aletea desde su hombro. */}
+        <div className="eclaria-intro__dove" aria-hidden="true">
+          <span className="eclaria-intro__dove-part eclaria-intro__dove-part--wing-left" />
+          <span className="eclaria-intro__dove-part eclaria-intro__dove-part--wing-right" />
+          <span className="eclaria-intro__dove-part eclaria-intro__dove-part--body" />
+        </div>
+        <div className="eclaria-intro__halo" aria-hidden="true" />
         <Image className="eclaria-intro__logo" src="/eclaria-logo.jpg" alt="" width={320} height={320} priority />
       </div>
     </div>

@@ -64,6 +64,29 @@ export async function removeLogo(actor: Actor | null) {
   await deleteStored(before.logoPath);
 }
 
+/** Foto de portada del sitio público (hasta 3 MB: suelen ser fotos tomadas con el celular). */
+export async function updateCover(actor: Actor | null, file: unknown) {
+  const a = requirePermission(actor, "settings:update");
+  if (!(file instanceof File)) throw new AppError("VALIDATION_ERROR", "Selecciona una imagen.");
+  const name = await saveImage(file, "cover", 3 * 1024 * 1024);
+  const before = await ensureSettings();
+  await db.$transaction(async (tx) => {
+    await tx.churchSettings.update({ where: { id: DEFAULT_ID }, data: { coverPath: name, updatedById: a.userId } });
+    await recordAudit(tx, a, { action: "settings.cover_update", entityType: "ChurchSettings", entityId: DEFAULT_ID });
+  });
+  await deleteStored(before.coverPath);
+}
+
+export async function removeCover(actor: Actor | null) {
+  const a = requirePermission(actor, "settings:update");
+  const before = await ensureSettings();
+  await db.$transaction(async (tx) => {
+    await tx.churchSettings.update({ where: { id: DEFAULT_ID }, data: { coverPath: null, updatedById: a.userId } });
+    await recordAudit(tx, a, { action: "settings.cover_remove", entityType: "ChurchSettings", entityId: DEFAULT_ID });
+  });
+  await deleteStored(before.coverPath);
+}
+
 // ───── Horarios habituales ─────
 
 export async function listSchedules(actor: Actor | null) {

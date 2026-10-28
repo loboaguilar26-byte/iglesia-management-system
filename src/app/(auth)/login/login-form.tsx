@@ -17,9 +17,13 @@ function loginErrorMessage(status: number) {
 
 export function LoginForm() {
   const router = useRouter();
-  const next = safeAdminPath(useSearchParams().get("next"));
-  const [error, setError] = useState<string | null>(null);
+  const params = useSearchParams();
+  const next = safeAdminPath(params.get("next"));
+  const [error, setError] = useState<string | null>(
+    params.get("error") ? "No fue posible entrar con Google. Inténtalo de nuevo o usa tu correo." : null,
+  );
   const [pending, setPending] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -43,8 +47,12 @@ export function LoginForm() {
     <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
       {error ? <Alert tone="error">{error}</Alert> : null}
       <Field label="Correo electrónico" name="email" type="email" autoComplete="email" required />
-      <Field label="Contraseña" name="password" type="password" autoComplete="current-password" required />
-      <Button type="submit" disabled={pending}>
+      <Field label="Contraseña" name="password" type={showPassword ? "text" : "password"} autoComplete="current-password" required />
+      <label className="-mt-2 flex w-fit cursor-pointer items-center gap-2 text-sm text-muted">
+        <input type="checkbox" checked={showPassword} onChange={(e) => setShowPassword(e.target.checked)} className="size-4 accent-[var(--accent)]" />
+        Mostrar contraseña
+      </label>
+      <Button type="submit" disabled={pending} className="btn-shine mt-1">
         {pending ? "Entrando…" : "Iniciar sesión"}
       </Button>
       <Link href="/recuperar" className="text-center text-sm text-primary underline-offset-4 hover:underline">

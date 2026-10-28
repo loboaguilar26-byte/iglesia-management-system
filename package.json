@@ -23,7 +23,10 @@
     "mobile:android": "cap open android",
     "mobile:ios": "cap open ios",
     "mobile:apk": "cap sync android && cd android && gradlew assembleDebug",
-    "check:unused": "knip"
+    "check:unused": "knip",
+    "brand:dove": "node scripts/brand-dove.mjs",
+    "vercel-build": "prisma generate && next build",
+    "db:seed:contenido": "tsx prisma/seed-contenido.ts"
   },
   "dependencies": {
     "@capacitor/app": "8.1.2",

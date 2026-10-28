@@ -23,9 +23,9 @@ function detectImage(bytes: Uint8Array) {
   );
 }
 
-export async function saveImage(file: File, prefix: string): Promise<string> {
+export async function saveImage(file: File, prefix: string, maxBytes = MAX_IMAGE_BYTES): Promise<string> {
   if (file.size === 0) throw new AppError("VALIDATION_ERROR", "Selecciona una imagen.");
-  if (file.size > MAX_IMAGE_BYTES) throw new AppError("VALIDATION_ERROR", "La imagen no debe superar 1 MB.");
+  if (file.size > maxBytes) throw new AppError("VALIDATION_ERROR", `La imagen no debe superar ${Math.round(maxBytes / 1024 / 1024)} MB.`);
   const bytes = new Uint8Array(await file.arrayBuffer());
   const type = detectImage(bytes);
   if (!type) throw new AppError("VALIDATION_ERROR", "Formato no permitido. Usa PNG, JPG o WebP.");

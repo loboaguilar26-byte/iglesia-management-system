@@ -1,0 +1,19 @@
+# Archivos que nunca se suben a Vercel al publicar desde la terminal (`vercel deploy`).
+# Secretos locales: las variables de producción se configuran en el proyecto de Vercel.
+.env
+.env.*
+!.env.example
+# Generados o pesados que Vercel reconstruye o no necesita.
+node_modules
+.next
+src/generated
+test-results
+playwright-report
+e2e/.data
+uploads
+verify.log
+tsconfig.tsbuildinfo
+# App móvil nativa (no forma parte del sitio web).
+android
+ios
+assets

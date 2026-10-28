@@ -28,6 +28,13 @@ export default async function HomePage() {
     <>
       {/* Portada */}
       <section className="aurora relative overflow-hidden text-white">
+        {s.coverPath ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={`/media/portada?v=${encodeURIComponent(s.coverPath)}`} alt="" className="absolute inset-0 size-full object-cover opacity-40" />
+            <div aria-hidden className="absolute inset-0 bg-gradient-to-r from-brand-deep via-brand-deep/80 to-brand-deep/30" />
+          </>
+        ) : null}
         <svg aria-hidden className="absolute -right-24 top-1/2 h-[140%] -translate-y-1/2 opacity-[0.10]" viewBox="0 0 400 400" fill="none">
           {[60, 100, 140, 180].map((r) => <circle key={r} cx="200" cy="200" r={r} stroke="white" strokeWidth="1" />)}
           <path d="M200 20v360M20 200h360" stroke="white" strokeWidth="0.6" strokeDasharray="2 6" />
@@ -45,6 +52,11 @@ export default async function HomePage() {
             </div>
           </div>
           <div className="flex flex-col gap-4">
+            <div aria-hidden className="hero-dove relative mx-auto grid w-full max-w-md place-items-center">
+              <span className="absolute inset-[18%] rounded-full bg-accent/30 blur-3xl" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/intro/paloma.webp" alt="" width={880} height={740} className="relative w-full drop-shadow-[0_0_2rem_rgb(255_236_190/0.35)]" />
+            </div>
             <NextService schedules={schedules} tz={tz} />
             {s.address ? (
               <a href={s.mapUrl ?? "/contacto"} {...(s.mapUrl ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="flex items-start gap-3 rounded-2xl border border-white/15 bg-white/5 p-4 text-sm text-white/85 transition hover:bg-white/10">

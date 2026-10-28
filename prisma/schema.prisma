@@ -36,21 +36,21 @@ model User {
   member   Member? @relation(fields: [memberId], references: [id])
   memberId String? @unique
 
-  membersCreated         Member[]              @relation("MemberCreatedBy")
-  membersUpdated         Member[]              @relation("MemberUpdatedBy")
-  attendanceRecorded     Attendance[]
-  donationsCreated       Donation[]            @relation("DonationCreatedBy")
-  donationsVoided        Donation[]            @relation("DonationVoidedBy")
-  givingReportsSubmitted GivingReport[]        @relation("GivingReportSubmitter")
-  givingReportsReviewed  GivingReport[]        @relation("GivingReportReviewer")
-  expensesCreated        Expense[]             @relation("ExpenseCreatedBy")
-  expensesVoided         Expense[]             @relation("ExpenseVoidedBy")
-  announcements          Announcement[]
-  churchSettingsUpdated  ChurchSettings[]
-  followUps              FollowUp[]
-  chapelsManaged         Chapel[]              @relation("ChapelManagerUser")
-  prayersHandled         PrayerRequest[]       @relation("PrayerHandledBy")
-  joinRequestsReviewed   MinistryJoinRequest[] @relation("JoinRequestReviewer")
+  membersCreated                Member[]                @relation("MemberCreatedBy")
+  membersUpdated                Member[]                @relation("MemberUpdatedBy")
+  attendanceRecorded            Attendance[]
+  donationsCreated              Donation[]              @relation("DonationCreatedBy")
+  donationsVoided               Donation[]              @relation("DonationVoidedBy")
+  givingReportsSubmitted        GivingReport[]          @relation("GivingReportSubmitter")
+  givingReportsReviewed         GivingReport[]          @relation("GivingReportReviewer")
+  expensesCreated               Expense[]               @relation("ExpenseCreatedBy")
+  expensesVoided                Expense[]               @relation("ExpenseVoidedBy")
+  announcements                 Announcement[]
+  churchSettingsUpdated         ChurchSettings[]
+  followUps                     FollowUp[]
+  chapelsManaged                Chapel[]                @relation("ChapelManagerUser")
+  prayersHandled                PrayerRequest[]         @relation("PrayerHandledBy")
+  joinRequestsReviewed          MinistryJoinRequest[]   @relation("JoinRequestReviewer")
   confessionAppointmentsHandled ConfessionAppointment[] @relation("ConfessionAppointmentHandler")
   confessionMessagesHandled     ConfessionMessage[]     @relation("ConfessionMessageHandler")
 
@@ -590,6 +590,8 @@ model ChurchSettings {
   id             String   @id @default("default")
   name           String
   logoPath       String?
+  /// Foto de portada del sitio público (stored_file).
+  coverPath      String?
   address        String?
   phone          String?
   email          String?
@@ -719,15 +721,27 @@ model Chapel {
   managerUserId   String?
   archivedAt      DateTime?    @db.Timestamptz(3)
   statusReason    String?
+  /// Identidad propia (modelo de franquicia): misma estructura, distinta presentación.
+  /// Página pública en /capillas/<código en minúsculas> mientras esté activa y sea pública.
+  isPublic        Boolean      @default(true)
+  primaryColor    String       @default("#10253d") @db.VarChar(7)
+  accentColor     String       @default("#c8832a") @db.VarChar(7)
+  tagline         String?      @db.VarChar(160)
+  aboutText       String?      @db.VarChar(4000)
+  scheduleText    String?      @db.VarChar(2000)
+  /// Nombre del archivo en stored_file (portada de la página pública).
+  coverPath       String?
+  mapUrl          String?      @db.VarChar(500)
+  whatsapp        String?      @db.VarChar(30)
   createdAt       DateTime     @default(now()) @db.Timestamptz(3)
   updatedAt       DateTime     @updatedAt @db.Timestamptz(3)
   managerMember   Member?      @relation("ChapelManagerMember", fields: [managerMemberId], references: [id], onDelete: SetNull)
   managerUser     User?        @relation("ChapelManagerUser", fields: [managerUserId], references: [id], onDelete: SetNull)
 
-  members    Member[]
-  events     Event[]
-  ministries Ministry[]
-  donations  Donation[]
+  members                Member[]
+  events                 Event[]
+  ministries             Ministry[]
+  donations              Donation[]
   confessionAppointments ConfessionAppointment[]
 
   @@index([status])
@@ -794,20 +808,20 @@ enum ConfessionAppointmentStatus {
 
 /// Solicitud de cita; la información de contacto se cifra en la aplicación.
 model ConfessionAppointment {
-  id              String                       @id
-  locationKey     String                       @db.VarChar(160)
-  locationName    String                       @db.VarChar(160)
-  chapelId        String?
-  scheduledAt     DateTime                     @db.Timestamptz(3)
+  id                String                      @id
+  locationKey       String                      @db.VarChar(160)
+  locationName      String                      @db.VarChar(160)
+  chapelId          String?
+  scheduledAt       DateTime                    @db.Timestamptz(3)
   contactCiphertext String?
-  contactIv       String?                      @db.VarChar(24)
-  contactAuthTag  String?                      @db.VarChar(24)
-  status          ConfessionAppointmentStatus  @default(REQUESTED)
-  createdAt       DateTime                     @default(now()) @db.Timestamptz(3)
-  updatedAt       DateTime                     @updatedAt @db.Timestamptz(3)
-  handledById     String?
-  chapel          Chapel?                      @relation(fields: [chapelId], references: [id], onDelete: Restrict)
-  handledBy       User?                        @relation("ConfessionAppointmentHandler", fields: [handledById], references: [id], onDelete: SetNull)
+  contactIv         String?                     @db.VarChar(24)
+  contactAuthTag    String?                     @db.VarChar(24)
+  status            ConfessionAppointmentStatus @default(REQUESTED)
+  createdAt         DateTime                    @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime                    @updatedAt @db.Timestamptz(3)
+  handledById       String?
+  chapel            Chapel?                     @relation(fields: [chapelId], references: [id], onDelete: Restrict)
+  handledBy         User?                       @relation("ConfessionAppointmentHandler", fields: [handledById], references: [id], onDelete: SetNull)
 
   @@index([status, scheduledAt])
   @@index([createdAt])
@@ -823,18 +837,18 @@ enum ConfessionMessageStatus {
 
 /// Mensaje sin autor, sesión, contacto, IP ni ubicación para conservar el anonimato.
 model ConfessionMessage {
-  id                     String                  @id
-  bodyCiphertext         String
-  bodyIv                 String                  @db.VarChar(24)
-  bodyAuthTag            String                  @db.VarChar(24)
+  id                       String                  @id
+  bodyCiphertext           String
+  bodyIv                   String                  @db.VarChar(24)
+  bodyAuthTag              String                  @db.VarChar(24)
   priestResponseCiphertext String?
-  responseIv             String?                 @db.VarChar(24)
-  responseAuthTag        String?                 @db.VarChar(24)
-  status                 ConfessionMessageStatus @default(NEW)
-  createdAt              DateTime                @default(now()) @db.Timestamptz(3)
-  updatedAt              DateTime                @updatedAt @db.Timestamptz(3)
-  handledById            String?
-  handledBy              User?                   @relation("ConfessionMessageHandler", fields: [handledById], references: [id], onDelete: SetNull)
+  responseIv               String?                 @db.VarChar(24)
+  responseAuthTag          String?                 @db.VarChar(24)
+  status                   ConfessionMessageStatus @default(NEW)
+  createdAt                DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt                DateTime                @updatedAt @db.Timestamptz(3)
+  handledById              String?
+  handledBy                User?                   @relation("ConfessionMessageHandler", fields: [handledById], references: [id], onDelete: SetNull)
 
   @@index([status, createdAt])
   @@map("confession_message")
