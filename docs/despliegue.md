@@ -1,64 +1,91 @@
-# Despliegue en Firebase App Hosting
+# Despliegue en Vercel + Neon
 
-Proyecto Firebase: **iglesia-gestion-mx** · Backend: **iglesia** · Región: `us-central1`
-URL prevista: `https://iglesia--iglesia-gestion-mx.us-central1.hosted.app`
+Sitio publicado: **https://eclaria-gilt.vercel.app**
 
-Base de datos: **PostgreSQL en Neon** (plan gratuito para iniciar).
+| Pieza | Servicio | Plan |
+|---|---|---|
+| Aplicación (Next.js) | Vercel, proyecto `eclaria` | Hobby (gratis) |
+| Base de datos (PostgreSQL) | Neon, conectado desde la integración de Vercel | Free (≈0.5 GB) |
 
-## Pasos que hace la persona responsable (datos de pago y cuentas)
-1. **Plan Blaze:** https://console.firebase.google.com/project/iglesia-gestion-mx/usage/details → “Modificar plan” → Blaze. Recomendado: crear una **alerta de presupuesto** (p. ej. US$10/mes) en Google Cloud Billing.
-2. **Neon:** crear cuenta en https://neon.com, proyecto “iglesia” (región AWS us-east-1 o us-east-2, cercana a us-central1) y copiar la cadena de conexión *pooled* con `sslmode=require`.
-3. **Guardar secretos** (los valores se escriben en la terminal, nunca en git ni en el chat):
-   ```bash
-   firebase apphosting:secrets:set DATABASE_URL
-   firebase apphosting:secrets:set BETTER_AUTH_SECRET
-   firebase apphosting:secrets:set CONFESSIONS_ENCRYPTION_KEY
-   ```
-   Para `BETTER_AUTH_SECRET` usar un valor aleatorio: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`.
-   Para `CONFESSIONS_ENCRYPTION_KEY`: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. Respáldala cifrada fuera de la base de datos; perderla impide recuperar mensajes/contactos.
-4. Para migrar desde tu equipo, crea `.env.production.local` (ignorado por git) con `DATABASE_URL=...` de Neon.
-5. **Google (iniciar sesión y crear cuenta):** en https://console.cloud.google.com/apis/credentials?project=iglesia-gestion-mx
-   - *Pantalla de consentimiento de OAuth*: tipo **Externo**, nombre "Eclaria", correo de soporte; ámbitos básicos (correo y perfil).
-   - *Crear credenciales → ID de cliente de OAuth → Aplicación web*. URI de redirección autorizados:
-     - `https://iglesia--iglesia-gestion-mx.us-central1.hosted.app/api/auth/callback/google`
-     - `http://localhost:3000/api/auth/callback/google` (desarrollo)
-   - Guarda el ID y el secreto con `firebase apphosting:secrets:set GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` (y en tu `.env` local si quieres probarlo en tu equipo).
-   - Mientras la app esté "En pruebas" en Google, solo entran los correos agregados como usuarios de prueba; para abrirlo a todos, *Publicar app*.
+Todos usan **la misma base de datos**: el sitio publicado, el panel y la app móvil leen y escriben en Neon.
+Para que el equipo entre al panel, el administrador crea una cuenta para cada persona (ver
+[equipo.md](equipo.md)); no se comparten contraseñas ni se suben a la repo.
 
-### Registro con Google
-- Quien crea su cuenta con Google recibe solo el rol **Miembro** (portal). Si existe una ficha con su mismo correo, se vincula sola; si no, secretaría la vincula desde *Usuarios*.
-- El personal que ya tiene cuenta puede entrar con Google si usa el mismo correo (se vincula a su cuenta; no se crea otra).
+> El plan Hobby de Vercel es para uso no comercial y tiene un solo dueño. Si el proyecto crece o se
+> necesita que varias personas administren Vercel, evaluar Vercel Pro (ver [analisis-alojamiento.md](analisis-alojamiento.md)).
 
-## Pasos técnicos
+## Variables de entorno (Vercel → Settings → Environment Variables, producción)
+
+| Variable | Origen |
+|---|---|
+| `DATABASE_URL`, `DATABASE_URL_UNPOOLED` y demás `PG*` | Las agrega la integración de Neon |
+| `BETTER_AUTH_URL` | `https://eclaria-gilt.vercel.app` (cambiar si se usa dominio propio) |
+| `BETTER_AUTH_SECRET` | Aleatorio: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"` |
+| `CONFESSIONS_ENCRYPTION_KEY` | Aleatorio (mismo comando). **Respáldala fuera de la base**: sin ella no se pueden leer las confesiones |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google Cloud (opcional; ver abajo) |
+
+Los valores se escriben en la terminal o en el panel de Vercel, nunca en git ni en el chat:
+
 ```bash
-# 1. Migraciones y datos base en Neon (sin datos de demostración)
-pnpm dlx dotenv-cli -e .env.production.local -- pnpm db:deploy
-pnpm dlx dotenv-cli -e .env.production.local -- pnpm db:seed
-pnpm dlx dotenv-cli -e .env.production.local -- pnpm setup:admin
-
-# 2. Crear el backend (una sola vez) y desplegar desde el código local
-firebase apphosting:backends:create --backend iglesia --primary-region us-central1
-firebase deploy --only apphosting
+vercel env add NOMBRE production
 ```
 
-## Configuración (`apphosting.yaml`)
-- 0–2 instancias (sin tráfico no hay costo de cómputo), 1 CPU, 512 MiB.
-- Secretos: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `CONFESSIONS_ENCRYPTION_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (Secret Manager).
-- `BETTER_AUTH_URL` = URL pública; actualizar si se usa dominio propio.
-- `AUTH_IP_HEADERS` / `AUTH_TRUSTED_PROXIES`: IP real del cliente detrás del balanceador de Google, para que el límite de intentos sea por persona. **Verificar tras el primer despliegue** (bitácora → IP registrada) y ajustar si aparece la IP del balanceador.
-- El logotipo se guarda en la BD (tabla `stored_file`), porque el disco de Cloud Run no es persistente.
+## Publicar una nueva versión
 
-## Lista de verificación previa a producción
-- [ ] Plan Blaze y alerta de presupuesto.
-- [ ] Secretos configurados (no en git).
-- [ ] `prisma migrate deploy` aplicado (nunca `migrate dev` en producción).
-- [ ] **No** ejecutar `db:seed:demo` en producción (bloqueado si `NODE_ENV=production`).
-- [ ] Primer administrador con `setup:admin`.
-- [ ] Respaldos: Neon conserva historial (point-in-time) según plan; además exportar `pg_dump` periódico cifrado.
-- [ ] Aviso de privacidad publicado y datos institucionales reales configurados.
-- [ ] Dominio propio (opcional) y actualizar `BETTER_AUTH_URL`.
+El proyecto de Vercel no está conectado a GitHub: se publica desde el código local de `main`.
 
-## Costos estimados (verificar en la consola)
-- App Hosting / Cloud Run: con 0 instancias mínimas y tráfico bajo, normalmente dentro de la capa gratuita o pocos dólares al mes.
-- Neon Free: US$0 (≈0.5 GB). Plan de pago por uso si se excede.
-- Fuente de precios: https://firebase.google.com/pricing · https://neon.com/pricing
+```bash
+git switch main && git pull
+vercel deploy --prod --yes
+```
+
+Vercel corre `pnpm vercel-build` (`prisma generate && next build`). Las migraciones **no** corren
+solas: si la versión trae migraciones nuevas, aplícalas antes de publicar (siguiente sección).
+
+## Migraciones y datos en Neon
+
+Copia las variables de producción a `.env.production.local` (ignorado por git) con
+`vercel env pull .env.production.local --environment=production`, y usa la conexión directa
+(`DATABASE_URL_UNPOOLED`). En PowerShell:
+
+```powershell
+$env:DATABASE_URL = (Select-String -Path .env.production.local -Pattern '^DATABASE_URL_UNPOOLED=').Line.Split('=',2)[1].Trim('"')
+pnpm db:deploy          # migraciones (nunca `db:migrate` en producción)
+pnpm db:seed            # roles, permisos y catálogos (idempotente)
+pnpm setup:admin        # primer administrador (una sola vez)
+pnpm db:seed:contenido  # textos y contenido de ejemplo; solo llena lo vacío
+```
+
+`db:seed:demo` está bloqueado en producción: no cargues datos ficticios de personas en Neon.
+
+## Inicio de sesión con Google (opcional)
+
+1. En https://console.cloud.google.com → *Google Auth Platform*:
+   - *Branding*: nombre "Eclaria", correo de soporte. *Audience*: **External** y luego *Publish app*
+     (mientras esté "En pruebas" solo entran los correos agregados como usuarios de prueba).
+   - *Clients → Create client → Web application*:
+     - Orígenes de JavaScript: `https://eclaria-gilt.vercel.app` y `http://localhost:3000`
+     - URI de redirección: `https://eclaria-gilt.vercel.app/api/auth/callback/google` y
+       `http://localhost:3000/api/auth/callback/google`
+2. Guarda el ID y el secreto en Vercel (`vercel env add GOOGLE_CLIENT_ID production` y
+   `vercel env add GOOGLE_CLIENT_SECRET production --sensitive`) y vuelve a publicar.
+3. En tu `.env` local también puedes ponerlos para probarlo en `localhost`.
+
+Quien crea su cuenta con Google recibe solo el rol **Miembro** (portal). Si existe una ficha con su
+mismo correo, se vincula sola; si no, secretaría la vincula desde *Usuarios*. El personal que ya
+tiene cuenta puede entrar con Google si usa el mismo correo (se vincula; no se crea otra).
+
+## Archivos e imágenes
+
+Logotipo, portada y fotos de capillas se guardan en la base (tabla `stored_file`), porque el disco
+de Vercel no es persistente.
+
+## Lista de verificación
+
+- [x] Migraciones aplicadas en Neon y datos base cargados.
+- [x] Primer administrador creado.
+- [x] Secretos solo en Vercel y en `.env.production.local` (no en git).
+- [ ] Datos reales de contacto, foto de portada y aviso de privacidad en *Configuración*.
+- [ ] Capillas de ejemplo editadas o archivadas.
+- [ ] Respaldo: Neon Free guarda historial corto; exportar `pg_dump` cifrado periódicamente.
+- [ ] Dominio propio (opcional): agregarlo en Vercel y actualizar `BETTER_AUTH_URL`.

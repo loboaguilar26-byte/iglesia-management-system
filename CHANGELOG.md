@@ -4,6 +4,14 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Sin publicar]
 
+### Añadido — Sitio publicado y acceso del equipo
+- Sitio en **https://eclaria-gilt.vercel.app** (Vercel Hobby + Neon Free): base de datos compartida por el sitio, el panel y la app.
+- Inicio de sesión y registro con Google (rol Miembro para cuentas nuevas), foto de portada y contenido inicial (`pnpm db:seed:contenido`).
+- Guías [docs/despliegue.md](docs/despliegue.md) (Vercel + Neon) y [docs/equipo.md](docs/equipo.md) (una cuenta por persona; las contraseñas nunca van a la repo).
+
+### Cambiado
+- Se retira la configuración de Firebase (`firebase.json`, `.firebaserc`, `apphosting.yaml`, `dataconnect/`): el plan Blaze era de pago.
+
 ### Añadido — Capillas como franquicia, intro y acceso renovados
 - **Identidad por capilla:** colores, lema, presentación, horarios, portada, mapa y WhatsApp propios (pestaña *Identidad* con vista previa en vivo). Misma estructura para todas, distinta presentación.
 - **Sitio público:** directorio `/capillas` y página de cada capilla en `/capillas/<código>` con sus colores, eventos y ministerios públicos. Solo aparecen capillas activas marcadas como públicas.

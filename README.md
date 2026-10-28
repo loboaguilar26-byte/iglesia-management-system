@@ -2,6 +2,8 @@
 
 Sistema multidenominacional para administrar una iglesia y su red de capillas: sitio público, panel administrativo, portal del miembro y app para Android e iOS, todo sobre la misma base.
 
+**Sitio publicado:** https://eclaria-gilt.vercel.app · panel en `/admin` · cada integrante del equipo entra con su propia cuenta ([docs/equipo.md](docs/equipo.md)).
+
 > Repositorio **privado**. No subas `.env`, contraseñas, llaves ni datos reales de la congregación.
 
 ## Apartados
@@ -73,7 +75,6 @@ Antes de compilar (`pnpm build`) detén `pnpm dev`: ambos usan la carpeta `.next
 ├── android/ · ios/          Proyectos nativos de la app (Capacitor)
 ├── mobile/www/              Pantalla "sin conexión" incluida en la app
 ├── scripts/                 Primer administrador, íconos móviles y verificación completa
-├── dataconnect/             Configuración de la base de datos en Firebase
 └── .github/                 CI, Dependabot y plantillas de PR e issues
 ```
 

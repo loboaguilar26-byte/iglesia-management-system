@@ -3,7 +3,7 @@ import { db } from "./db";
 import { AppError } from "./errors";
 
 // Archivos subidos pequeños (logotipo) guardados en la base de datos (ADR-011): funciona igual en
-// local y en servidores sin disco persistente (Firebase App Hosting / Cloud Run).
+// local y en servidores sin disco persistente (como Vercel).
 
 const IMAGE_TYPES = [
   { ext: "png", mime: "image/png", magic: [0x89, 0x50, 0x4e, 0x47] },
