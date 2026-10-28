@@ -590,6 +590,8 @@ model ChurchSettings {
   id             String   @id @default("default")
   name           String
   logoPath       String?
+  /// Foto de portada del sitio público (stored_file).
+  coverPath      String?
   address        String?
   phone          String?
   email          String?

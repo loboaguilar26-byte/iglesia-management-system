@@ -35,6 +35,7 @@ export async function getPublicSite() {
         youtubeUrl: true,
         privacyNotice: true,
         logoPath: true,
+        coverPath: true,
         timezone: true,
       },
     }),
@@ -45,7 +46,7 @@ export async function getPublicSite() {
     }),
   ]);
   return {
-    settings: settings ?? { name: "Eclaria", tagline: null, welcomeText: null, firstVisitText: null, aboutText: null, mission: null, vision: null, valuesText: null, scheduleText: null, address: null, phone: null, email: null, whatsapp: null, mapUrl: null, facebookUrl: null, instagramUrl: null, youtubeUrl: null, privacyNotice: null, logoPath: null, timezone: "America/Mexico_City" },
+    settings: settings ?? { name: "Eclaria", tagline: null, welcomeText: null, firstVisitText: null, aboutText: null, mission: null, vision: null, valuesText: null, scheduleText: null, address: null, phone: null, email: null, whatsapp: null, mapUrl: null, facebookUrl: null, instagramUrl: null, youtubeUrl: null, privacyNotice: null, logoPath: null, coverPath: null, timezone: "America/Mexico_City" },
     schedules,
   };
 }
