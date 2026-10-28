@@ -3,6 +3,7 @@
 ## Para empezar
 | Documento | Contenido |
 |---|---|
+| [equipo.md](equipo.md) | Sitio publicado y cómo da acceso al panel a cada compañero |
 | [instalacion.md](instalacion.md) | Instalar y correr el proyecto en tu equipo |
 | [../CONTRIBUTING.md](../CONTRIBUTING.md) | Flujo de ramas, PR y reglas del equipo |
 | [movil.md](movil.md) | App de Android e iOS (Capacitor) |
@@ -24,4 +25,4 @@
 | [requisitos.md](requisitos.md) | Requisitos funcionales y no funcionales |
 | [plan-desarrollo.md](plan-desarrollo.md) | Fases y criterios de aceptación |
 | [analisis-alojamiento.md](analisis-alojamiento.md) | Comparación de alojamiento |
-| [despliegue.md](despliegue.md) | Despliegue, variables de entorno y respaldos |
+| [despliegue.md](despliegue.md) | Publicación en Vercel + Neon, variables de entorno y respaldos |

@@ -48,7 +48,7 @@ El proyecto `ios/` ya está generado, pero **compilar para iPhone requiere una M
 
 ## Producción y tiendas (pendiente de autorización)
 
-1. Publicar el sistema con HTTPS (p. ej. Firebase App Hosting, que necesita el plan Blaze).
+1. Publicar el sistema con HTTPS (hoy: https://eclaria-gilt.vercel.app, ver docs/despliegue.md).
 2. `CAP_SERVER_URL="https://<dominio>"` y `pnpm mobile:sync`.
 3. Google Play: cuenta de desarrollador (pago único de USD 25), firma de la app (keystore guardada fuera
    del repositorio) y `Build → Generate Signed App Bundle` en Android Studio.
