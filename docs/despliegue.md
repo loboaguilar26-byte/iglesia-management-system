@@ -17,6 +17,17 @@ Base de datos: **PostgreSQL en Neon** (plan gratuito para iniciar).
    Para `BETTER_AUTH_SECRET` usar un valor aleatorio: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`.
    Para `CONFESSIONS_ENCRYPTION_KEY`: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. Respáldala cifrada fuera de la base de datos; perderla impide recuperar mensajes/contactos.
 4. Para migrar desde tu equipo, crea `.env.production.local` (ignorado por git) con `DATABASE_URL=...` de Neon.
+5. **Google (iniciar sesión y crear cuenta):** en https://console.cloud.google.com/apis/credentials?project=iglesia-gestion-mx
+   - *Pantalla de consentimiento de OAuth*: tipo **Externo**, nombre "Eclaria", correo de soporte; ámbitos básicos (correo y perfil).
+   - *Crear credenciales → ID de cliente de OAuth → Aplicación web*. URI de redirección autorizados:
+     - `https://iglesia--iglesia-gestion-mx.us-central1.hosted.app/api/auth/callback/google`
+     - `http://localhost:3000/api/auth/callback/google` (desarrollo)
+   - Guarda el ID y el secreto con `firebase apphosting:secrets:set GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` (y en tu `.env` local si quieres probarlo en tu equipo).
+   - Mientras la app esté "En pruebas" en Google, solo entran los correos agregados como usuarios de prueba; para abrirlo a todos, *Publicar app*.
+
+### Registro con Google
+- Quien crea su cuenta con Google recibe solo el rol **Miembro** (portal). Si existe una ficha con su mismo correo, se vincula sola; si no, secretaría la vincula desde *Usuarios*.
+- El personal que ya tiene cuenta puede entrar con Google si usa el mismo correo (se vincula a su cuenta; no se crea otra).
 
 ## Pasos técnicos
 ```bash
@@ -32,7 +43,7 @@ firebase deploy --only apphosting
 
 ## Configuración (`apphosting.yaml`)
 - 0–2 instancias (sin tráfico no hay costo de cómputo), 1 CPU, 512 MiB.
-- Secretos: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `CONFESSIONS_ENCRYPTION_KEY` (Secret Manager).
+- Secretos: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `CONFESSIONS_ENCRYPTION_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (Secret Manager).
 - `BETTER_AUTH_URL` = URL pública; actualizar si se usa dominio propio.
 - `AUTH_IP_HEADERS` / `AUTH_TRUSTED_PROXIES`: IP real del cliente detrás del balanceador de Google, para que el límite de intentos sea por persona. **Verificar tras el primer despliegue** (bitácora → IP registrada) y ajustar si aparece la IP del balanceador.
 - El logotipo se guarda en la BD (tabla `stored_file`), porque el disco de Cloud Run no es persistente.

@@ -17,8 +17,11 @@ function loginErrorMessage(status: number) {
 
 export function LoginForm() {
   const router = useRouter();
-  const next = safeAdminPath(useSearchParams().get("next"));
-  const [error, setError] = useState<string | null>(null);
+  const params = useSearchParams();
+  const next = safeAdminPath(params.get("next"));
+  const [error, setError] = useState<string | null>(
+    params.get("error") ? "No fue posible entrar con Google. Inténtalo de nuevo o usa tu correo." : null,
+  );
   const [pending, setPending] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 

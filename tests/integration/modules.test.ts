@@ -618,3 +618,28 @@ describe("capillas como franquicia", () => {
     expect(await db.auditLog.count({ where: { action: "chapel.identity_update" } })).toBe(2);
   });
 });
+
+describe("registro con Google", () => {
+  it("da rol Miembro, vincula la ficha por correo y nunca acceso al panel", async () => {
+    await resetDatabase();
+    const { onSelfSignup } = await import("@/modules/users/self-signup");
+    const secretary = await createTestUser(["SECRETARY"]);
+    const ficha = await createMember(secretary, { firstName: "Lucía", lastName: "Google", email: "lucia@example.test" });
+
+    const nueva = await db.user.create({ data: { id: "google-1", name: "Lucía", email: "LUCIA@example.test", emailVerified: true } });
+    await onSelfSignup(nueva);
+    const roles = await db.userRole.findMany({ where: { userId: nueva.id }, include: { role: true } });
+    expect(roles.map((r) => r.role.key)).toEqual(["MEMBER"]);
+    expect((await db.user.findUniqueOrThrow({ where: { id: nueva.id } })).memberId).toBe(ficha.id);
+
+    // Sin ficha con ese correo: entra al portal pendiente de que secretaría la vincule.
+    const sinFicha = await db.user.create({ data: { id: "google-2", name: "Visitante", email: "nuevo@example.test", emailVerified: true } });
+    await onSelfSignup(sinFicha);
+    expect((await db.user.findUniqueOrThrow({ where: { id: sinFicha.id } })).memberId).toBeNull();
+
+    const actor = await (await import("@/lib/session")).loadActor(nueva.id);
+    expect(actor?.permissions.has("portal:access")).toBe(true);
+    expect([...(actor?.permissions ?? [])].every((p) => p === "portal:access")).toBe(true);
+    expect(await db.auditLog.count({ where: { action: "user.self_signup" } })).toBe(2);
+  });
+});
