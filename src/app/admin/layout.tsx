@@ -4,6 +4,7 @@ import { Suspense, type ReactNode } from "react";
 import { can } from "@/lib/authz";
 import { ROLES } from "@/lib/permissions";
 import { requirePageActor } from "@/lib/session";
+import { SiteLink } from "@/components/site-link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { getSettingsInternal } from "@/modules/settings/service";
 import { MobileNav, MobileTabBar, SidebarNav } from "./admin-nav";
@@ -56,6 +57,7 @@ async function AdminShell({ children }: { children: ReactNode }) {
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle className="shrink-0" />
+            <SiteLink />
             {can(actor, "portal:access") ? (
               <Link href="/mi-cuenta" className="hidden rounded-lg px-3 py-2 text-sm hover:bg-surface-2 md:inline-block">Mi portal</Link>
             ) : null}
