@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/", label: "Inicio" },
   { href: "/nosotros", label: "Nosotros" },
   { href: "/horarios", label: "Horarios" },
+  { href: "/capillas", label: "Capillas" },
   { href: "/ministerios", label: "Ministerios" },
   { href: "/eventos", label: "Eventos" },
   { href: "/comunicados", label: "Comunicados" },

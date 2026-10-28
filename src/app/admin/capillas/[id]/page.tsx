@@ -3,6 +3,7 @@ import { CalendarDays, ClipboardCheck, HandHeart, Mail, MapPin, Phone, UserPlus,
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BarChart } from "@/components/bar-chart";
+import { ActionButton } from "@/components/ui/action-button";
 import { ActionForm, SubmitButton } from "@/components/ui/action-form";
 import { Alert } from "@/components/ui/alert";
 import { TextArea } from "@/components/ui/field";
@@ -17,8 +18,9 @@ import { describeAction } from "@/modules/audit/service";
 import { CHAPEL_STATUS_LABEL, chapelDonations, chapelPeople, getChapelOverview, managerUserOptions } from "@/modules/chapels/service";
 import { MEMBER_STATUS_LABEL } from "@/modules/members/schema";
 import { getChurchTimezone, getSettingsInternal } from "@/modules/settings/service";
-import { setChapelStatusAction, updateChapelAction } from "../actions";
+import { removeChapelCoverAction, saveChapelIdentityAction, setChapelCoverAction, setChapelStatusAction, updateChapelAction } from "../actions";
 import { ChapelForm } from "../chapel-form";
+import { ChapelIdentityForm } from "./chapel-identity-form";
 
 export const metadata: Metadata = { title: "Capilla" };
 
@@ -42,6 +44,7 @@ export default async function ChapelPage({ params, searchParams }: PageProps<"/a
     { key: "resumen", label: "Resumen", show: true },
     { key: "personas", label: "Personas", show: can(actor, "members:read") },
     { key: "ingresos", label: "Ingresos", show: can(actor, "finance:read") },
+    { key: "identidad", label: "Identidad", show: can(actor, "chapels:manage") && c.status !== "ARCHIVED" },
     { key: "historial", label: "Historial", show: !!o.history },
     { key: "gestion", label: "Gestión", show: can(actor, "chapels:manage") },
   ].filter((t) => t.show);
@@ -158,6 +161,7 @@ export default async function ChapelPage({ params, searchParams }: PageProps<"/a
         </Card>
       ) : null}
 
+      {tab === "identidad" && can(actor, "chapels:manage") && c.status !== "ARCHIVED" ? <IdentityTab chapel={c} /> : null}
       {tab === "gestion" && can(actor, "chapels:manage") ? <ManageTab chapel={c} /> : null}
     </div>
   );
@@ -252,6 +256,41 @@ async function ManageTab({ chapel }: { chapel: Awaited<ReturnType<typeof getChap
               </ActionForm>
             ) : null}
           </div>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function IdentityTab({ chapel }: { chapel: Awaited<ReturnType<typeof getChapelOverview>>["chapel"] }) {
+  const slug = chapel.code.toLowerCase();
+  const coverUrl = chapel.coverPath ? `/media/capilla/${slug}?v=${encodeURIComponent(chapel.coverPath)}` : null;
+  return (
+    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <Card title="Identidad de la capilla" description="Misma estructura que las demás sedes, con sus propios colores, textos y portada.">
+        <ChapelIdentityForm action={saveChapelIdentityAction.bind(null, chapel.id)} values={chapel} coverUrl={chapel.isPublic && chapel.status === "ACTIVE" ? coverUrl : null} />
+      </Card>
+      <div className="flex flex-col gap-6">
+        <Card title="Página pública">
+          {chapel.isPublic && chapel.status === "ACTIVE" ? (
+            <p className="text-sm">
+              Disponible en{" "}
+              <Link href={`/capillas/${slug}`} target="_blank" className="font-medium text-primary hover:underline">/capillas/{slug}</Link>
+            </p>
+          ) : (
+            <p className="text-sm text-muted">{chapel.status !== "ACTIVE" ? "La capilla no está activa: su página no se muestra." : "Oculta del sitio público."}</p>
+          )}
+        </Card>
+        <Card title="Portada" description="PNG, JPG o WebP de hasta 1 MB. Se usa de fondo en la página pública.">
+          <ActionForm action={setChapelCoverAction.bind(null, chapel.id)}>
+            <input type="file" name="cover" accept="image/png,image/jpeg,image/webp" className="text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-surface-2 file:px-3 file:py-2 file:text-sm" />
+            <SubmitButton>Subir portada</SubmitButton>
+          </ActionForm>
+          {chapel.coverPath ? (
+            <div className="mt-4">
+              <ActionButton action={removeChapelCoverAction.bind(null, chapel.id)} variant="ghost" confirmMessage="¿Quitar la portada?">Quitar portada</ActionButton>
+            </div>
+          ) : null}
         </Card>
       </div>
     </div>

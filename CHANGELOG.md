@@ -4,6 +4,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Sin publicar]
 
+### Añadido — Capillas como franquicia, intro y acceso renovados
+- **Identidad por capilla:** colores, lema, presentación, horarios, portada, mapa y WhatsApp propios (pestaña *Identidad* con vista previa en vivo). Misma estructura para todas, distinta presentación.
+- **Sitio público:** directorio `/capillas` y página de cada capilla en `/capillas/<código>` con sus colores, eventos y ministerios públicos. Solo aparecen capillas activas marcadas como públicas.
+- **Intro:** la Biblia se abre, la paloma vuela hacia la luz y el logotipo aparece centrado con un halo dorado.
+- **Acceso:** nueva pantalla de inicio de sesión con el logotipo de Eclaria, opción para mostrar la contraseña y enlace de regreso al sitio (también en recuperar y restablecer contraseña).
+
 ### Añadido — Organización del repositorio
 - README con mapa de carpetas y comandos, guía [CONTRIBUTING.md](CONTRIBUTING.md), índice de `docs/`, plantillas de PR e issues.
 - `main` protegida: los cambios entran por PR con el CI en verde.

@@ -127,3 +127,57 @@ export async function getPublicAnnouncement(id: string) {
     select: { id: true, title: true, body: true, isFeatured: true, publishedAt: true },
   });
 }
+
+// ───── Capillas (cada una con su propia identidad, misma estructura) ─────
+
+const publicChapelSelect = {
+  id: true,
+  name: true,
+  code: true,
+  tagline: true,
+  aboutText: true,
+  scheduleText: true,
+  address: true,
+  phone: true,
+  email: true,
+  whatsapp: true,
+  mapUrl: true,
+  coverPath: true,
+  primaryColor: true,
+  accentColor: true,
+  openedOn: true,
+} as const;
+
+/** Capillas activas que se muestran en el sitio (sin encargados ni datos de personas). */
+export async function getPublicChapels() {
+  "use cache";
+  cacheTag(PUBLIC_TAG);
+  cacheLife("minutes");
+  return db.chapel.findMany({ where: { status: "ACTIVE", isPublic: true }, orderBy: { name: "asc" }, select: publicChapelSelect });
+}
+
+/** Página de una capilla por su código (en la URL va en minúsculas): datos, eventos y ministerios públicos. */
+export async function getPublicChapel(code: string) {
+  "use cache";
+  cacheTag(PUBLIC_TAG);
+  cacheLife("minutes");
+  const chapel = await db.chapel.findFirst({
+    where: { code: code.toUpperCase(), status: "ACTIVE", isPublic: true },
+    select: publicChapelSelect,
+  });
+  if (!chapel) return null;
+  const [events, ministries] = await Promise.all([
+    db.event.findMany({
+      where: { chapelId: chapel.id, visibility: "PUBLIC", status: "SCHEDULED", endsAt: { gte: new Date() } },
+      orderBy: { startsAt: "asc" },
+      take: 6,
+      select: publicEventSelect,
+    }),
+    db.ministry.findMany({
+      where: { chapelId: chapel.id, isPublic: true, isActive: true },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, description: true },
+    }),
+  ]);
+  return { chapel, events, ministries };
+}

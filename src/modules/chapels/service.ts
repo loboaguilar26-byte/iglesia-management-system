@@ -4,6 +4,7 @@ import { recordAudit } from "@/lib/audit";
 import { can, requirePermission, type Actor } from "@/lib/authz";
 import { db, type Tx } from "@/lib/db";
 import { AppError } from "@/lib/errors";
+import { deleteStored, saveImage } from "@/lib/storage";
 import { parseInput } from "@/lib/validation";
 import type { ChapelStatus } from "@/generated/prisma/client";
 
@@ -203,4 +204,58 @@ export async function setChapelStatus(actor: Actor | null, id: string, input: un
       metadata: { before: current.status, after: status, reason },
     });
   });
+}
+
+// ───── Identidad de la capilla (modelo de franquicia) ─────
+
+const hex = z.string().trim().regex(/^#[0-9a-fA-F]{6}$/, "Usa un color hexadecimal (#RRGGBB)");
+
+const identitySchema = z.object({
+  isPublic: z.preprocess((v) => v === true || v === "on" || v === "true", z.boolean()),
+  primaryColor: hex,
+  accentColor: hex,
+  tagline: optional(160),
+  aboutText: optional(4000),
+  scheduleText: optional(2000),
+  mapUrl: z
+    .string()
+    .trim()
+    .max(500)
+    .optional()
+    .refine((v) => !v || /^https?:\/\/\S+$/.test(v), "Pega un enlace que empiece con https://")
+    .transform((v) => (v ? v : null)),
+  whatsapp: z
+    .string()
+    .trim()
+    .max(30)
+    .optional()
+    .refine((v) => !v || /^\+?[\d\s()-]{8,}$/.test(v), "Número inválido")
+    .transform((v) => (v ? v : null)),
+});
+
+/** Colores, textos y enlaces de la página pública de la capilla. */
+export async function saveChapelIdentity(actor: Actor | null, id: string, input: unknown) {
+  const a = requirePermission(actor, "chapels:manage");
+  const data = parseInput(identitySchema, input);
+  await db.$transaction(async (tx) => {
+    const current = await tx.chapel.findUnique({ where: { id }, select: { status: true } });
+    if (!current) throw new AppError("NOT_FOUND", "Capilla no encontrada.");
+    if (current.status === "ARCHIVED") throw new AppError("CONFLICT", "Una capilla archivada no se edita; restáurala primero.");
+    await tx.chapel.update({ where: { id }, data });
+    await recordAudit(tx, a, { action: "chapel.identity_update", entityType: "Chapel", entityId: id, metadata: { isPublic: data.isPublic } });
+  });
+}
+
+/** Sustituye (o quita, con `file = null`) la portada de la capilla. */
+export async function setChapelCover(actor: Actor | null, id: string, file: File | null) {
+  const a = requirePermission(actor, "chapels:manage");
+  const current = await db.chapel.findUnique({ where: { id }, select: { coverPath: true, status: true } });
+  if (!current) throw new AppError("NOT_FOUND", "Capilla no encontrada.");
+  if (current.status === "ARCHIVED") throw new AppError("CONFLICT", "Una capilla archivada no se edita; restáurala primero.");
+  const name = file ? await saveImage(file, "chapel-cover") : null;
+  await db.$transaction(async (tx) => {
+    await tx.chapel.update({ where: { id }, data: { coverPath: name } });
+    await recordAudit(tx, a, { action: name ? "chapel.cover_update" : "chapel.cover_remove", entityType: "Chapel", entityId: id, metadata: {} });
+  });
+  await deleteStored(current.coverPath);
 }
