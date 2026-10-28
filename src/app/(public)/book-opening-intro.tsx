@@ -2,20 +2,24 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useSyncExternalStore } from "react";
+import { preload } from "react-dom";
 
 /*
  * Intro de Eclaria: la Biblia se abre, la paloma real del logotipo sale volando hacia la luz y
- * aparece el logotipo centrado (coreografía en globals.css). Se muestra una vez por sesión, se
- * puede omitir (botón o Escape) y no aparece con "reducir movimiento".
+ * aparece el logotipo centrado (coreografía en globals.css). Se muestra una vez por sesión y se
+ * puede omitir (botón o Escape). Con "reducir movimiento" se muestra una versión quieta y breve
+ * (solo el logotipo con su halo), en lugar de ocultarse.
  */
 const STORAGE_KEY = "eclaria-intro-seen";
 const CHANGE_EVENT = "iglesia-intro-change";
 const INTRO_DURATION = 5000;
+const CALM_DURATION = 2200;
 let replayRequested = false;
 
+const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 function getSnapshot() {
-  return !window.matchMedia("(prefers-reduced-motion: reduce)").matches &&
-    (replayRequested || sessionStorage.getItem(STORAGE_KEY) !== "true");
+  return replayRequested || sessionStorage.getItem(STORAGE_KEY) !== "true";
 }
 
 function subscribe(onChange: () => void) {
@@ -30,12 +34,14 @@ function markIntroSeen() {
 }
 
 function requestIntro() {
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   replayRequested = true;
   window.dispatchEvent(new Event(CHANGE_EVENT));
 }
 
 export function BookOpeningIntro({ churchName, playOnMount = false }: { churchName: string; playOnMount?: boolean }) {
+  // Se piden desde el inicio para que la paloma y el logotipo estén listos al aparecer.
+  preload("/intro/paloma.webp", { as: "image", fetchPriority: "high" });
+  preload("/eclaria-logo.jpg", { as: "image", fetchPriority: "high" });
   const visible = useSyncExternalStore(subscribe, getSnapshot, () => false);
   const skipButton = useRef<HTMLButtonElement>(null);
 
@@ -46,7 +52,7 @@ export function BookOpeningIntro({ churchName, playOnMount = false }: { churchNa
   useEffect(() => {
     if (!visible) return;
     skipButton.current?.focus();
-    const timeout = window.setTimeout(markIntroSeen, INTRO_DURATION);
+    const timeout = window.setTimeout(markIntroSeen, reducedMotion() ? CALM_DURATION : INTRO_DURATION);
     return () => window.clearTimeout(timeout);
   }, [visible]);
 

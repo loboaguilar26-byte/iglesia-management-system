@@ -4,7 +4,15 @@ import { revalidatePath } from "next/cache";
 import { formToObject, toActionState, type ActionState } from "@/lib/action-state";
 import { refreshPublicSite } from "@/lib/public-cache";
 import { getActor } from "@/lib/session";
-import { deleteSchedule, removeLogo, saveSchedule, updateLogo, updateSettings } from "@/modules/settings/service";
+import {
+  deleteSchedule,
+  removeCover,
+  removeLogo,
+  saveSchedule,
+  updateCover,
+  updateLogo,
+  updateSettings,
+} from "@/modules/settings/service";
 
 function done(message: string): ActionState {
   refreshPublicSite();
@@ -37,6 +45,24 @@ export async function removeLogoAction(_prev: ActionState): Promise<ActionState>
     return toActionState(error);
   }
   return done("Logotipo eliminado.");
+}
+
+export async function updateCoverAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  try {
+    await updateCover(await getActor(), form.get("cover"));
+  } catch (error) {
+    return toActionState(error);
+  }
+  return done("Foto de portada actualizada.");
+}
+
+export async function removeCoverAction(_prev: ActionState): Promise<ActionState> {
+  try {
+    await removeCover(await getActor());
+  } catch (error) {
+    return toActionState(error);
+  }
+  return done("Foto de portada quitada.");
 }
 
 export async function saveScheduleAction(id: string | null, _prev: ActionState, form: FormData): Promise<ActionState> {

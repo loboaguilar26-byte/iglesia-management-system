@@ -498,6 +498,9 @@ h3 {
   .eclaria-intro__rays { display: none; }
 }
 
+/* Paloma de la portada: flota suavemente sobre su halo dorado. */
+.hero-dove { animation: auth-float 7s ease-in-out infinite; }
+
 /* Panel celestial de las pantallas de acceso: mismo lenguaje visual que la intro. */
 .auth-sky {
   background:

@@ -14,8 +14,8 @@ const nextConfig: NextConfig = {
     .map((o) => o.trim().replace(/^https?:\/\//, "").replace(/:\d+$/, ""))
     .filter(Boolean),
   experimental: {
-    // Permite subir el logotipo (máx. 1 MB) mediante Server Actions.
-    serverActions: { bodySizeLimit: "2mb" },
+    // Subida de imágenes por Server Actions: logotipo (1 MB) y foto de portada (3 MB).
+    serverActions: { bodySizeLimit: "4mb" },
   },
   async headers() {
     return [

@@ -11,8 +11,10 @@ import { TIMEZONES } from "@/modules/settings/schema";
 import { getSettings, listSchedules } from "@/modules/settings/service";
 import {
   deleteScheduleAction,
+  removeCoverAction,
   removeLogoAction,
   saveScheduleAction,
+  updateCoverAction,
   updateLogoAction,
   updateSettingsAction,
 } from "./actions";
@@ -104,6 +106,30 @@ export default async function SettingsPage() {
               {s.logoPath ? (
                 <ActionButton action={removeLogoAction} confirmMessage="¿Quitar el logotipo?" variant="ghost">
                   Quitar logotipo
+                </ActionButton>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      </Card>
+
+      <Card title="Foto de portada" description="Una foto de tu iglesia (fachada, comunidad, un culto). Se muestra de fondo en la portada del sitio. JPG, PNG o WebP de hasta 3 MB.">
+        <div className="flex flex-wrap items-center gap-6">
+          {s.coverPath ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={`/media/portada?v=${encodeURIComponent(s.coverPath)}`} alt="Foto de portada actual" className="h-28 w-48 rounded-xl border border-border object-cover" />
+          ) : (
+            <p className="w-48 rounded-xl border border-dashed border-border p-4 text-center text-sm text-muted">Sin foto: la portada muestra la paloma de Eclaria.</p>
+          )}
+          {editable ? (
+            <div className="flex flex-col gap-3">
+              <ActionForm action={updateCoverAction} className="flex flex-wrap items-end gap-3">
+                <Field label="Nueva foto" name="cover" type="file" accept="image/png,image/jpeg,image/webp" className="py-1.5" />
+                <SubmitButton pendingText="Subiendo…">Subir</SubmitButton>
+              </ActionForm>
+              {s.coverPath ? (
+                <ActionButton action={removeCoverAction} confirmMessage="¿Quitar la foto de portada?" variant="ghost">
+                  Quitar foto
                 </ActionButton>
               ) : null}
             </div>
