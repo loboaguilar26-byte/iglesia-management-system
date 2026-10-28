@@ -60,3 +60,7 @@ firebase-debug.log
 
 # Herramientas locales de cada persona
 .qodo/
+
+.vercel
+.env*.local
+
