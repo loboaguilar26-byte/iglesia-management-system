@@ -256,7 +256,7 @@ h3 {
 }
 
 /*
- * Intro de Eclaria (≈4.6 s): cielo estrellado → la Biblia se eleva y se abre → la paloma sale
+ * Intro de Eclaria (≈5 s): cielo estrellado → la Biblia se eleva y se abre → la paloma real sale
  * volando hacia la luz → destello dorado y el logotipo aparece centrado → desvanecido.
  * Todas las piezas se apilan en la misma celda de una cuadrícula, así quedan centradas.
  */
@@ -269,7 +269,7 @@ h3 {
   overflow: hidden;
   background: radial-gradient(circle at 50% 45%, #1b3550 0%, #091321 50%, #02060d 100%);
   color: #fffaf0;
-  animation: eclaria-out .6s ease-in 4s forwards;
+  animation: eclaria-out .6s ease-in 4.4s forwards;
 }
 
 .eclaria-intro__skip {
@@ -391,31 +391,33 @@ h3 {
   box-shadow: 0 0 .9rem rgb(255 207 111 / 80%);
 }
 
+/* Paloma real (recortada del logotipo) en tres capas; las alas giran desde el hombro con escorzo. */
 .eclaria-intro__dove {
-  width: min(62vw, 19rem);
+  position: relative;
+  width: min(80vw, 28rem);
+  aspect-ratio: 880 / 740;
   opacity: 0;
-  filter: drop-shadow(0 0 1rem rgb(255 255 255 / 55%));
-  animation: eclaria-dove-flight 2.2s cubic-bezier(.25,.7,.25,1) 1.35s both;
+  filter: drop-shadow(0 0 1.6rem rgb(255 236 190 / 45%)) drop-shadow(0 1.2rem 2rem rgb(0 0 0 / 35%));
+  animation: eclaria-dove-flight 2.4s cubic-bezier(.3,.6,.25,1) 1.15s both;
 }
-.eclaria-intro__dove path { fill: #fff; stroke: #f8e7c6; stroke-width: 1.25; }
-.eclaria-intro__dove-wing { transform-box: fill-box; }
-.eclaria-intro__dove-wing--left {
-  transform-origin: 88% 70%;
-  animation: eclaria-wing-left .32s ease-in-out 1.35s 7 alternate both;
+.eclaria-intro__dove-part {
+  position: absolute;
+  inset: 0;
+  background: url("/intro/paloma.webp") center / 100% 100% no-repeat;
 }
-.eclaria-intro__dove-wing--right {
-  transform-origin: 12% 70%;
-  animation: eclaria-wing-right .32s ease-in-out 1.35s 7 alternate both;
+.eclaria-intro__dove-part--wing-left {
+  clip-path: polygon(0 0, 53.4% 0, 53.4% 44.6%, 50% 63.5%, 40.9% 75.7%, 29.5% 81.1%, 0 81.1%);
+  transform-origin: 50% 60.8%;
+  animation: eclaria-flap-left .46s cubic-bezier(.45,0,.35,1) 1.15s 5 both;
 }
-.eclaria-intro__dove-feather {
-  fill: none !important;
-  stroke: #f8e7c6 !important;
-  stroke-width: 1 !important;
-  opacity: .75;
+.eclaria-intro__dove-part--wing-right {
+  clip-path: polygon(59.1% 24.3%, 100% 20.3%, 100% 89.2%, 61.4% 89.2%, 63.1% 64.9%, 63.6% 56.8%);
+  transform-origin: 64.2% 63.5%;
+  animation: eclaria-flap-right .46s cubic-bezier(.45,0,.35,1) 1.15s 5 both;
 }
-.eclaria-intro__dove-body,
-.eclaria-intro__dove-head { fill: #fff; }
-.eclaria-intro__dove-beak { fill: #e8a83d !important; stroke: #fff2cf !important; }
+.eclaria-intro__dove-part--body {
+  clip-path: polygon(40.3% 52%, 54.5% 44.6%, 71.6% 45.9%, 71% 56.8%, 63.6% 64.9%, 61.9% 94.6%, 6.8% 94.6%, 9.1% 82.4%, 36.4% 79.7%, 39.8% 64.9%);
+}
 
 .eclaria-intro__halo {
   width: min(70vw, 20rem);
@@ -424,7 +426,7 @@ h3 {
   border: 2px solid rgb(242 191 100 / 70%);
   box-shadow: 0 0 2.5rem rgb(242 191 100 / 45%), inset 0 0 2rem rgb(242 191 100 / 25%);
   opacity: 0;
-  animation: eclaria-halo 1.8s ease-out 2.55s both;
+  animation: eclaria-halo 1.8s ease-out 2.95s both;
 }
 
 .eclaria-intro__logo {
@@ -433,7 +435,7 @@ h3 {
   border-radius: 1.5rem;
   opacity: 0;
   box-shadow: 0 0 3rem rgb(232 168 61 / 35%);
-  animation: eclaria-logo-in 1s cubic-bezier(.2,.8,.2,1) 2.55s both;
+  animation: eclaria-logo-in 1s cubic-bezier(.2,.8,.2,1) 2.95s both;
 }
 
 @keyframes eclaria-fade-in { from { opacity: 0; } to { opacity: 1; } }
@@ -453,19 +455,29 @@ h3 {
 @keyframes eclaria-book {
   0% { opacity: 0; transform: translateY(3rem) scale(.85); }
   20% { opacity: 1; transform: translateY(0) scale(1); }
-  70% { opacity: 1; transform: translateY(0) scale(1); }
-  100% { opacity: 0; transform: translateY(2rem) scale(.92); }
+  55% { opacity: 1; transform: translateY(0) scale(1); }
+  85%, 100% { opacity: 0; transform: translateY(2.5rem) scale(.9); }
 }
 @keyframes eclaria-open-left { from { transform: rotateY(0deg); } to { transform: rotateY(-155deg); } }
 @keyframes eclaria-open-right { from { transform: rotateY(0deg); } to { transform: rotateY(155deg); } }
 @keyframes eclaria-dove-flight {
-  0% { opacity: 0; transform: translateY(1rem) scale(.35); }
-  15% { opacity: 1; transform: translateY(-1rem) scale(.55) rotate(-3deg); }
-  55% { opacity: 1; transform: translate(.8rem, -6rem) scale(.8) rotate(3deg); }
-  100% { opacity: 0; transform: translate(-.5rem, -13rem) scale(.6) rotate(-2deg); }
+  0% { opacity: 0; transform: translateY(3.5rem) scale(.3); }
+  18% { opacity: 1; transform: translateY(.5rem) scale(.62) rotate(-2deg); }
+  48% { opacity: 1; transform: translateY(-1.5rem) scale(.86) rotate(1.5deg); }
+  72% { opacity: 1; transform: translate(.6rem, -4rem) scale(.8) rotate(-1deg); }
+  100% { opacity: 0; transform: translate(-.4rem, -12rem) scale(.55) rotate(2deg); }
 }
-@keyframes eclaria-wing-left { 0%, 100% { transform: rotate(14deg) scaleY(.88); } 50% { transform: rotate(-19deg) scaleY(1.16); } }
-@keyframes eclaria-wing-right { 0%, 100% { transform: rotate(-14deg) scaleY(.88); } 50% { transform: rotate(19deg) scaleY(1.16); } }
+/* Bajada rápida del ala (fuerza) y subida más lenta, como en un aleteo real. */
+@keyframes eclaria-flap-left {
+  0% { transform: rotate(8deg) scaleY(1); }
+  38% { transform: rotate(-24deg) scaleY(.8); }
+  100% { transform: rotate(8deg) scaleY(1); }
+}
+@keyframes eclaria-flap-right {
+  0% { transform: rotate(-8deg) scaleY(1); }
+  38% { transform: rotate(24deg) scaleY(.8); }
+  100% { transform: rotate(-8deg) scaleY(1); }
+}
 @keyframes eclaria-halo {
   0% { opacity: 0; transform: scale(.6); }
   40% { opacity: 1; transform: scale(1.05); }

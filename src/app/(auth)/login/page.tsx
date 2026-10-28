@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Iniciar sesión", robots: { index: f
 
 export default function LoginPage() {
   return (
-    <AuthCard title="Te damos la bienvenida" description="Inicia sesión para entrar al panel o a tu portal de miembro.">
+    <AuthCard title="Iniciar sesión" description="Te damos la bienvenida. Entra al panel o a tu portal de miembro.">
       <Suspense>
         <LoginForm />
       </Suspense>

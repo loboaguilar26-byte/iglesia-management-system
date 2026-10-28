@@ -4,13 +4,13 @@ import Image from "next/image";
 import { useEffect, useRef, useSyncExternalStore } from "react";
 
 /*
- * Intro de Eclaria: la Biblia se abre, la paloma sale volando hacia la luz y aparece el logotipo
- * centrado (diseño de main, coreografía en globals.css). Se muestra una vez por sesión, se puede omitir (botón o Escape) y no aparece con
- * "reducir movimiento".
+ * Intro de Eclaria: la Biblia se abre, la paloma real del logotipo sale volando hacia la luz y
+ * aparece el logotipo centrado (coreografía en globals.css). Se muestra una vez por sesión, se
+ * puede omitir (botón o Escape) y no aparece con "reducir movimiento".
  */
 const STORAGE_KEY = "eclaria-intro-seen";
 const CHANGE_EVENT = "iglesia-intro-change";
-const INTRO_DURATION = 4600;
+const INTRO_DURATION = 5000;
 let replayRequested = false;
 
 function getSnapshot() {
@@ -73,26 +73,18 @@ export function BookOpeningIntro({ churchName, playOnMount = false }: { churchNa
       <div className="eclaria-intro__stage">
         <div className="eclaria-intro__rays" aria-hidden="true" />
         <div className="eclaria-intro__glow" aria-hidden="true" />
-        <svg className="eclaria-intro__dove" viewBox="0 0 180 100" aria-hidden="true">
-          <g className="eclaria-intro__dove-wing eclaria-intro__dove-wing--left">
-            <path d="M82 53C61 31 35 19 7 20c14 22 35 42 61 48 10 2 17-4 22-13Z" />
-            <path className="eclaria-intro__dove-feather" d="M15 27c18 14 34 25 51 31M26 24c16 14 29 25 45 32M40 25c12 13 23 23 37 31" />
-          </g>
-          <g className="eclaria-intro__dove-wing eclaria-intro__dove-wing--right">
-            <path d="M101 54c20-22 44-35 72-34-14 22-35 42-61 48-9 2-16-4-21-14Z" />
-            <path className="eclaria-intro__dove-feather" d="M165 27c-18 14-34 25-51 31M154 24c-16 14-29 25-45 32M140 25c-12 13-23 23-37 31" />
-          </g>
-          <path className="eclaria-intro__dove-body" d="M65 57c8-16 22-25 39-25 16 0 29 8 39 24-10 15-25 23-43 23-16 0-29-7-35-22Z" />
-          <circle className="eclaria-intro__dove-head" cx="105" cy="31" r="12" />
-          <path className="eclaria-intro__dove-beak" d="m115 30 12 5-12 5Z" />
-          <circle cx="108" cy="28" r="2.4" fill="#0b1726" />
-        </svg>
         <div className="eclaria-intro__book" aria-hidden="true">
           <span className="eclaria-intro__cover eclaria-intro__cover--left" />
           <span className="eclaria-intro__cover eclaria-intro__cover--right" />
           <span className="eclaria-intro__page eclaria-intro__page--left" />
           <span className="eclaria-intro__page eclaria-intro__page--right" />
           <span className="eclaria-intro__spine" />
+        </div>
+        {/* Paloma real del logotipo (public/intro/paloma.webp) en tres capas: cada ala aletea desde su hombro. */}
+        <div className="eclaria-intro__dove" aria-hidden="true">
+          <span className="eclaria-intro__dove-part eclaria-intro__dove-part--wing-left" />
+          <span className="eclaria-intro__dove-part eclaria-intro__dove-part--wing-right" />
+          <span className="eclaria-intro__dove-part eclaria-intro__dove-part--body" />
         </div>
         <div className="eclaria-intro__halo" aria-hidden="true" />
         <Image className="eclaria-intro__logo" src="/eclaria-logo.jpg" alt="" width={320} height={320} priority />

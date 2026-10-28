@@ -10,7 +10,7 @@ test.describe("acceso al panel", () => {
   test("credenciales incorrectas muestran un error genérico", async ({ page }) => {
     await page.goto("/login");
     await page.getByLabel("Correo electrónico").fill(testUsers().admin.email);
-    await page.getByLabel("Contraseña").fill("contraseña-incorrecta");
+    await page.getByLabel(/^Contraseña/).fill("contraseña-incorrecta");
     await page.getByRole("button", { name: "Iniciar sesión" }).click();
     await expect(pageAlert(page)).toHaveText("Correo o contraseña incorrectos.");
   });
@@ -41,7 +41,7 @@ test.describe("acceso al panel", () => {
     await page.goto("/login");
     for (let i = 0; i < 6; i++) {
       await page.getByLabel("Correo electrónico").fill("ataque@e2e.test");
-      await page.getByLabel("Contraseña").fill(`intento-${i}`);
+      await page.getByLabel(/^Contraseña/).fill(`intento-${i}`);
       await page.getByRole("button", { name: "Iniciar sesión" }).click();
       await expect(pageAlert(page)).toBeVisible();
     }
