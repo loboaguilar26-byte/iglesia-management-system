@@ -52,6 +52,10 @@ pnpm dev                # http://localhost:3000
 
 Antes de compilar (`pnpm build`) detén `pnpm dev`: ambos usan la carpeta `.next`.
 
+## Asistente de desarrollo
+
+El repositorio incluye **ChetoOMG**, un coordinador para analizar, corregir y validar cambios desde Claude Code. Inícialo desde la raíz con `claude --agent chetoomg` o usa `/cheto-orchestrate <objetivo>` dentro de una sesión. La configuración, los agentes especializados y sus restricciones están documentados en [docs/orchestrator/README.md](docs/orchestrator/README.md).
+
 ## Estructura de carpetas
 
 ```
