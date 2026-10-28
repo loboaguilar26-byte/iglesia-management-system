@@ -4,13 +4,13 @@ import Image from "next/image";
 import { useEffect, useRef, useSyncExternalStore } from "react";
 
 /*
- * Intro de Eclaria: la paloma vuela sobre la Biblia que se abre y aparece el logotipo (diseño de
- * main). Se muestra una vez por sesión, se puede omitir (botón o Escape) y no aparece con
+ * Intro de Eclaria: la Biblia se abre, la paloma sale volando hacia la luz y aparece el logotipo
+ * centrado (diseño de main, coreografía en globals.css). Se muestra una vez por sesión, se puede omitir (botón o Escape) y no aparece con
  * "reducir movimiento".
  */
 const STORAGE_KEY = "eclaria-intro-seen";
 const CHANGE_EVENT = "iglesia-intro-change";
-const INTRO_DURATION = 4200;
+const INTRO_DURATION = 4600;
 let replayRequested = false;
 
 function getSnapshot() {
@@ -69,7 +69,9 @@ export function BookOpeningIntro({ churchName, playOnMount = false }: { churchNa
       <button ref={skipButton} className="eclaria-intro__skip" type="button" onClick={markIntroSeen}>
         Omitir introducción
       </button>
+      <div className="eclaria-intro__stars" aria-hidden="true" />
       <div className="eclaria-intro__stage">
+        <div className="eclaria-intro__rays" aria-hidden="true" />
         <div className="eclaria-intro__glow" aria-hidden="true" />
         <svg className="eclaria-intro__dove" viewBox="0 0 180 100" aria-hidden="true">
           <g className="eclaria-intro__dove-wing eclaria-intro__dove-wing--left">
@@ -92,6 +94,7 @@ export function BookOpeningIntro({ churchName, playOnMount = false }: { churchNa
           <span className="eclaria-intro__page eclaria-intro__page--right" />
           <span className="eclaria-intro__spine" />
         </div>
+        <div className="eclaria-intro__halo" aria-hidden="true" />
         <Image className="eclaria-intro__logo" src="/eclaria-logo.jpg" alt="" width={320} height={320} priority />
       </div>
     </div>

@@ -582,3 +582,39 @@ describe("confesiones", () => {
     vi.unstubAllEnvs();
   });
 });
+
+describe("capillas como franquicia", () => {
+  it("cada capilla tiene identidad propia y solo las activas y públicas aparecen en el sitio", async () => {
+    await resetDatabase();
+    const chapels = await import("@/modules/chapels/service");
+    const pub = await import("@/modules/public/service");
+    const admin = await createTestUser(["ADMIN"]);
+    const secretary = await createTestUser(["SECRETARY"]);
+    const norte = await chapels.saveChapel(admin, null, { name: "Capilla Norte", code: "NORTE" });
+    const sur = await chapels.saveChapel(admin, null, { name: "Capilla Sur", code: "SUR" });
+
+    await expectCode(chapels.saveChapelIdentity(secretary, norte.id, { primaryColor: "#123456", accentColor: "#abcdef" }), "FORBIDDEN");
+    await expectCode(chapels.saveChapelIdentity(admin, norte.id, { primaryColor: "rojo", accentColor: "#abcdef" }), "VALIDATION_ERROR");
+    await expectCode(chapels.saveChapelIdentity(admin, norte.id, { primaryColor: "#123456", accentColor: "#abcdef", mapUrl: "javascript:alert(1)" }), "VALIDATION_ERROR");
+    await chapels.saveChapelIdentity(admin, norte.id, {
+      isPublic: "on",
+      primaryColor: "#123456",
+      accentColor: "#ABCDEF",
+      tagline: "Fe en el barrio",
+      scheduleText: "Domingo 10:00",
+      mapUrl: "https://maps.example.test/norte",
+    });
+    await chapels.saveChapelIdentity(admin, sur.id, { primaryColor: "#654321", accentColor: "#fedcba" }); // isPublic sin marcar: oculta
+
+    const listed = await pub.getPublicChapels();
+    expect(listed.map((c) => c.code)).toEqual(["NORTE"]);
+    const page = await pub.getPublicChapel("norte");
+    expect(page?.chapel).toMatchObject({ name: "Capilla Norte", primaryColor: "#123456", tagline: "Fe en el barrio" });
+    expect(page?.chapel).not.toHaveProperty("managerMemberId");
+    expect(await pub.getPublicChapel("sur")).toBeNull();
+
+    await chapels.setChapelStatus(admin, norte.id, { status: "INACTIVE" });
+    expect(await pub.getPublicChapel("norte")).toBeNull();
+    expect(await db.auditLog.count({ where: { action: "chapel.identity_update" } })).toBe(2);
+  });
+});
