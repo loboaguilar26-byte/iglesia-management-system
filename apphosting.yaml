@@ -3,6 +3,8 @@
 #   firebase apphosting:secrets:set DATABASE_URL
 #   firebase apphosting:secrets:set BETTER_AUTH_SECRET
 #   firebase apphosting:secrets:set CONFESSIONS_ENCRYPTION_KEY
+#   firebase apphosting:secrets:set GOOGLE_CLIENT_ID
+#   firebase apphosting:secrets:set GOOGLE_CLIENT_SECRET
 
 runConfig:
   minInstances: 0 # sin tráfico no hay instancias encendidas (menor costo)
@@ -18,6 +20,10 @@ env:
     secret: BETTER_AUTH_SECRET
   - variable: CONFESSIONS_ENCRYPTION_KEY
     secret: CONFESSIONS_ENCRYPTION_KEY
+  - variable: GOOGLE_CLIENT_ID
+    secret: GOOGLE_CLIENT_ID
+  - variable: GOOGLE_CLIENT_SECRET
+    secret: GOOGLE_CLIENT_SECRET
   - variable: BETTER_AUTH_URL
     value: https://iglesia--iglesia-gestion-mx.us-central1.hosted.app
   - variable: DEFAULT_TIMEZONE

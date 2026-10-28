@@ -5,11 +5,15 @@ import { nextCookies } from "better-auth/next-js";
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "./auth-rules";
 import { db } from "./db";
 import { sendMail } from "./mailer";
+import { onSelfSignup } from "@/modules/users/self-signup";
 
 function listFromEnv(value: string | undefined) {
   const items = value?.split(",").map((s) => s.trim()).filter(Boolean);
   return items?.length ? items : undefined;
 }
+
+/** Google se activa solo si existen sus credenciales (GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET). */
+export const googleEnabled = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 
 export const auth = betterAuth({
   appName: "Eclaria",
@@ -19,7 +23,8 @@ export const auth = betterAuth({
   trustedOrigins: listFromEnv(process.env.AUTH_TRUSTED_ORIGINS),
   emailAndPassword: {
     enabled: true,
-    // No hay registro público: los usuarios los crea un administrador.
+    // Con correo y contraseña no hay registro público: esas cuentas las crea un administrador.
+    // El registro por cuenta propia es solo con Google (correo ya verificado por Google).
     disableSignUp: true,
     minPasswordLength: PASSWORD_MIN_LENGTH,
     maxPasswordLength: PASSWORD_MAX_LENGTH,
@@ -32,6 +37,19 @@ export const auth = betterAuth({
         text: `Hola ${user.name}:\n\nPara restablecer tu contraseña abre este enlace (vence en 30 minutos):\n${url}\n\nSi no lo solicitaste, ignora este mensaje.`,
       });
     },
+  },
+  socialProviders: googleEnabled
+    ? {
+        google: {
+          clientId: process.env.GOOGLE_CLIENT_ID!,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+          prompt: "select_account",
+        },
+      }
+    : {},
+  account: {
+    // Si el personal ya tiene cuenta con ese correo, entrar con Google la usa (no crea otra).
+    accountLinking: { enabled: true, trustedProviders: ["google"] },
   },
   user: {
     additionalFields: {
@@ -63,6 +81,14 @@ export const auth = betterAuth({
     },
   },
   databaseHooks: {
+    user: {
+      create: {
+        // Solo lo dispara el alta por cuenta propia (Google): rol Miembro y vínculo por correo.
+        after: async (user) => {
+          await onSelfSignup({ id: user.id, email: user.email });
+        },
+      },
+    },
     session: {
       create: {
         // Un usuario desactivado no puede iniciar sesión.
