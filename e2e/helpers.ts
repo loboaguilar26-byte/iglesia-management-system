@@ -29,7 +29,7 @@ export const pageStatus = (page: Page) => page.getByRole("main").getByRole("stat
 export async function login(page: Page, user: { email: string; password: string }) {
   await page.goto("/login");
   await page.getByLabel("Correo electrónico").fill(user.email);
-  await page.getByLabel("Contraseña").fill(user.password);
+  await page.getByLabel(/^Contraseña/).fill(user.password);
   await page.getByRole("button", { name: "Iniciar sesión" }).click();
   await expect(page).toHaveURL(/\/admin$/);
 }
