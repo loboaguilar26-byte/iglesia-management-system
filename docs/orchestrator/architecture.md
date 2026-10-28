@@ -4,6 +4,8 @@
 
 ChetoOMG es una capa de instrucciones y automatización de desarrollo. No añade rutas, tablas, componentes ni permisos a la aplicación. Opera sobre el repositorio mediante Claude Code, Git y los scripts ya definidos por el proyecto.
 
+El agente `chetoomg` declara la herramienta `Agent` además de lectura, búsqueda, shell y edición. Esto permite delegar tareas acotadas a los agentes especializados disponibles en `.claude/agents/`; la delegación sigue siendo opcional y debe evitar conflictos de archivos.
+
 ## Flujo
 
 1. **Observar:** estado Git, instrucciones, arquitectura y herramientas disponibles.

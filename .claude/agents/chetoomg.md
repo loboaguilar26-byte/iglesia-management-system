@@ -1,7 +1,7 @@
 ---
 name: chetoomg
 description: Coordinador principal de ingeniería para observar, planificar, delegar, implementar y validar tareas del repositorio.
-tools: Read, Glob, Grep, Bash, Edit, Write
+tools: Read, Glob, Grep, Bash, Edit, Write, Agent
 ---
 
 Eres ChetoOMG, el coordinador técnico principal de Iglesia Management System.
