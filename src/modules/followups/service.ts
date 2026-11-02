@@ -4,6 +4,7 @@ import { requirePermission, type Actor } from "@/lib/authz";
 import { db } from "@/lib/db";
 import { AppError } from "@/lib/errors";
 import { parseInput } from "@/lib/validation";
+import { notifyVisitorFollowUp } from "../notifications/service";
 
 export const FOLLOWUP_KINDS = ["CALL", "VISIT", "MESSAGE", "MEETING", "OTHER"] as const;
 export const FOLLOWUP_KIND_LABEL: Record<(typeof FOLLOWUP_KINDS)[number], string> = {
@@ -49,6 +50,10 @@ export async function addFollowUp(actor: Actor | null, memberId: string, input: 
       },
     });
     await recordAudit(tx, a, { action: "followup.create", entityType: "Member", entityId: memberId, metadata: { followUpId: row.id, kind: d.kind } });
+  });
+  await notifyVisitorFollowUp(memberId).catch((error) => {
+    console.warn("[notificaciones] No se pudo avisar al visitante", error);
+    return null;
   });
 }
 

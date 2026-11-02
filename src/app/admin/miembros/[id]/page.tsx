@@ -19,6 +19,7 @@ import { FollowUpForm } from "../../seguimiento/followup-form";
 import { createPortalAccountAction, setMemberStatusAction, updateMemberAction } from "../actions";
 import { MemberForm } from "../member-form";
 import { statusTone } from "../status-tone";
+import { getMemberTimeline } from "@/modules/members/timeline";
 
 export const metadata: Metadata = { title: "Ficha de miembro" };
 
@@ -34,7 +35,10 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/a
     }),
     getChurchTimezone(),
   ]);
-  const followUps = can(actor, "followup:read") ? await memberFollowUps(actor, m.id) : null;
+  const [followUps, timeline] = await Promise.all([
+    can(actor, "followup:read") ? memberFollowUps(actor, m.id) : Promise.resolve(null),
+    getMemberTimeline(actor, m.id),
+  ]);
   const today = toDateInput(new Date(), tz);
 
   return (
@@ -178,6 +182,24 @@ export default async function MemberPage({ params, searchParams }: PageProps<"/a
           </Card>
         </section>
       ) : null}
+      <section id="linea-tiempo" className="scroll-mt-20">
+        <Card title="Línea de tiempo" description="Relación histórica de esta persona con la iglesia. Solo muestra información permitida por tu rol.">
+          {timeline.length === 0 ? (
+            <EmptyState title="Sin actividad registrada" />
+          ) : (
+            <ol className="relative flex flex-col gap-4 border-l-2 border-border pl-6">
+              {timeline.map((item, index) => (
+                <li key={`${item.kind}-${item.date.toISOString()}-${index}`} className="relative">
+                  <span aria-hidden className="absolute -left-[31px] top-1 size-3 rounded-full bg-primary ring-4 ring-surface" />
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted">{item.kind} · {formatDate(item.date, tz)}</p>
+                  {item.href ? <Link href={item.href} className="font-medium text-primary hover:underline">{item.title}</Link> : <p className="font-medium">{item.title}</p>}
+                  {item.detail ? <p className="text-sm text-muted">{item.detail}</p> : null}
+                </li>
+              ))}
+            </ol>
+          )}
+        </Card>
+      </section>
     </div>
   );
 }

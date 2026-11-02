@@ -6,6 +6,7 @@ import { formToObject, toActionState, type ActionState } from "@/lib/action-stat
 import { refreshPublicSite } from "@/lib/public-cache";
 import { getActor } from "@/lib/session";
 import { cancelEvent, createEvent, updateEvent } from "@/modules/events/service";
+import { sendEventReminder } from "@/modules/notifications/service";
 
 function eventInput(form: FormData) {
   return { ...formToObject(form), responsibles: form.getAll("responsibles") };
@@ -40,7 +41,18 @@ export async function cancelEventAction(id: string, _prev: ActionState, form: Fo
   } catch (error) {
     return toActionState(error, form);
   }
+
   refreshPublicSite();
   revalidatePath(`/admin/eventos/${id}`);
   return { ok: true, message: "Evento cancelado." };
+}
+
+export async function sendEventReminderAction(id: string, _prev: ActionState): Promise<ActionState> {
+  try {
+    const sent = await sendEventReminder(await getActor(), id);
+    revalidatePath(`/admin/eventos/${id}`);
+    return { ok: true, message: `Recordatorio enviado a ${sent.length} responsable(s).` };
+  } catch (error) {
+    return toActionState(error);
+  }
 }

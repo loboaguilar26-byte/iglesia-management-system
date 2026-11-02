@@ -73,6 +73,11 @@
 - Solo datos marcados `PUBLIC`; DTOs públicos con campos explícitos.
 - Formulario de contacto: **[P]** (requiere decidir a dónde llegan los mensajes y aviso de privacidad).
 
+### RF-12 Notificaciones y línea de tiempo
+- Se registran notificaciones de correo para confirmaciones de asistencia, recordatorios de eventos y avisos a visitantes contactados.
+- La entrega queda auditada por estado (`PENDING`, `SENT`, `FAILED`); WhatsApp queda preparado para conectar un proveedor externo.
+- La ficha de cada miembro muestra una línea de tiempo con ingreso, asistencia, ministerios, seguimiento, eventos bajo su responsabilidad y aportaciones propias cuando el rol tiene permiso financiero.
+
 ## Requisitos no funcionales
 
 | ID | Requisito |

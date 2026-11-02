@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ActionForm, SubmitButton } from "@/components/ui/action-form";
+import { ActionButton } from "@/components/ui/action-button";
 import { Alert } from "@/components/ui/alert";
 import { buttonClass } from "@/components/ui/button";
 import { TextArea } from "@/components/ui/field";
@@ -14,7 +15,7 @@ import { EVENT_STATUS_LABEL, VISIBILITY_LABEL } from "@/modules/events/schema";
 import { getEvent, listEventTypes, ministryOptionsFor } from "@/modules/events/service";
 import { eventRsvpSummary } from "@/modules/portal/engagement";
 import { getChurchTimezone } from "@/modules/settings/service";
-import { cancelEventAction, updateEventAction } from "../actions";
+import { cancelEventAction, sendEventReminderAction, updateEventAction } from "../actions";
 import { EventForm } from "../event-form";
 
 export const metadata: Metadata = { title: "Evento" };
@@ -47,6 +48,7 @@ export default async function EventPage({ params, searchParams }: PageProps<"/ad
           <>
             {can(actor, "attendance:read") && !cancelled ? <Link href={`/admin/asistencia/${e.id}`} className={buttonClass("accent")}>Asistencia ({e._count.attendances})</Link> : null}
             {can(actor, "events:create") ? <Link href={`/admin/eventos/nuevo?copiar=${e.id}`} className={buttonClass("secondary")}>Duplicar</Link> : null}
+            {can(actor, "events:update") && !cancelled ? <ActionButton action={sendEventReminderAction.bind(null, e.id)} variant="secondary">Enviar recordatorio</ActionButton> : null}
           </>
         }
       />
