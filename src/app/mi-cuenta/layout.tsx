@@ -31,10 +31,10 @@ async function PortalShell({ children }: { children: ReactNode }) {
           <Link href="/" className="flex min-w-0 items-center gap-3">
             {settings.logoPath ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={`/media/logo?v=${encodeURIComponent(settings.logoPath)}`} alt="" className="size-9 rounded-lg object-contain" />
+              <img src={`/media/logo?v=${encodeURIComponent(settings.logoPath)}`} alt="" className="size-9 rounded-full object-cover" />
             ) : (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src="/eclaria-icon.png" alt="" className="size-9 rounded-lg object-contain" />
+              <img src="/branding/eclaria-logo.jpg" alt="" className="size-9 rounded-full object-cover" />
             )}
             <span className="min-w-0">
               <span className="block truncate font-display font-semibold leading-tight">{settings.name}</span>
