@@ -77,20 +77,20 @@ export function BookOpeningIntro({ churchName, playOnMount = false }: { churchNa
       </button>
       <div className="eclaria-intro__stars" aria-hidden="true" />
       <div className="eclaria-intro__stage">
-        <div className="eclaria-intro__rays" aria-hidden="true" />
-        <div className="eclaria-intro__glow" aria-hidden="true" />
-        <div className="eclaria-intro__book" aria-hidden="true">
-          <span className="eclaria-intro__cover eclaria-intro__cover--left" />
-          <span className="eclaria-intro__cover eclaria-intro__cover--right" />
-          <span className="eclaria-intro__page eclaria-intro__page--left" />
-          <span className="eclaria-intro__page eclaria-intro__page--right" />
-          <span className="eclaria-intro__spine" />
-        </div>
-        {/* Paloma real del logotipo (public/intro/paloma.webp) en tres capas: cada ala aletea desde su hombro. */}
+      <div className="eclaria-intro__rays" aria-hidden="true" />
+      <div className="eclaria-intro__glow" aria-hidden="true" />
+      <div className="eclaria-intro__book" aria-hidden="true">
+        <span className="eclaria-intro__cover eclaria-intro__cover--left" />
+        <span className="eclaria-intro__cover eclaria-intro__cover--right" />
+        <span className="eclaria-intro__page eclaria-intro__page--left" />
+        <span className="eclaria-intro__page eclaria-intro__page--right" />
+        <span className="eclaria-intro__spine" />
+        <span className="eclaria-intro__bookmark" />
+      </div>
+        {/* Paloma completa para evitar saltos entre capas recortadas durante el vuelo. */}
         <div className="eclaria-intro__dove" aria-hidden="true">
-          <span className="eclaria-intro__dove-part eclaria-intro__dove-part--wing-left" />
-          <span className="eclaria-intro__dove-part eclaria-intro__dove-part--wing-right" />
-          <span className="eclaria-intro__dove-part eclaria-intro__dove-part--body" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/intro/paloma.webp" alt="" width={880} height={740} />
         </div>
         <div className="eclaria-intro__halo" aria-hidden="true" />
         <Image className="eclaria-intro__logo" src="/branding/eclaria-logo.jpg" alt="" width={320} height={320} priority />

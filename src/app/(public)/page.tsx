@@ -28,6 +28,7 @@ export default async function HomePage() {
     <>
       {/* Portada */}
       <section className="aurora relative overflow-hidden text-white">
+        <div aria-hidden className="aurora__backdrop" />
         {s.coverPath ? (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
