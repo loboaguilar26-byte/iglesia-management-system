@@ -5,25 +5,25 @@
  * Mismos tokens que usan los componentes; el tema oscuro es azul profundo con acentos dorados.
  */
 :root {
-  --background: #edf5ef;
-  --surface: #f8fcf8;
-  --surface-2: #e2eee5;
-  --foreground: #17352a;
-  --muted: #60766a;
-  --border: #cbded0;
-  --primary: #1f5a43;
-  --primary-strong: #174534;
-  --primary-foreground: #f5fbf6;
-  --accent: #c8832a;
-  --accent-foreground: #fffdf5;
-  --accent-soft: #f3ead4;
+  --background: #f4e7d8;
+  --surface: #fff8ef;
+  --surface-2: #ead4bd;
+  --foreground: #3a2418;
+  --muted: #765b48;
+  --border: #d9b99a;
+  --primary: #8a4823;
+  --primary-strong: #642f18;
+  --primary-foreground: #fff8ef;
+  --accent: #c8752d;
+  --accent-foreground: #fff9f0;
+  --accent-soft: #f3d9b9;
   --danger: #b91c1c;
   --success: #15803d;
   --warning: #a2611a;
   --ring: #c8832a;
-  --sidebar: #17392d;
-  --sidebar-foreground: #e2f0e5;
-  /* Verde de marca para el tema claro; las portadas conservan su identidad azul. */
+  --sidebar: #4b281b;
+  --sidebar-foreground: #f8e9d8;
+  /* Café cálido de marca para el tema claro; las portadas conservan su identidad azul. */
   --brand: #10253d;
   --brand-deep: #08111f;
 }
@@ -76,24 +76,26 @@
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --background: #edf5ef;
-  --surface: #f8fcf8;
-  --surface-2: #e2eee5;
-  --foreground: #17352a;
-  --muted: #60766a;
-  --border: #cbded0;
-  --primary: #1f5a43;
-  --primary-strong: #174534;
-  --primary-foreground: #f5fbf6;
-  --accent: #c8832a;
-  --accent-foreground: #fffdf5;
-  --accent-soft: #f3ead4;
+  --background: #f4e7d8;
+  --surface: #fff8ef;
+  --surface-2: #ead4bd;
+  --foreground: #3a2418;
+  --muted: #765b48;
+  --border: #d9b99a;
+  --primary: #8a4823;
+  --primary-strong: #642f18;
+  --primary-foreground: #fff8ef;
+  --accent: #c8752d;
+  --accent-foreground: #fff9f0;
+  --accent-soft: #f3d9b9;
   --danger: #b91c1c;
   --success: #15803d;
   --warning: #a2611a;
   --ring: #c8832a;
-  --sidebar: #17392d;
-  --sidebar-foreground: #e2f0e5;
+  --sidebar: #4b281b;
+  --sidebar-foreground: #f8e9d8;
+  --brand: #6f351d;
+  --brand-deep: #3d1d12;
 }
 
 @theme inline {
@@ -226,6 +228,19 @@ h3 {
   content: "";
   pointer-events: none;
 }
+
+:root[data-theme="light"] .aurora__backdrop {
+  background:
+    linear-gradient(90deg, rgb(61 29 18 / 74%), rgb(111 53 29 / 56%) 52%, rgb(61 29 18 / 72%)),
+    linear-gradient(180deg, rgb(138 72 35 / 48%), rgb(61 29 18 / 72%)),
+    url("/branding/public-intro-sky.png") center top / cover no-repeat;
+  filter: sepia(.62) saturate(.78) hue-rotate(335deg) blur(8px);
+}
+
+:root[data-theme="light"] .aurora::after {
+  background: radial-gradient(ellipse at 70% 30%, transparent 12%, rgb(61 29 18 / 34%) 82%);
+}
+
 @property --ax {
   syntax: "<percentage>";
   inherits: false;
