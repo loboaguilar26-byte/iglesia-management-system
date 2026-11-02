@@ -12,7 +12,7 @@
 | Eventos | `events:read`, `events:create`, `events:update`, `events:cancel` |
 | Ministerios | `ministries:read`, `ministries:create`, `ministries:update`, `ministries:manage_members` |
 | Finanzas | `finance:dashboard` (solo totales), `finance:read`, `finance:create`, `finance:review_giving`, `finance:update`, `finance:void`, `finance:export`, `finance:configure` |
-| Comunicados | `announcements:read`, `announcements:create`, `announcements:update`, `announcements:publish`, `announcements:archive` |
+| Comunicados | `announcements:read`, `announcements:create`, `announcements:update`, `announcements:publish`, `announcements:archive`, `announcements:delete` |
 | Reportes | `reports:members`, `reports:attendance`, `reports:ministries`, `reports:finance` |
 | Configuración | `settings:read`, `settings:update` |
 | Auditoría | `audit:read`, `audit:read_finance` |
@@ -56,7 +56,7 @@ Leyenda: ✅ total · 🔸 acotado a lo asignado (scope) · — sin acceso
 | finance:dashboard (totales de hoy y semana) | ✅ | — | — | ✅ | — |
 | announcements:read | ✅ | ✅ | ✅ | ✅ | ✅ |
 | announcements:create/update | ✅ | ✅ | ✅ | — | ✅ (propios) |
-| announcements:publish/archive | ✅ | ✅ | ✅ | — | — |
+| announcements:publish/archive/delete | ✅ | ✅ | ✅ | — | — |
 | reports:members | ✅ | ✅ | ✅ | — | — |
 | reports:attendance | ✅ | ✅ | ✅ | — | 🔸 |
 | reports:ministries | ✅ | ✅ | ✅ | — | 🔸 |

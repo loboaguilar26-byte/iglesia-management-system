@@ -103,3 +103,13 @@ export async function setAnnouncementStatus(actor: Actor | null, id: string, sta
     await recordAudit(tx, a, { action: `announcement.${status.toLowerCase()}`, entityType: "Announcement", entityId: id });
   });
 }
+
+export async function deleteAnnouncement(actor: Actor | null, id: string) {
+  const a = requirePermission(actor, "announcements:delete");
+  await db.$transaction(async (tx) => {
+    const current = await tx.announcement.findUnique({ where: { id }, select: { id: true } });
+    if (!current) throw new AppError("NOT_FOUND", "Comunicado no encontrado.");
+    await tx.announcement.delete({ where: { id } });
+    await recordAudit(tx, a, { action: "announcement.delete", entityType: "Announcement", entityId: id });
+  });
+}
