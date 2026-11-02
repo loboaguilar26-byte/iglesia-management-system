@@ -5,25 +5,25 @@
  * Mismos tokens que usan los componentes; el tema oscuro es azul profundo con acentos dorados.
  */
 :root {
-  --background: #f5f0e8;
-  --surface: #fffdf8;
-  --surface-2: #efe7da;
-  --foreground: #122033;
-  --muted: #687386;
-  --border: #e7dcc9;
-  --primary: #10253d;
-  --primary-strong: #0b1a2c;
-  --primary-foreground: #fffaf0;
+  --background: #edf5ef;
+  --surface: #f8fcf8;
+  --surface-2: #e2eee5;
+  --foreground: #17352a;
+  --muted: #60766a;
+  --border: #cbded0;
+  --primary: #1f5a43;
+  --primary-strong: #174534;
+  --primary-foreground: #f5fbf6;
   --accent: #c8832a;
-  --accent-foreground: #fffaf0;
-  --accent-soft: #f6e7cc;
+  --accent-foreground: #fffdf5;
+  --accent-soft: #f3ead4;
   --danger: #b91c1c;
   --success: #15803d;
   --warning: #a2611a;
   --ring: #c8832a;
-  --sidebar: #0b1726;
-  --sidebar-foreground: #e6dcc8;
-  /* Azul de marca: igual en ambos temas, para portadas y bandas con texto claro. */
+  --sidebar: #17392d;
+  --sidebar-foreground: #e2f0e5;
+  /* Verde de marca para el tema claro; las portadas conservan su identidad azul. */
   --brand: #10253d;
   --brand-deep: #08111f;
 }
@@ -76,24 +76,24 @@
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --background: #f5f0e8;
-  --surface: #fffdf8;
-  --surface-2: #efe7da;
-  --foreground: #122033;
-  --muted: #687386;
-  --border: #e7dcc9;
-  --primary: #10253d;
-  --primary-strong: #0b1a2c;
-  --primary-foreground: #fffaf0;
+  --background: #edf5ef;
+  --surface: #f8fcf8;
+  --surface-2: #e2eee5;
+  --foreground: #17352a;
+  --muted: #60766a;
+  --border: #cbded0;
+  --primary: #1f5a43;
+  --primary-strong: #174534;
+  --primary-foreground: #f5fbf6;
   --accent: #c8832a;
-  --accent-foreground: #fffaf0;
-  --accent-soft: #f6e7cc;
+  --accent-foreground: #fffdf5;
+  --accent-soft: #f3ead4;
   --danger: #b91c1c;
   --success: #15803d;
   --warning: #a2611a;
   --ring: #c8832a;
-  --sidebar: #0b1726;
-  --sidebar-foreground: #e6dcc8;
+  --sidebar: #17392d;
+  --sidebar-foreground: #e2f0e5;
 }
 
 @theme inline {
