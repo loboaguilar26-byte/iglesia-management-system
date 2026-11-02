@@ -8,7 +8,7 @@ import { AppError } from "@/lib/errors";
 import { requirePageActor } from "@/lib/session";
 import { ANNOUNCEMENT_STATUS_LABEL, getAnnouncement } from "@/modules/announcements/service";
 import { getChurchTimezone } from "@/modules/settings/service";
-import { setAnnouncementStatusAction, updateAnnouncementAction } from "../actions";
+import { deleteAnnouncementAction, setAnnouncementStatusAction, updateAnnouncementAction } from "../actions";
 import { AnnouncementForm } from "../announcement-form";
 
 export const metadata: Metadata = { title: "Comunicado" };
@@ -34,6 +34,7 @@ export default async function AnnouncementPage({ params }: PageProps<"/admin/com
             {a.status === "DRAFT" && can(actor, "announcements:publish") ? <ActionButton action={setAnnouncementStatusAction.bind(null, a.id, "PUBLISHED")} variant="primary">Publicar</ActionButton> : null}
             {a.status !== "ARCHIVED" && can(actor, "announcements:archive") ? <ActionButton action={setAnnouncementStatusAction.bind(null, a.id, "ARCHIVED")} confirmMessage="¿Archivar este comunicado? Dejará de mostrarse." variant="secondary">Archivar</ActionButton> : null}
             {a.status === "ARCHIVED" && can(actor, "announcements:publish") ? <ActionButton action={setAnnouncementStatusAction.bind(null, a.id, "PUBLISHED")}>Restaurar</ActionButton> : null}
+            {can(actor, "announcements:delete") ? <ActionButton action={deleteAnnouncementAction.bind(null, a.id)} confirmMessage="¿Eliminar definitivamente este comunicado? Esta acción no se puede deshacer." variant="danger">Eliminar</ActionButton> : null}
           </>
         }
       />

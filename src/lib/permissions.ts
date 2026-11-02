@@ -48,6 +48,7 @@ export const PERMISSIONS = {
   "announcements:update": "Editar comunicados",
   "announcements:publish": "Publicar comunicados",
   "announcements:archive": "Archivar comunicados",
+  "announcements:delete": "Eliminar comunicados permanentemente",
 
   "reports:members": "Reportes de miembros",
   "reports:attendance": "Reportes de asistencia",

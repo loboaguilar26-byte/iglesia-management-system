@@ -50,7 +50,7 @@
 - Sin pagos en línea. **[C]**
 
 ### RF-07 Comunicados [C]
-- Crear, editar, archivar (no borrado físico en v1 **[R]**), autor, fecha de publicación, vigencia (desde/hasta), destacado, visibilidad pública/privada.
+- Crear, editar, archivar y eliminar definitivamente, autor, fecha de publicación, vigencia (desde/hasta), destacado, visibilidad pública/privada.
 - Modelo preparado para notificaciones (`AnnouncementDelivery` en v2) — no se simula.
 
 ### RF-08 Dashboard [C]

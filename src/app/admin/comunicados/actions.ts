@@ -6,7 +6,7 @@ import { formToObject, toActionState, type ActionState } from "@/lib/action-stat
 import { refreshPublicSite } from "@/lib/public-cache";
 import { getActor } from "@/lib/session";
 import type { AnnouncementStatus } from "@/generated/prisma/client";
-import { createAnnouncement, setAnnouncementStatus, updateAnnouncement } from "@/modules/announcements/service";
+import { createAnnouncement, deleteAnnouncement, setAnnouncementStatus, updateAnnouncement } from "@/modules/announcements/service";
 
 export async function createAnnouncementAction(_prev: ActionState, form: FormData): Promise<ActionState> {
   try {
@@ -40,4 +40,15 @@ export async function setAnnouncementStatusAction(id: string, status: Announceme
   revalidatePath("/admin/comunicados");
   revalidatePath(`/admin/comunicados/${id}`);
   return { ok: true };
+}
+
+export async function deleteAnnouncementAction(id: string, _prev: ActionState): Promise<ActionState> {
+  try {
+    await deleteAnnouncement(await getActor(), id);
+  } catch (error) {
+    return toActionState(error);
+  }
+  refreshPublicSite();
+  revalidatePath("/admin/comunicados");
+  redirect("/admin/comunicados");
 }

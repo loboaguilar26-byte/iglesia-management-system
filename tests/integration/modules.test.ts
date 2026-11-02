@@ -20,6 +20,7 @@ import {
 } from "@/modules/finance/service";
 import { createMember, getMember, listMembers, lookupMembers, setMemberStatus } from "@/modules/members/service";
 import { addMembership, getMinistry, saveMinistry } from "@/modules/ministries/service";
+import { deleteAnnouncement, setAnnouncementStatus } from "@/modules/announcements/service";
 import { buildReport } from "@/modules/reports/service";
 import { createTestUser, resetDatabase } from "../support/db";
 
@@ -304,6 +305,23 @@ describe("sitio público", () => {
     expect(serialized).not.toContain("privado@example.test");
     expect(serialized).not.toContain("5599999999");
     expect(Object.keys(events[0]).sort()).toEqual(["description", "endsAt", "id", "location", "startsAt", "status", "title", "type"]);
+  });
+});
+
+describe("comunicados", () => {
+  it("permite archivar y eliminar con permisos separados", async () => {
+    await resetDatabase();
+    const admin = await createTestUser(["ADMIN"]);
+    const treasurer = await createTestUser(["TREASURER"]);
+    const announcement = await db.announcement.create({
+      data: { title: "Aviso", body: "Contenido", authorId: admin.userId, status: "PUBLISHED", publishedAt: new Date() },
+    });
+
+    await setAnnouncementStatus(admin, announcement.id, "ARCHIVED");
+    await expect(db.announcement.findUnique({ where: { id: announcement.id } })).resolves.toMatchObject({ status: "ARCHIVED" });
+    await expectCode(deleteAnnouncement(treasurer, announcement.id), "FORBIDDEN");
+    await deleteAnnouncement(admin, announcement.id);
+    await expect(db.announcement.findUnique({ where: { id: announcement.id } })).resolves.toBeNull();
   });
 });
 
