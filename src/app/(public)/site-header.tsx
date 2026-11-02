@@ -3,7 +3,7 @@
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const LINKS = [
@@ -21,20 +21,42 @@ const LINKS = [
 export function SiteHeader({ name, logo }: { name: string; logo: string | null }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [logoOpen, setLogoOpen] = useState(false);
   const active = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
+  const logoSrc = logo ? `/media/logo?v=${encodeURIComponent(logo)}` : "/branding/eclaria-logo.jpg";
+
+  useEffect(() => {
+    if (!logoOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setLogoOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [logoOpen]);
+
   return (
-    <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur">
+    <>
+      <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-        <Link href="/" className="flex min-w-0 shrink-0 items-center gap-3" onClick={() => setOpen(false)}>
-          {logo ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={`/media/logo?v=${encodeURIComponent(logo)}`} alt="" className="size-9 rounded-full object-cover" />
-          ) : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src="/branding/eclaria-logo.jpg" alt="" className="size-9 rounded-full object-cover" />
-          )}
-          <span className="truncate font-display text-lg font-semibold">{name}</span>
-        </Link>
+        <div className="flex min-w-0 shrink-0 items-center gap-3">
+          <button
+            type="button"
+            className="rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            aria-label={`Ver logotipo de ${name}`}
+            onClick={() => setLogoOpen(true)}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={logoSrc} alt="" className="size-9 rounded-full object-cover transition-transform hover:scale-105" />
+          </button>
+          <Link href="/" className="truncate font-display text-lg font-semibold" onClick={() => setOpen(false)}>
+            {name}
+          </Link>
+        </div>
         <nav aria-label="Principal" className="hidden items-center gap-0.5 lg:flex">
           {LINKS.map((l) => (
             <Link key={l.href} href={l.href} aria-current={active(l.href) ? "page" : undefined} className={`rounded-full px-2.5 py-2 text-sm transition xl:px-3 ${active(l.href) ? "bg-primary text-primary-foreground" : "hover:bg-surface"}`}>
@@ -66,6 +88,29 @@ export function SiteHeader({ name, logo }: { name: string; logo: string | null }
           <Link href="/login?next=/mi-cuenta" onClick={() => setOpen(false)} className="block rounded-lg bg-accent px-3 py-3 text-center font-medium text-white">Acceder</Link>
         </nav>
       ) : null}
-    </header>
+      </header>
+      {logoOpen ? (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Logotipo de ${name}`}
+          onClick={() => setLogoOpen(false)}
+        >
+          <div className="relative size-[min(72vw,24rem)] max-h-[72vh] max-w-[24rem]" onClick={(event) => event.stopPropagation()}>
+            <button
+              type="button"
+              className="absolute -right-2 -top-2 z-10 flex size-9 items-center justify-center rounded-full bg-background text-foreground shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              aria-label="Cerrar logotipo"
+              onClick={() => setLogoOpen(false)}
+            >
+              <X aria-hidden className="size-5" />
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={logoSrc} alt={`Logotipo de ${name}`} className="size-full rounded-full object-cover shadow-2xl" />
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }
