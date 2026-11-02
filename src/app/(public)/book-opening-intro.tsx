@@ -41,7 +41,7 @@ function requestIntro() {
 export function BookOpeningIntro({ churchName, playOnMount = false }: { churchName: string; playOnMount?: boolean }) {
   // Se piden desde el inicio para que la paloma y el logotipo estén listos al aparecer.
   preload("/intro/paloma.webp", { as: "image", fetchPriority: "high" });
-  preload("/eclaria-logo.jpg", { as: "image", fetchPriority: "high" });
+  preload("/branding/eclaria-logo.jpg", { as: "image", fetchPriority: "high" });
   const visible = useSyncExternalStore(subscribe, getSnapshot, () => false);
   const skipButton = useRef<HTMLButtonElement>(null);
 
@@ -93,7 +93,7 @@ export function BookOpeningIntro({ churchName, playOnMount = false }: { churchNa
           <span className="eclaria-intro__dove-part eclaria-intro__dove-part--body" />
         </div>
         <div className="eclaria-intro__halo" aria-hidden="true" />
-        <Image className="eclaria-intro__logo" src="/eclaria-logo.jpg" alt="" width={320} height={320} priority />
+        <Image className="eclaria-intro__logo" src="/branding/eclaria-logo.jpg" alt="" width={320} height={320} priority />
       </div>
     </div>
   );

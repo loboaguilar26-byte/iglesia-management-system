@@ -432,7 +432,7 @@ h3 {
 .eclaria-intro__logo {
   width: min(64vw, 18rem);
   height: auto;
-  border-radius: 1.5rem;
+  border-radius: 50%;
   opacity: 0;
   box-shadow: 0 0 3rem rgb(232 168 61 / 35%);
   animation: eclaria-logo-in 1s cubic-bezier(.2,.8,.2,1) 2.95s both;
@@ -530,7 +530,7 @@ h3 {
 .auth-sky__logo {
   width: min(24rem, 32vw);
   height: auto;
-  border-radius: 1.75rem;
+  border-radius: 50%;
   animation: eclaria-logo-in 1s cubic-bezier(.2,.8,.2,1) both;
 }
 @keyframes auth-rays { to { transform: rotate(360deg); } }

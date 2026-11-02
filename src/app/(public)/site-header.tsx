@@ -28,10 +28,10 @@ export function SiteHeader({ name, logo }: { name: string; logo: string | null }
         <Link href="/" className="flex min-w-0 shrink-0 items-center gap-3" onClick={() => setOpen(false)}>
           {logo ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={`/media/logo?v=${encodeURIComponent(logo)}`} alt="" className="size-9 rounded-lg object-contain" />
+            <img src={`/media/logo?v=${encodeURIComponent(logo)}`} alt="" className="size-9 rounded-full object-cover" />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src="/eclaria-icon.png" alt="" className="size-9 rounded-lg object-contain" />
+            <img src="/branding/eclaria-logo.jpg" alt="" className="size-9 rounded-full object-cover" />
           )}
           <span className="truncate font-display text-lg font-semibold">{name}</span>
         </Link>
