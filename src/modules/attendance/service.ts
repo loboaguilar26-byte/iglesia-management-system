@@ -6,6 +6,7 @@ import { AppError } from "@/lib/errors";
 import { parseInput } from "@/lib/validation";
 import type { AttendanceStatus, Prisma } from "@/generated/prisma/client";
 import { eventScopeWhere, requireEventScope } from "../scope";
+import { notifyAttendanceConfirmation } from "../notifications/service";
 
 /** No se captura asistencia de eventos que empiezan más de 24 h en el futuro. */
 const FUTURE_LIMIT_MS = 24 * 3600 * 1000;
@@ -120,5 +121,13 @@ export async function saveAttendance(actor: Actor | null, eventId: string, input
       metadata: { created: creates.length, changes, visitorCount },
     });
   });
+  await Promise.all(
+    creates.map((entry) =>
+      notifyAttendanceConfirmation(entry.memberId, eventId, entry.status).catch((error) => {
+        console.warn("[notificaciones] No se pudo enviar confirmación de asistencia", error);
+        return null;
+      }),
+    ),
+  );
   return { created: creates.length, changed: changes.length };
 }

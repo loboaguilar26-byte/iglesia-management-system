@@ -9,6 +9,7 @@ import { coordinatedMinistryIds, eventScopeWhere, requireEventScope } from "../s
 import { getChurchTimezone } from "../settings/service";
 import { assertChapelAssignable } from "../chapels/service";
 import { cancelSchema, eventSchema } from "./schema";
+import { notifyScheduleChange } from "../notifications/service";
 
 export async function listEventTypes() {
   return db.eventType.findMany({ where: { isActive: true }, orderBy: { name: "asc" } });
@@ -99,7 +100,7 @@ export async function updateEvent(actor: Actor | null, id: string, input: unknow
   const a = await requireEventScope(actor, "events:update", id);
   const { responsibles, ...data } = await toData(input);
   if (!canFully(a, "events:update")) await assertCanUseMinistry(a, data.ministryId);
-  const before = await db.event.findUnique({ where: { id }, select: { status: true, chapelId: true } });
+  const before = await db.event.findUnique({ where: { id }, select: { status: true, chapelId: true, startsAt: true, endsAt: true } });
   await assertChapelAssignable(db, data.chapelId, before?.chapelId);
   if (before?.status === "CANCELLED") throw new AppError("CONFLICT", "Un evento cancelado no se puede editar.");
   await db.$transaction(async (tx) => {
@@ -108,6 +109,12 @@ export async function updateEvent(actor: Actor | null, id: string, input: unknow
     if (responsibles.length) await tx.eventResponsible.createMany({ data: responsibles.map((memberId) => ({ eventId: id, memberId })) });
     await recordAudit(tx, a, { action: "event.update", entityType: "Event", entityId: id });
   });
+  if (before && (before.startsAt.getTime() !== data.startsAt.getTime() || before.endsAt.getTime() !== data.endsAt.getTime())) {
+    await notifyScheduleChange(id, before.startsAt, before.endsAt).catch((error) => {
+      console.warn("[notificaciones] No se pudo avisar el cambio de horario", error);
+      return null;
+    });
+  }
 }
 
 export async function cancelEvent(actor: Actor | null, id: string, input: unknown) {

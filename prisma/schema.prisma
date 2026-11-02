@@ -297,6 +297,7 @@ model Member {
   rsvps               EventRsvp[]
   prayerRequests      PrayerRequest[]
   joinRequests        MinistryJoinRequest[]
+  notifications       Notification[]
 
   @@index([searchName])
   @@index([status])
@@ -348,6 +349,7 @@ model Event {
   rsvps        EventRsvp[]
   chapelId     String?
   chapel       Chapel?            @relation(fields: [chapelId], references: [id], onDelete: Restrict)
+  notifications Notification[]
 
   @@index([startsAt])
   @@index([visibility, status, startsAt])
@@ -667,6 +669,46 @@ model FollowUp {
   @@index([memberId, contactedOn])
   @@index([nextActionOn])
   @@map("follow_up")
+}
+
+enum NotificationChannel {
+  EMAIL
+  WHATSAPP
+}
+
+enum NotificationType {
+  EVENT_REMINDER
+  ATTENDANCE_CONFIRMATION
+  SCHEDULE_CHANGE
+  PASTORAL_REQUEST
+  VISITOR_FOLLOWUP
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+model Notification {
+  id          String             @id @default(cuid())
+  channel     NotificationChannel
+  type        NotificationType
+  status      NotificationStatus @default(PENDING)
+  recipient   String
+  subject     String
+  body        String
+  error       String?
+  memberId    String?
+  eventId     String?
+  createdAt   DateTime           @default(now()) @db.Timestamptz(3)
+  sentAt      DateTime?          @db.Timestamptz(3)
+  member      Member?            @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  event       Event?             @relation(fields: [eventId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([memberId, createdAt])
+  @@map("notification")
 }
 
 /// Archivos subidos pequeños (logotipo). Se guardan en la BD para funcionar en servidores sin disco persistente.

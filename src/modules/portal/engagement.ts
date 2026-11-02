@@ -7,6 +7,7 @@ import { formatDateOnly, formatDateTime, MONTHS, toDateInput, zonedParts } from 
 import { AppError } from "@/lib/errors";
 import { formatMoney } from "@/lib/money";
 import { parseInput } from "@/lib/validation";
+import { notifyPastoralRequest } from "@/modules/notifications/service";
 import type { Report } from "@/modules/reports/service";
 import { getSettingsInternal } from "@/modules/settings/service";
 import { requireMinistryScope } from "../scope";
@@ -188,6 +189,10 @@ export async function requestToJoinMinistry(actor: Actor | null, ministryId: str
   await db.$transaction(async (tx) => {
     const row = await tx.ministryJoinRequest.create({ data: { ministryId, memberId, message: message || null } });
     await recordAudit(tx, a, { action: "ministry.join_request", entityType: "Ministry", entityId: ministryId, metadata: { requestId: row.id } });
+  });
+  await notifyPastoralRequest().catch((error) => {
+    console.warn("[notificaciones] No se pudo avisar al equipo pastoral", error);
+    return null;
   });
 }
 
