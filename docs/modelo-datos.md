@@ -95,4 +95,6 @@ La base actual conserva los módulos operativos existentes y añade una capa no 
 - `ChurchMembership` permite que un usuario pertenezca a varias iglesias.
 - `ChurchRoleAssignment` prepara la asignación de un rol por iglesia.
 
+Una iglesia y una capilla con el mismo código se tratan como la misma sede: la ficha de la iglesia enlaza al sitio público y a la operación de la capilla (`pnpm db:seed:red` crea 20 sedes de ejemplo así, solo en desarrollo).
+
 Esta primera fase no migra ni reescribe los módulos existentes. La separación de miembros, eventos, asistencia, ministerios, aportaciones y comunicados por `churchId` debe hacerse módulo por módulo, con datos de migración y validación de alcance. Así se mantiene funcional el sistema actual mientras se incorpora la estructura de franquicia.

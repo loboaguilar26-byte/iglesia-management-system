@@ -337,6 +337,10 @@ export async function getChurchDetail(actor: Actor | null, id: string) {
     roles: church.roleAssignments.filter((r) => r.userId === m.user.id).map((r) => r.role),
   }));
   const readiness = churchReadiness({ code: church.code, profile: church.profile, teamCount: team.length });
+  // Una iglesia y una capilla con el mismo código son la misma sede: la capilla da el sitio público y la operación.
+  const chapel = church.code
+    ? await db.chapel.findUnique({ where: { code: church.code }, select: { id: true, code: true, isPublic: true, status: true } })
+    : null;
   const history = can(a, "audit:read")
     ? await db.auditLog.findMany({
         where: { entityType: "Church", entityId: id },
@@ -346,7 +350,7 @@ export async function getChurchDetail(actor: Actor | null, id: string) {
       })
     : null;
 
-  return { church, team, readiness, history };
+  return { church, team, readiness, history, chapel };
 }
 
 function maxLevel(actor: Actor) {

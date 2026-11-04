@@ -26,7 +26,8 @@
     "check:unused": "knip",
     "brand:dove": "node scripts/brand-dove.mjs",
     "vercel-build": "prisma generate && next build",
-    "db:seed:contenido": "tsx prisma/seed-contenido.ts"
+    "db:seed:contenido": "tsx prisma/seed-contenido.ts",
+    "db:seed:red": "tsx prisma/seed-red.ts"
   },
   "dependencies": {
     "@capacitor/app": "8.1.2",
