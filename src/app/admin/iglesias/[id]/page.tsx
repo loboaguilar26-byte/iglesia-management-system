@@ -62,6 +62,14 @@ export default async function ChurchDetailPage({ params, searchParams }: PagePro
                 </span>
                 <span>Alta {formatDate(c.createdAt)}</span>
               </p>
+              {d.chapel ? (
+                <p className="mt-3 flex flex-wrap gap-2 text-sm font-medium">
+                  {d.chapel.isPublic && d.chapel.status === "ACTIVE" ? (
+                    <Link href={`/capillas/${d.chapel.code.toLowerCase()}`} target="_blank" className="rounded-lg bg-white/15 px-3 py-1.5 hover:bg-white/25">Ver sitio público ↗</Link>
+                  ) : null}
+                  <Link href={`/admin/capillas/${d.chapel.id}`} className="rounded-lg bg-white/15 px-3 py-1.5 hover:bg-white/25">Miembros, eventos y aportaciones</Link>
+                </p>
+              ) : null}
             </div>
           </div>
           <div className="flex items-center gap-3 rounded-2xl bg-black/15 p-3 backdrop-blur">

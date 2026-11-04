@@ -4,6 +4,10 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Sin publicar]
 
+### Añadido — Red de 20 sedes de ejemplo
+- `pnpm db:seed:red` crea la red "Red Eclaria": la iglesia principal y 20 sedes ficticias con sitio en `/capillas/<código>`, ministerios y eventos propios. Bloqueado en producción.
+- La ficha de una iglesia enlaza a su sitio público y a su capilla cuando ambas comparten código.
+
 ### Añadido — Sitio publicado y acceso del equipo
 - Sitio en **https://eclaria-gilt.vercel.app** (Vercel Hobby + Neon Free): base de datos compartida por el sitio, el panel y la app.
 - Inicio de sesión y registro con Google (rol Miembro para cuentas nuevas), foto de portada y contenido inicial (`pnpm db:seed:contenido`).
