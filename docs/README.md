@@ -26,3 +26,4 @@
 | [plan-desarrollo.md](plan-desarrollo.md) | Fases y criterios de aceptación |
 | [analisis-alojamiento.md](analisis-alojamiento.md) | Comparación de alojamiento |
 | [despliegue.md](despliegue.md) | Publicación en Vercel + Neon, variables de entorno y respaldos |
+| [orchestrator/README.md](orchestrator/README.md) | ChetoOMG: orquestador de desarrollo para Claude Code |

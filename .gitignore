@@ -64,3 +64,6 @@ firebase-debug.log
 .vercel
 .env*.local
 
+
+# Ajustes personales de Claude Code
+.claude/settings.local.json
