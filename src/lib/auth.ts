@@ -5,7 +5,7 @@ import { nextCookies } from "better-auth/next-js";
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "./auth-rules";
 import { db } from "./db";
 import { sendMail } from "./mailer";
-import { onSelfSignup } from "@/modules/users/self-signup";
+import { onAccountLinked, onSelfSignup } from "@/modules/users/self-signup";
 
 function listFromEnv(value: string | undefined) {
   const items = value?.split(",").map((s) => s.trim()).filter(Boolean);
@@ -23,9 +23,8 @@ export const auth = betterAuth({
   trustedOrigins: listFromEnv(process.env.AUTH_TRUSTED_ORIGINS),
   emailAndPassword: {
     enabled: true,
-    // Con correo y contraseña no hay registro público: esas cuentas las crea un administrador.
-    // El registro por cuenta propia es solo con Google (correo ya verificado por Google).
-    disableSignUp: true,
+    // Registro público abierto en /registro: el correo no se verifica (no hay proveedor de correo),
+    // así que estas cuentas solo reciben el rol Miembro y nunca se vinculan solas a una ficha.
     minPasswordLength: PASSWORD_MIN_LENGTH,
     maxPasswordLength: PASSWORD_MAX_LENGTH,
     resetPasswordTokenExpiresIn: 60 * 30,
@@ -68,6 +67,7 @@ export const auth = betterAuth({
     max: 100,
     customRules: {
       "/sign-in/email": { window: 60, max: 5 },
+      "/sign-up/email": { window: 300, max: 5 },
       "/request-password-reset": { window: 300, max: 3 },
       "/reset-password": { window: 300, max: 5 },
     },
@@ -83,9 +83,16 @@ export const auth = betterAuth({
   databaseHooks: {
     user: {
       create: {
-        // Solo lo dispara el alta por cuenta propia (Google): rol Miembro y vínculo por correo.
+        // Solo lo dispara el alta por cuenta propia (/registro o Google): rol Miembro.
         after: async (user) => {
-          await onSelfSignup({ id: user.id, email: user.email });
+          await onSelfSignup({ id: user.id, email: user.email, emailVerified: user.emailVerified });
+        },
+      },
+    },
+    account: {
+      create: {
+        after: async (account) => {
+          await onAccountLinked({ userId: account.userId, providerId: account.providerId });
         },
       },
     },

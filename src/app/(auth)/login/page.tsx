@@ -24,12 +24,10 @@ export default function LoginPage() {
       <Suspense>
         <LoginForm />
       </Suspense>
-      {googleEnabled ? (
-        <p className="mt-5 border-t border-border pt-4 text-center text-sm text-muted">
-          ¿Aún no tienes cuenta?{" "}
-          <Link href="/registro" className="font-semibold text-primary hover:underline">Crear cuenta</Link>
-        </p>
-      ) : null}
+      <p className="mt-5 border-t border-border pt-4 text-center text-sm text-muted">
+        ¿Aún no tienes cuenta?{" "}
+        <Link href="/registro" className="font-semibold text-primary hover:underline">Crear cuenta</Link>
+      </p>
     </AuthCard>
   );
 }

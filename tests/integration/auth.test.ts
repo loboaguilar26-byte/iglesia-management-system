@@ -37,11 +37,24 @@ describe("autenticación", () => {
     expect(await db.session.count({ where: { userId } })).toBe(0);
   });
 
-  it("el registro público está deshabilitado", async () => {
+  it("el registro público crea una cuenta solo con rol Miembro, sin verificar ni ficha", async () => {
+    await auth.api.signUpEmail({
+      body: { name: "X", email: "x@example.test", password: TEST_PASSWORD, role: "ADMIN", emailVerified: true } as never,
+    });
+    const user = await db.user.findUniqueOrThrow({
+      where: { email: "x@example.test" },
+      select: { emailVerified: true, memberId: true, roles: { select: { role: { select: { key: true } } } } },
+    });
+    expect(user.emailVerified).toBe(false);
+    expect(user.memberId).toBeNull();
+    expect(user.roles.map((r) => r.role.key)).toEqual(["MEMBER"]);
+  });
+
+  it("el registro público rechaza un correo que ya tiene cuenta", async () => {
     await expect(
-      auth.api.signUpEmail({ body: { name: "X", email: "x@example.test", password: TEST_PASSWORD } }),
+      auth.api.signUpEmail({ body: { name: "X", email, password: TEST_PASSWORD } }),
     ).rejects.toBeTruthy();
-    expect(await db.user.count({ where: { email: "x@example.test" } })).toBe(0);
+    expect(await db.user.count({ where: { email } })).toBe(1);
   });
 
   it("el token de recuperación funciona una sola vez y cierra sesiones previas", async () => {

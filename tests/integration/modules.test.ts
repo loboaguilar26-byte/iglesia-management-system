@@ -661,3 +661,59 @@ describe("registro con Google", () => {
     expect(await db.auditLog.count({ where: { action: "user.self_signup" } })).toBe(2);
   });
 });
+
+describe("registro con correo y contraseña", () => {
+  it("da rol Miembro pero no vincula la ficha: el correo no está verificado", async () => {
+    await resetDatabase();
+    const { onSelfSignup } = await import("@/modules/users/self-signup");
+    const secretary = await createTestUser(["SECRETARY"]);
+    await createMember(secretary, { firstName: "Ana", lastName: "Ajena", email: "ana@example.test" });
+
+    const intruso = await db.user.create({ data: { id: "correo-1", name: "Intruso", email: "ana@example.test", emailVerified: false } });
+    await onSelfSignup(intruso);
+
+    expect((await db.user.findUniqueOrThrow({ where: { id: intruso.id } })).memberId).toBeNull();
+    const actor = await (await import("@/lib/session")).loadActor(intruso.id);
+    expect([...(actor?.permissions ?? [])].every((p) => p === "portal:access")).toBe(true);
+  });
+
+  it("al entrar con Google anula la contraseña de quien registró ese correo antes", async () => {
+    await resetDatabase();
+    const { onAccountLinked, onSelfSignup } = await import("@/modules/users/self-signup");
+    const user = await db.user.create({
+      data: {
+        id: "correo-2",
+        name: "Registro previo",
+        email: "dueno@example.test",
+        emailVerified: false,
+        accounts: { create: { id: "cred-2", accountId: "correo-2", providerId: "credential", password: "hash" } },
+      },
+    });
+    await onSelfSignup(user);
+    await db.session.create({ data: { id: "s-2", userId: user.id, token: "t-2", expiresAt: new Date(Date.now() + 3600000) } });
+
+    await onAccountLinked({ userId: user.id, providerId: "credential" });
+    expect(await db.account.count({ where: { userId: user.id, providerId: "credential" } })).toBe(1);
+
+    await onAccountLinked({ userId: user.id, providerId: "google" });
+    expect(await db.account.count({ where: { userId: user.id, providerId: "credential" } })).toBe(0);
+    expect(await db.session.count({ where: { userId: user.id } })).toBe(0);
+    expect(await db.auditLog.count({ where: { action: "user.email_claimed_with_google" } })).toBe(1);
+  });
+
+  it("no toca la contraseña de cuentas creadas por un administrador", async () => {
+    await resetDatabase();
+    const { onAccountLinked } = await import("@/modules/users/self-signup");
+    const staff = await db.user.create({
+      data: {
+        id: "staff-1",
+        name: "Personal",
+        email: "personal@example.test",
+        emailVerified: false,
+        accounts: { create: { id: "cred-3", accountId: "staff-1", providerId: "credential", password: "hash" } },
+      },
+    });
+    await onAccountLinked({ userId: staff.id, providerId: "google" });
+    expect(await db.account.count({ where: { userId: staff.id, providerId: "credential" } })).toBe(1);
+  });
+});
