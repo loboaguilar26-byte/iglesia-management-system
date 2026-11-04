@@ -42,7 +42,7 @@ Genera `CONFESSIONS_ENCRYPTION_KEY` con `node -e "console.log(require('crypto').
 **Límite actual:** el esquema de confesiones aún no incluye un `churchId`, y el contexto sacerdotal es global. Mantén el módulo en una sola iglesia hasta que cada registro y autorización se vincule y filtre por iglesia; no está completo el aislamiento multi-tenant.
 
 ## Implementado en la Fase 1 (22/10/2026)
-- Better Auth 1.7.12 (≥ versión que corrige CVE-2026-45364); registro público deshabilitado; contraseñas 10–128 caracteres; sesiones de 7 días revocables; token de recuperación de 30 min y un solo uso; al restablecer se cierran todas las sesiones.
+- Better Auth 1.7.12 (≥ versión que corrige CVE-2026-45364); registro público en `/registro` (correo o Google) solo con rol Miembro: con correo y contraseña el correo no se verifica, no se vincula a ninguna ficha, y si el dueño entra después con Google se anulan esa contraseña y sus sesiones; límite de 5 altas cada 5 min; contraseñas 10–128 caracteres; sesiones de 7 días revocables; token de recuperación de 30 min y un solo uso; al restablecer se cierran todas las sesiones.
 - Rate limit en BD: `/sign-in/email` 5/min, `/request-password-reset` 3/5 min, `/reset-password` 5/5 min. **Requiere `AUTH_IP_HEADERS` en producción** (ADR-015).
 - Usuario desactivado: no puede crear sesión (hook de BD) y sus sesiones se eliminan.
 - No autoasignación de roles (auditado como `roles.self_assign_denied`); siempre queda al menos un usuario activo con `roles:assign`.

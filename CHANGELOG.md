@@ -4,6 +4,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ## [Sin publicar]
 
+### Añadido — Crear cuenta desde el inicio de sesión
+- El login siempre muestra "Crear cuenta". `/registro` permite crear una cuenta con correo y contraseña además de Google.
+- Las cuentas nuevas solo reciben el rol Miembro. Con correo y contraseña no se vinculan solas a una ficha porque el correo no está verificado.
+- Si alguien registró un correo ajeno, al entrar el dueño con Google se anulan esa contraseña y sus sesiones.
+
 ### Añadido — Red de 20 sedes de ejemplo
 - `pnpm db:seed:red` crea la red "Red Eclaria": la iglesia principal y 20 sedes ficticias con sitio en `/capillas/<código>`, ministerios y eventos propios. Bloqueado en producción.
 - La ficha de una iglesia enlaza a su sitio público y a su capilla cuando ambas comparten código.
