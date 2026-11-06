@@ -36,7 +36,7 @@
     "@capacitor/status-bar": "8.0.4",
     "@prisma/adapter-pg": "^7.10.1",
     "@prisma/client": "^7.10.1",
-    "better-auth": "^1.7.12",
+    "better-auth": "^1.7.15",
     "decimal.js": "^10.6.0",
     "exceljs": "^4.4.0",
     "lucide-react": "^1.61.0",
